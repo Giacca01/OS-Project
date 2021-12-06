@@ -14,3 +14,10 @@ La lista privata è probabilmente più veloce.
 (**) le condizioni d'errore sono:
 	-scadenza timer simulazione
 	-libro mastro pieno (invio segnale dal nodo al master)
+Le repository contiene 5 branches:
+	-Master: caricheremo qui tutto ciò che riguarda il modulo master. Iniziate a fare i commit appena avete qualche funzionalità pronta.
+	magari mettendo tutta in una "vostra" cartella [Nome_Master]
+	-User, Node: come per master, ma per i moduli nodo ed utente
+	-develop: metteremo qui le varie versioni del progetto ottenute unendo i moduli e tutti gli altri
+	dati inerenti ad esso
+	-master: caricheremo gradualmente le versioni più significative, fino ad arrivare a quella definitiva
