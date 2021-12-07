@@ -4,6 +4,7 @@
 4) Accesso al master: problema dei lettori/scrittori (due sem creati ed inizializzati dal master)
 5) Transaction pool: coda di messaggi (niente rollback in caso di errore, mandi solo un messaggio per avvertire l'utente) oppure lista privata (funzioe associata all'uscita del nodo che stampa il numero di transazioni presenti e argv oppure coda di messaggi per passare la transazione transaction poolscartata al nuovo figlio).
 La lista privata è probabilmente più veloce.
+Usiamo la coda di messaggi, usando come sender e receiver i PID
 6) Lista nodi disponibili: memori condivisa
 7) Per simulazione elaborazione blocco: usiamo nanosleep
 8) Meccanismo di uscita:
@@ -21,3 +22,19 @@ Le repository contiene 5 branches:
 	-develop: metteremo qui le varie versioni del progetto ottenute unendo i moduli e tutti gli altri
 	dati inerenti ad esso
 	-master: caricheremo gradualmente le versioni più significative, fino ad arrivare a quella definitiva
+	
+	
+Risorse IPC usate:
+	-tre segmenti di shared memory per libro mastro
+	-due segmenti di shared memory per la lista di utenti e nodi: 
+		L'idea è allocare un segmento di memoria, allocato e caricato dal master, a cui gli utenti ed i noti sono collegati IN SOLA LETTURA.
+		Il segmento contiene una linked list (la dimensione non è fissa e così la rimozione in caso di terminazione anticipata).
+		La deallocazione della lista spetta al master, così come l'eliminazione di nodi corrispondenti ad utenti che terminano in anticipo.
+		Dato che ci serve conoscere i PID dei nodi, conviene anche qui fare come per la lista dei PID utente.
+		Anche qui l'allocazione, la deallocazione e la modifica (serve??) spettano al master, mentre nodi ed utenti sono collegati in sola lettura.
+	-usiamo una coda di messaggi sola oppure uno per ogni nodo
+	-un segmento di memoria per ogni processo con la lista degli amici (creato, inizializzato e deallocato dal master: l'utente vi si collega solo in lettura)
+
+IL NODO NON DEVE DEALLOCARE IL BLOCCO, altrimenti lo si perde.
+Il nodo deve allocare il blocco con malloc ed aggiungerlo alla blocklist
+Mettere un handler che deallochi le cose in caso di terminazione con CTRL+C (in tal caso, mentre si è nell'handler un altro CTRL+C va deallocato) (lo faccio io come parte della terminazione del master)
