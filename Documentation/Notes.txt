@@ -32,9 +32,27 @@ Risorse IPC usate:
 		La deallocazione della lista spetta al master, così come l'eliminazione di nodi corrispondenti ad utenti che terminano in anticipo.
 		Dato che ci serve conoscere i PID dei nodi, conviene anche qui fare come per la lista dei PID utente.
 		Anche qui l'allocazione, la deallocazione e la modifica (serve??) spettano al master, mentre nodi ed utenti sono collegati in sola lettura.
-	-usiamo una coda di messaggi sola oppure uno per ogni nodo
-	-un segmento di memoria per ogni processo con la lista degli amici (creato, inizializzato e deallocato dal master: l'utente vi si collega solo in lettura)
+	-usiamo una coda di messaggi sola oppure uno per ogni nodo: una per ogni nodo, creata e deallocata dal master (così passare gli id agli utenti è più semplice)
+	questa code sono create vuote dal master, non cambiano per tutta l'esecuzione. Sono deallocate in due casi:
+		-fine esecuzione utente proprietario
+		-fine simulazione
+	conviene inserire gli id in una lista, avendo cura di rimuovere da essa l'id di eventuali nodi che terminano in anticipo(Può succedere???)
+	-un segmento di memoria per ogni processo con la lista degli amici (creato, inizializzato e deallocato da.l master: il nodo vi si collega solo in lettura): questa area è strutturata come lista, in modo da poter deallocare eventuali nodi che terminino anticipatamente(Può succedere???). Se i nodi non possono terminare anticipatamente allora rimane invariata per tutta la simulazione e viene poi deallocata dal master.
+
+In (quasi) definitiva, possiamo dire che le risorse IPC in uso saranno le seguenti:
+	/*** IPC Pointers ***/
+	
+	Register * regPtrs[REG_PARTITION_COUNT];
+	ProcessesList * usersList = NULL;
+	ProcessesList * nodesList = NULL;
+	
+	ProcessesList ** processesFriends = NULL;
+	TransactionPoolList * tpList = NULL;
+	
+	/*** End of IPC Pointers ***/
+
 
 IL NODO NON DEVE DEALLOCARE IL BLOCCO, altrimenti lo si perde.
 Il nodo deve allocare il blocco con malloc ed aggiungerlo alla blocklist
 Mettere un handler che deallochi le cose in caso di terminazione con CTRL+C (in tal caso, mentre si è nell'handler un altro CTRL+C va deallocato) (lo faccio io come parte della terminazione del master)
+Dopo la fine del modulo master dovremmo definire una procedure di gestione seria, reentrant ed inserita in un modulo a parte (in modo che venga collegato solo se necessario)
