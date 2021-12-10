@@ -27,11 +27,22 @@ void deallocateFacilities();
 
 // each partition is an array of registers
 Register regPtrs[REG_PARTITION_COUNT]; // to be loaded by master
-ProcListElem usersList[SO_USER_NUM];
-ProcListElem nodesList[SO_NODES_NUM];
+ProcListElem usersList[SO_USER_NUM];	// Lista utenti (attivi e non)
+// in cui mantenere gli ID dei nodi da usare durante il calcolo del bilancio
+// ProcListElem nodesList[SO_NODES_NUM];
 
-FriendsList processesFriends[SO_NODES_NUM]; // Ogni nodo ha una lista di amici
+// Non serve: i nodi non cambiano durante la simulazione, quindi conviene passare la lista
+// come argomento o variabile d'ambiente
+// FriendsList processesFriends[SO_NODES_NUM]; // Ogni nodo ha una lista di amici
+// Tutti i processi devono potersi connetere alle TP dei nodi
 TPElement tpList[SO_NODES_NUM];				// Ogni processo nodo ha un transaction pool
+
+int wrPartSem; // Id of the set that contais the three semaphores
+	// used to write on the register's partitions
+int rdPartSem; // Id of the set that contais the three semaphores
+	// used to read from the register's partitions
+int fairStartSem; // Id of the semaphore used to make all the processes
+				  // start to compete for CPU at the same time
 
 /*** End of IPC Pointers ***/
 

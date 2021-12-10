@@ -45,11 +45,24 @@ In (quasi) definitiva, possiamo dire che le risorse IPC in uso saranno le seguen
 	// each partition is an array of registers
 	Register regPtrs[REG_PARTITION_COUNT]; // to be loaded by master
 	ProcListElem usersList[SO_USER_NUM];
-	ProcListElem nodesList[SO_NODES_NUM];
+	// Non è più una facility IPC, ma un seplice vettore privato del master
+	// in cui mantenere gli ID dei nodi da usare durante il calcolo del bilancio
+	// ProcListElem nodesList[SO_NODES_NUM];
 
 	FriendsList processesFriends[SO_NODES_NUM]; // Ogni nodo ha una lista di amici
 	TPElement tpList[SO_NODES_NUM]; // Ogni processo nodo ha un transaction pool
 
+	int wrPartSem; // Id of the set that contais the three semaphores 
+					// used to write on the register's partitions
+	int rdPartSem; // Id of the set that contais the three semaphores 
+					// used to read from the register's partitions
+	int fairStartSem; // Id of the semaphore used to make all the processes
+					// start to compete for CPU at the same time
+
+	// MAnca lo strumento di sincronizzazione per la modifica della lista
+	// dei processi: è un caso complesso, nè il semaforo nè un smeplice intero sembrano adatti
+	// Per la lista dei nodi non serve alcun semaforo (e anzi, si potrebbe valutarne l'eliminazione, perchè tanto basta estrarre un id di transaction pool)
+	// perchè i nodi non cambiano durante la simulazione
 /*** End of IPC Pointers ***/
 
 
