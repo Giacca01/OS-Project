@@ -84,6 +84,6 @@ typedef struct { // Modificato 10/12/2021
 
 typedef struct // Modificato 10/12/2021
 {
-    long int procId; // è necessario???
+    long int procId; // è necessario??? NO, a nessuno serve l'ID del nodo
     int msgQId;
 } TPElement;
