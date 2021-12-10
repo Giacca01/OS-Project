@@ -72,7 +72,7 @@ typedef struct // Modificato 10/12/2021
 typedef struct // Modificato 10/12/2021
 {
     long int procId;
-    States procState; 
+    States procState;  // dA ignorare se il processo è un nodo
 } ProcListElem;
 
 // Il singolo elemento della lista degli amici è una coppia

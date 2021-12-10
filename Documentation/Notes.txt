@@ -50,6 +50,15 @@ In (quasi) definitiva, possiamo dire che le risorse IPC in uso saranno le seguen
 	FriendsList processesFriends[SO_NODES_NUM]; // Ogni nodo ha una lista di amici
 	TPElement tpList[SO_NODES_NUM]; // Ogni processo nodo ha un transaction pool
 
+	int wrPartSem; // Id of the set that contais the three semaphores 
+					// used to write on the register's partitions
+	int rdPartSem; // Id of the set that contais the three semaphores 
+					// used to read from the register's partitions
+	int fairStartSem; // Id of the semaphore used to make all the processes
+					// start to compete for CPU at the same time
+
+	// MAnca lo strumento di sincronizzazione per la modifica della lista
+	// dei processi: è un caso complesso, nè il semaforo nè un smeplice intero sembrano adatti
 /*** End of IPC Pointers ***/
 
 
