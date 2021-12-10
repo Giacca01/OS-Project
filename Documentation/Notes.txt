@@ -41,15 +41,16 @@ Risorse IPC usate:
 
 In (quasi) definitiva, possiamo dire che le risorse IPC in uso saranno le seguenti:
 	/*** IPC Pointers ***/
-	
-	Register * regPtrs[REG_PARTITION_COUNT];
-	ProcessesList * usersList = NULL;
-	ProcessesList * nodesList = NULL;
-	
-	ProcessesList ** processesFriends = NULL;
-	TransactionPoolList * tpList = NULL;
-	
-	/*** End of IPC Pointers ***/
+
+	// each partition is an array of registers
+	Register regPtrs[REG_PARTITION_COUNT]; // to be loaded by master
+	ProcListElem usersList[SO_USER_NUM];
+	ProcListElem nodesList[SO_NODES_NUM];
+
+	FriendsList processesFriends[SO_NODES_NUM]; // Ogni nodo ha una lista di amici
+	TPElement tpList[SO_NODES_NUM]; // Ogni processo nodo ha un transaction pool
+
+/*** End of IPC Pointers ***/
 
 
 IL NODO NON DEVE DEALLOCARE IL BLOCCO, altrimenti lo si perde.
