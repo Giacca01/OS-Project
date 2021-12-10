@@ -4,6 +4,7 @@
 4) Accesso al master: problema dei lettori/scrittori (due sem creati ed inizializzati dal master)
 5) Transaction pool: coda di messaggi (niente rollback in caso di errore, mandi solo un messaggio per avvertire l'utente) oppure lista privata (funzioe associata all'uscita del nodo che stampa il numero di transazioni presenti e argv oppure coda di messaggi per passare la transazione transaction poolscartata al nuovo figlio).
 La lista privata è probabilmente più veloce.
+Usiamo la coda di messaggi, usando come sender e receiver i PID
 6) Lista nodi disponibili: memori condivisa
 7) Per simulazione elaborazione blocco: usiamo nanosleep
 8) Meccanismo di uscita:
@@ -14,3 +15,45 @@ La lista privata è probabilmente più veloce.
 (**) le condizioni d'errore sono:
 	-scadenza timer simulazione
 	-libro mastro pieno (invio segnale dal nodo al master)
+Le repository contiene 5 branches:
+	-Master: caricheremo qui tutto ciò che riguarda il modulo master. Iniziate a fare i commit appena avete qualche funzionalità pronta.
+	magari mettendo tutta in una "vostra" cartella [Nome_Master]
+	-User, Node: come per master, ma per i moduli nodo ed utente
+	-develop: metteremo qui le varie versioni del progetto ottenute unendo i moduli e tutti gli altri
+	dati inerenti ad esso
+	-master: caricheremo gradualmente le versioni più significative, fino ad arrivare a quella definitiva
+	
+	
+Risorse IPC usate:
+	-tre segmenti di shared memory per libro mastro
+	-due segmenti di shared memory per la lista di utenti e nodi: 
+		L'idea è allocare un segmento di memoria, allocato e caricato dal master, a cui gli utenti ed i noti sono collegati IN SOLA LETTURA.
+		Il segmento contiene una linked list (la dimensione non è fissa e così la rimozione in caso di terminazione anticipata).
+		La deallocazione della lista spetta al master, così come l'eliminazione di nodi corrispondenti ad utenti che terminano in anticipo.
+		Dato che ci serve conoscere i PID dei nodi, conviene anche qui fare come per la lista dei PID utente.
+		Anche qui l'allocazione, la deallocazione e la modifica (serve??) spettano al master, mentre nodi ed utenti sono collegati in sola lettura.
+	-usiamo una coda di messaggi sola oppure uno per ogni nodo: una per ogni nodo, creata e deallocata dal master (così passare gli id agli utenti è più semplice)
+	questa code sono create vuote dal master, non cambiano per tutta l'esecuzione. Sono deallocate in due casi:
+		-fine esecuzione utente proprietario
+		-fine simulazione
+	conviene inserire gli id in una lista, avendo cura di rimuovere da essa l'id di eventuali nodi che terminano in anticipo(Può succedere???)
+	-un segmento di memoria per ogni processo con la lista degli amici (creato, inizializzato e deallocato da.l master: il nodo vi si collega solo in lettura): questa area è strutturata come lista, in modo da poter deallocare eventuali nodi che terminino anticipatamente(Può succedere???). Se i nodi non possono terminare anticipatamente allora rimane invariata per tutta la simulazione e viene poi deallocata dal master.
+
+In (quasi) definitiva, possiamo dire che le risorse IPC in uso saranno le seguenti:
+	/*** IPC Pointers ***/
+
+	// each partition is an array of registers
+	Register regPtrs[REG_PARTITION_COUNT]; // to be loaded by master
+	ProcListElem usersList[SO_USER_NUM];
+	ProcListElem nodesList[SO_NODES_NUM];
+
+	FriendsList processesFriends[SO_NODES_NUM]; // Ogni nodo ha una lista di amici
+	TPElement tpList[SO_NODES_NUM]; // Ogni processo nodo ha un transaction pool
+
+/*** End of IPC Pointers ***/
+
+
+IL NODO NON DEVE DEALLOCARE IL BLOCCO, altrimenti lo si perde.
+Il nodo deve allocare il blocco con malloc ed aggiungerlo alla blocklist
+Mettere un handler che deallochi le cose in caso di terminazione con CTRL+C (in tal caso, mentre si è nell'handler un altro CTRL+C va deallocato) (lo faccio io come parte della terminazione del master)
+Dopo la fine del modulo master dovremmo definire una procedure di gestione seria, reentrant ed inserita in un modulo a parte (in modo che venga collegato solo se necessario)
