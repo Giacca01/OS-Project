@@ -5,6 +5,9 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <time.h>
+#include <sys/sem.h>
+#include <sys/shm.h>
+#include <sys/msg.h>
 
 #define SO_REGISTRY_SIZE 200
 // Right now it's not reentrant, we should modify it
@@ -32,9 +35,9 @@ typedef struct {
 	// così non ci sono rischi di portablità
 	struct timespec timestamp;
 	long int sender; // Sender's PID
-	long int receiver: // Receiver's PID
-	long float amountSend;
-	long float reward;
+	long int receiver; // Receiver's PID
+	float amountSend; // double???
+	float reward;
 	
 } Transaction;
 
