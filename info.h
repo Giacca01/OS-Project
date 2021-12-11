@@ -59,6 +59,7 @@ typedef struct // Modificato 10/12/2021
     Transaction transList[SO_BLOCK_SIZE];
 } Block;
 
+// Serve per memorizzare le transazioni, NON i puntatori ai segmenti
 // Each register is a group of blocks
 typedef struct // Modificato 10/12/2021
 {
@@ -77,13 +78,30 @@ typedef struct // Modificato 10/12/2021
 
 // Il singolo elemento della lista degli amici è una coppia
 // -(PID del processo a cui è riferita, lista di pid e stato degli amici)
+/*
 typedef struct { // Modificato 10/12/2021
     long int ownerId;
     ProcListElem friends;
-} FriendsList;
+} FriendsList;*/
 
 typedef struct // Modificato 10/12/2021
 {
     long int procId; // è necessario??? NO, a nessuno serve l'ID del nodo
     int msgQId;
 } TPElement;
+
+/*
+    NEWNODE: message sent to master from node 
+            to request the creation of a new node to serve a transaction
+    
+    NEWFRIEND: message sent to node from master to order the latter
+                to add a new process to its friends
+*/
+typedef enum {NEWNODE = 0, NEWFRIEND = 1} GlobalMsgContent;
+
+typedef struct{
+    long int mType; // Pid of the receiver, taken with getppid (children) or from dedicated arrays (parent)
+    GlobalMsgContent msgContent;
+    ProcListElem newFriend;  // garbage if msgcontent == NEWNODE
+    Transaction transaction; // garbage if msgContent == NEWFRIEND
+}MsgGlobalQueue;

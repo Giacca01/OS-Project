@@ -25,32 +25,60 @@ Le repository contiene 5 branches:
 	
 	
 Risorse IPC usate:
-	-tre segmenti di shared memory per libro mastro
-	-due segmenti di shared memory per la lista di utenti e nodi: 
+	-tre segmenti di shared memory per libro mastro: ogni segmento è un oggetto di tipo register
+	-due segmenti di shared memory per la lista di utenti e nodi: ogni segmento è un vettore di dimensione SO_USER_NUM o SO_NODES_NUM di oggetti ProcListElem
 		L'idea è allocare un segmento di memoria, allocato e caricato dal master, a cui gli utenti ed i noti sono collegati IN SOLA LETTURA.
 		Il segmento contiene una linked list (la dimensione non è fissa e così la rimozione in caso di terminazione anticipata).
 		La deallocazione della lista spetta al master, così come l'eliminazione di nodi corrispondenti ad utenti che terminano in anticipo.
 		Dato che ci serve conoscere i PID dei nodi, conviene anche qui fare come per la lista dei PID utente.
 		Anche qui l'allocazione, la deallocazione e la modifica (serve??) spettano al master, mentre nodi ed utenti sono collegati in sola lettura.
-	-usiamo una coda di messaggi sola oppure uno per ogni nodo: una per ogni nodo, creata e deallocata dal master (così passare gli id agli utenti è più semplice)
+	-TRANSACTION POOL: usiamo una coda di messaggi sola oppure uno per ogni nodo: una per ogni nodo, creata e deallocata dal master (così passare gli id agli utenti è più semplice)
 	questa code sono create vuote dal master, non cambiano per tutta l'esecuzione. Sono deallocate in due casi:
 		-fine esecuzione utente proprietario
 		-fine simulazione
 	conviene inserire gli id in una lista, avendo cura di rimuovere da essa l'id di eventuali nodi che terminano in anticipo(Può succedere???)
-	-un segmento di memoria per ogni processo con la lista degli amici (creato, inizializzato e deallocato da.l master: il nodo vi si collega solo in lettura): questa area è strutturata come lista, in modo da poter deallocare eventuali nodi che terminino anticipatamente(Può succedere???). Se i nodi non possono terminare anticipatamente allora rimane invariata per tutta la simulazione e viene poi deallocata dal master.
+	-Una coda di messaggi unica tramite la quale:
+		-il master ordina ai nodi di aggiungere un dato alla loro lista amici
+		-un nodo chiede al master di creare un nuovo nodo a cui delegare l'esecuzione di una transazione
+		I messaggi sono di tipo MsgGlobalQueue
 
-In (quasi) definitiva, possiamo dire che le risorse IPC in uso saranno le seguenti:
-	/*** IPC Pointers ***/
+	NOTA BENE: la lista amici è ora un vettore (o una lista) privato al nodo
+Variabili del master
 
 	// each partition is an array of registers
-	Register regPtrs[REG_PARTITION_COUNT]; // to be loaded by master
-	ProcListElem usersList[SO_USER_NUM];
-	// Non è più una facility IPC, ma un seplice vettore privato del master
-	// in cui mantenere gli ID dei nodi da usare durante il calcolo del bilancio
-	// ProcListElem nodesList[SO_NODES_NUM];
+	// vettore che contiene i puntatori alle partizioni del registro ottenuti con shmat. PRIVATO al master
+	// è presente, uguale, anche in nodi ed utenti, va ricreato perchè eseguiamo l'execve
+	// Viene allocato dinamicamente (il contenuto delle celle è un puntatore ad una zona allocata da shmat)
+	// ed è di dimensione REG_PARTITION_COUNT
+	Register ** regPtrs; // to be loaded by master
+	// vettore che contiene gli id dei segmenti che costituiscono le partizioni del registro restituiti da shmget.
+	// è privato al master e ci consente di passare gli id dei segmenti ai figli
+	// viene allocato dinamicamente ed è di dimensione REG_PARTITION_COUNT
+	int regPartsIds;
 
-	FriendsList processesFriends[SO_NODES_NUM]; // Ogni nodo ha una lista di amici
-	TPElement tpList[SO_NODES_NUM]; // Ogni processo nodo ha un transaction pool
+	// Puntatore privato al master alla lista degli utenti 
+	// qui salviamo il valore di ritorno della shmat al segmento che contiene la lista degli utenti
+	// serve per poter registrare la terminazione anticipata, stampare il bilancio, inviare i segnali, ecc...
+	// lo replicheremo anche negli utenti e (forse) nei nodi
+	ProcListElem * usersList;
+	// Serve perchè è stata reintrodotta la parte di rinnovamento della popolazione
+	// This array contains the PIDs of the nodes
+	ProcListElem * nodesList;
+
+
+	// Lista(sul serio, non un vettore) privata al nodo contenente i suoi amici
+	// il master passa gli amici iniziali come argomento o variabili d'ambiente
+	// il nodo aggiunge quanto ricevuto alla sua lista (inizialmente avrà SO_NODES_NUM nodi)
+	// In più, quando legge dalla coda comune l'ordine di aggiungere un certo
+	// processo ai suoi amici modifica la lista
+	// FriendsList * processesFriends; // Ogni nodo ha una lista di amici
+
+
+
+	// Vettore allocato dinamicamente e privato al master che contiene SO_NODES_NUM
+	// oggetti di tipo TPElement
+	// Questo verrà passato tramite fork anche ad utenti e nodi
+	TPElement * tpList; // Ogni processo nodo ha un transaction pool
 
 	int wrPartSem; // Id of the set that contais the three semaphores 
 					// used to write on the register's partitions
@@ -63,10 +91,13 @@ In (quasi) definitiva, possiamo dire che le risorse IPC in uso saranno le seguen
 	// dei processi: è un caso complesso, nè il semaforo nè un smeplice intero sembrano adatti
 	// Per la lista dei nodi non serve alcun semaforo (e anzi, si potrebbe valutarne l'eliminazione, perchè tanto basta estrarre un id di transaction pool)
 	// perchè i nodi non cambiano durante la simulazione
-/*** End of IPC Pointers ***/
 
 
 IL NODO NON DEVE DEALLOCARE IL BLOCCO, altrimenti lo si perde.
-Il nodo deve allocare il blocco con malloc ed aggiungerlo alla blocklist
-Mettere un handler che deallochi le cose in caso di terminazione con CTRL+C (in tal caso, mentre si è nell'handler un altro CTRL+C va deallocato) (lo faccio io come parte della terminazione del master)
+Il nodo deve allocare il blocco con malloc ed aggiungerlo alla blocklist (con memcopy, perchè va sposato da heap a memoria condivisa)
+(In realtà no, non usiamo punatori per le transazioni e per il blocco: quindi quando aggiungiamo un blocco alla partizione viene fatta una copia per valore di tutto
+cioò che contiene, anche delle transazioni. È molto inefficiente)
+Mettere un handler che deallochi le cose in caso di terminazione con CTRL+C (in tal caso, mentre si è nell'handler un altro CTRL+C va ignorato) (lo faccio io come parte della terminazione del master)
 Dopo la fine del modulo master dovremmo definire una procedure di gestione seria, reentrant ed inserita in un modulo a parte (in modo che venga collegato solo se necessario)
+
+// semaforo lista nodi e utenti
