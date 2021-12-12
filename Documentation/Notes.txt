@@ -26,6 +26,7 @@ Le repository contiene 5 branches:
 	
 Risorse IPC usate:
 	-tre segmenti di shared memory per libro mastro: ogni segmento è un oggetto di tipo register
+	// Forse il punto successivo non serve più
 	-due segmenti di shared memory per la lista di utenti e nodi: ogni segmento è un vettore di dimensione SO_USER_NUM o SO_NODES_NUM di oggetti ProcListElem
 		L'idea è allocare un segmento di memoria, allocato e caricato dal master, a cui gli utenti ed i noti sono collegati IN SOLA LETTURA.
 		Il segmento contiene una linked list (la dimensione non è fissa e così la rimozione in caso di terminazione anticipata).
@@ -60,9 +61,12 @@ Variabili del master
 	// qui salviamo il valore di ritorno della shmat al segmento che contiene la lista degli utenti
 	// serve per poter registrare la terminazione anticipata, stampare il bilancio, inviare i segnali, ecc...
 	// lo replicheremo anche negli utenti e (forse) nei nodi
+	// In alternativa, qui mettiamo i pid di tutti i figli.
+	// Ogni figlio deve ricare questo vettore con quanto massatogli come argomento o variabile d'ambiente
 	ProcListElem * usersList;
 	// Serve perchè è stata reintrodotta la parte di rinnovamento della popolazione
 	// This array contains the PIDs of the nodes
+	// Funziona come sopra
 	ProcListElem * nodesList;
 
 
@@ -71,7 +75,7 @@ Variabili del master
 	// il nodo aggiunge quanto ricevuto alla sua lista (inizialmente avrà SO_NODES_NUM nodi)
 	// In più, quando legge dalla coda comune l'ordine di aggiungere un certo
 	// processo ai suoi amici modifica la lista
-	// FriendsList * processesFriends; // Ogni nodo ha una lista di amici
+	FriendsList * processesFriends; // Ogni nodo ha una lista di amici
 
 
 
