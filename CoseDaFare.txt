@@ -1,0 +1,5 @@
+-Aggiungere definizione semafori: Ok
+-FInire deallocazione facilities
+-Testare mia parte master
+-Fare disegno facilities
+-Definire procedure d'errore
