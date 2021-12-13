@@ -11,6 +11,7 @@
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <sys/sem.h>
+#include "Error/error.h"
 
 #define SO_REGISTRY_SIZE 200
 // Right now it's not reentrant, we should modify it

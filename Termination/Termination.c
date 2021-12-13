@@ -8,8 +8,10 @@
 		-wait for children: Ok
 		-print report: OK
 		-deallocate IPC facilities: Ok
-		-define error procedures
+		-define error procedures: Ok
 		-refactoring e aggiunta stampe
+		-check memory leaks
+		-add ctrl+c handler
 		
 	SIGUSR1 is sent to all the children by the master when it
 	detects the end of the simulation.
@@ -62,7 +64,7 @@ int main()
 
 	if (sifillset(&set) == -1)
 	{
-		EXIT_ON_ERROR;
+		unsafeErrorPrint("Master: failed to initialize signals mask. Error: ");
 	}
 	else
 	{
@@ -70,14 +72,14 @@ int main()
 		act.sa_mask = set;
 		if (sigaction(SIGALRM, &act, NULL) == -1)
 		{
-			EXIT_ON_ERROR;
+			unsafeErrorPrint("Master: failed to set end of timer disposition. Error: ");
 		}
 		else
 		{
 
 			if (sigaction(SIGUSR1, &act, NULL) == -1)
 			{
-				EXIT_ON_ERROR;
+				unsafeErrorPrint("Master: failed to set end of simulation disposition. Error: ");
 			}
 			else
 			{
@@ -126,34 +128,39 @@ void endOfSimulation(int sig)
 		// in caso di errore
 		while (wait(NULL) != -1);
 
-		// print report: we use the write system call: slower, but async-signal-safe
-		// termination reason
-		if (sig == SIGALRM)
-			aus = "Termination reason: end of simulation.\n";
-		else
-			aus = "Termination reason: register book is full.\n";
+		if (errno != ECHILD) {
+			// print report: we use the write system call: slower, but async-signal-safe
+			// termination reason
+			if (sig == SIGALRM)
+				aus = "Termination reason: end of simulation.\n";
+			else
+				aus = "Termination reason: register book is full.\n";
 
-		// Users and nodes budgets
-		printBudget();
+			// Users and nodes budgets
+			printBudget();
 
-		/*Per la stampa degli errori non si può usare perror, perchè non è elencata* tra la funzioni signal*/
+			/*Per la stampa degli errori non si può usare perror, perchè non è elencata* tra la funzioni signal*/
 
-		// processes terminated before end of simulation
-		ret = sprintf(terminationMessage, "Processes terminated before end of simulation: %d\n", noTerminated);
-		if (ret <= 0)
-			write(STDERR_FILENO, "Master: sprintf failed to format process count's string.", strlen("Master: sprintf failed to format process count's string."));
+			// processes terminated before end of simulation
+			ret = sprintf(terminationMessage, "Processes terminated before end of simulation: %d\n", noTerminated);
+			if (ret <= 0)
+				write(STDERR_FILENO, "Master: sprintf failed to format process count's string.", strlen("Master: sprintf failed to format process count's string."));
 
-		// Blocks in register
-		ret = sprintf(aus, "There are %d blocks in the register.\n", regPtrs[0]->nBlocks + regPtrs[1]->nBlocks + regPtrs[2]->nBlocks);
-		if (ret <= 0)
-			write(STDERR_FILENO, "Master: sprintf failed to format number of blocks' string.", strlen("Master: sprintf failed to format number of blocks' string.")); // error handling
+			// Blocks in register
+			ret = sprintf(aus, "There are %d blocks in the register.\n", regPtrs[0]->nBlocks + regPtrs[1]->nBlocks + regPtrs[2]->nBlocks);
+			if (ret <= 0)
+				write(STDERR_FILENO, "Master: sprintf failed to format number of blocks' string.", strlen("Master: sprintf failed to format number of blocks' string.")); // error handling
 
-		ret = write(STDOUT_FILENO, terminationMessage, strlen(terminationMessage));
-		if (ret == -1)
-			write(STDERR_FILENO, "Master: failed to write termination message.", strlen("Master: failed to write termination message.")); // error handling
+			ret = write(STDOUT_FILENO, terminationMessage, strlen(terminationMessage));
+			if (ret == -1)
+				write(STDERR_FILENO, "Master: failed to write termination message.", strlen("Master: failed to write termination message.")); // error handling
 
-		// deallocate facilities
-		deallocateFacilities();
+			// deallocate facilities
+			deallocateFacilities();
+		} else 
+		{
+			
+		}
 
 		// Releasing local variables' memory
 		free(terminationMessage);
@@ -319,6 +326,14 @@ void printBudget()
 			node++;
 		}
 	}
+
+	free(reg);
+	free(usr);
+	free(node);
+	free(balanceString);
+	free(tList);
+	free(tpPtr);
+	free(buf);
 }
 
 void deallocateFacilities()
