@@ -2,5 +2,5 @@ CC=gcc
 CFLAGS=-ansi -pedantic-errors -Wall
 
 # mettere una regola che compili tutto
-mastro: mastro.c info.h
-	${CC} mastro.c info.h ${CFLAGS}
+termination: Termination.c info.h error.h
+	${CC} -c Termination.c ${CFLAGS} -o termination.o

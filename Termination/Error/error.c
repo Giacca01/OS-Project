@@ -9,18 +9,19 @@
 */
 #include "error.h"
 
-// Vedere come trattare eventuali errori in queste funzioni
-// Liberamente ispirato a EXIT_ON_ERROR del prof Radicioni
+/* Vedere come trattare eventuali errori in queste funzioni*/
+/* Liberamente ispirato a EXIT_ON_ERROR del prof Radicioni*/
 void unsafeErrorPrint(char * msg){
     fprintf(stderr, "An error occurred at line %d during the execution of process of PID: %ld. See following descrption.\n",
             __LINE__, (long)getpid());
 
     if (errno){
-        // If errno was set we dispaly the internal message
+        /* If errno was set we dispaly the internal message*/
         perror(msg);
     } else {
-        // If errno is unset we can only rely on user-defined message
-        fprintf(stderr, msg);
+        /* If errno is unset we can only rely on user-defined message*/
+        strcat(msg, "\n");
+        fputs(msg, stderr);
     }
 }
 
@@ -33,9 +34,12 @@ void safeErrorPrint(char * msg){
     write(STDERR_FILENO, aus, ret);
 
     if (errno) {
-        ret = strcat(msg, strerror(errno));
-        write(STDERR_FILENO, msg, ret);
+        /* check if null*/
+        strcat(msg, strerror(errno));
+        write(STDERR_FILENO, msg, strlen(msg));
     } else {
         write(STDERR_FILENO, msg, strlen(msg));
     }
+
+    write(STDERR_FILENO, "\n", 1);
 }

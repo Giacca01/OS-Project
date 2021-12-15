@@ -122,3 +122,8 @@ I vettori nelle struct usate per segmenti IPC non allocati dinamicamente perchè
 mentre noi vogliamo allocare nel segmento di memoria.
 Se usassimo la malloc dovremmo fare la copia di quanto allocato
 // semaforo lista nodi e utenti
+
+// CTRL + C handler:
+	-signaling the master will cause the end of the simulation
+	-signaling the user will cause the user's termination and the master will be notified
+	-signaling the node will cause the node's termination and the master will be notified(??)
