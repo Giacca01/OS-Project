@@ -31,8 +31,16 @@
 /***********************************************************************/
 /***********************************************************************/
 
-/***** IPC ID of the global semaphore  *****/
+/*****        Global structures        *****/
 /*******************************************/
+Register **regPtrs;
+int *regPartsIds;
+ProcListElem *usersList;
+ProcListElem *nodesList;
+TPElement *tpList;
+
+int globalQueueId;
+
 int fairStartSem; // Id of the set that contais the three semaphores
                   // used to write on the register's partitions
 int wrPartSem;    // Id of the set that contais the three semaphores
@@ -44,7 +52,8 @@ int rdPartSem;    // Id of the set that contais the three semaphores
 
 /***** IPC ID of global shared memory *****/
 /******************************************/
-int shm_id_users; // Shared memory used to store id and state of users processes
+// IN TEORIA NON SERVE PIU'
+//int shm_id_users; // Shared memory used to store id and state of users processes
 /******************************************/
 /******************************************/
 
@@ -114,9 +123,24 @@ int readConfigParameters()
 
 /****   Function that creates the ipc structures used in the project    *****/
 /****************************************************************************/
-void createSemaphores()
+void createIPCFacilties()
 {
-    // Creation of the semaphores
+    regPtrs = (Register **)malloc(REG_PARTITION_COUNT * sizeof(Register *));
+    for (int i = 0; i < REG_PARTITION_COUNT; i++)
+        regPtrs[i] = (Register *)malloc(REG_PARTITION_SIZE * sizeof(Register));
+    regPartsIds = (int *)malloc(REG_PARTITION_COUNT * sizeof(int));
+    usersList = (ProcListElem *)malloc(SO_USERS_NUM * sizeof(ProcListElem));
+    nodesList = (ProcListElem *)malloc(SO_NODES_NUM * sizeof(ProcListElem));
+    tpList = (TPElement *)malloc(SO_NODES_NUM * sizeof(TPElement));
+}
+/****************************************************************************/
+/****************************************************************************/
+
+/*****  Function that initialize the ipc structures used in the project *****/
+/****************************************************************************/
+void initializeIPCFacilities()
+{
+    // Initialization of semaphores
     fairStartSem = semget(IPC_PRIVATE, 1, IPC_CREAT | 0600);
     TEST_ERROR;
 
@@ -125,15 +149,6 @@ void createSemaphores()
 
     rdPartSem = semget(IPC_PRIVATE, 3, IPC_CREAT | 0600);
     TEST_ERROR;
-}
-/****************************************************************************/
-/****************************************************************************/
-
-/*****  Function that initialize the ipc structures used in the project *****/
-/****************************************************************************/
-void initializeSemaphores()
-{
-    // Initialization of semaphores
     semctl(fairStartSem, 0, SETVAL, SO_USERS_NUM + SO_NODES_NUM + 1);
 
     semctl(rdPartSem, 0, SETVAL, 1);
@@ -143,6 +158,30 @@ void initializeSemaphores()
     semctl(wrPartSem, 0, SETVAL, SO_USERS_NUM + SO_NODES_NUM + 1);
     semctl(wrPartSem, 1, SETVAL, SO_USERS_NUM + SO_NODES_NUM + 1);
     semctl(wrPartSem, 2, SETVAL, SO_USERS_NUM + SO_NODES_NUM + 1);
+
+    /*****  Creates and initialize the messages queues  *****/
+    /********************************************************/
+    // Creates the global queue
+    globalQueueId = msgget(IPC_PRIVATE, IPC_CREAT | IPC_EXCL);
+    TEST_ERROR;
+    /********************************************************/
+    /********************************************************/
+
+    /*****  Initialization of shared memory segments    *****/
+    /********************************************************/
+    regPartsIds[0] = shmget(IPC_PRIVATE, REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
+    regPartsIds[1] = shmget(IPC_PRIVATE, REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
+    regPartsIds[2] = shmget(IPC_PRIVATE, REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
+    regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
+    regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
+    regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
+    TEST_ERROR;
+
+    /*shm_id_users = shmget(IPC_PRIVATE, SO_USERS_NUM * sizeof(ProcListElem), S_IRUSR | S_IWUSR);
+    usersList = (ProcListElem *)shmat(shm_id_users, NULL, 0);
+    TEST_ERROR;*/
+    /********************************************************/
+    /********************************************************/
 }
 /****************************************************************************/
 /****************************************************************************/
@@ -179,16 +218,6 @@ int main(int argc, char *argv[])
     int status;
     struct sembuf sops;
 
-    Register **regPtrs;
-    regPtrs = (Register **)malloc(REG_PARTITION_COUNT * sizeof(Register *));
-    for (int i = 0; i < REG_PARTITION_COUNT; i++)
-        regPtrs[i] = (Register *)malloc(REG_PARTITION_SIZE * sizeof(Register));
-    int regPartsIds[REG_PARTITION_COUNT];
-    ProcListElem *usersList;
-    ProcListElem *nodesList;
-    //FriendsList *processesFriends;
-    TPElement *tpList;
-
     // Set common semaphore options
     sops.sem_num = 0;
     sops.sem_flg = 0;
@@ -198,39 +227,11 @@ int main(int argc, char *argv[])
     if (readConfigParameters() == -1)
         exit(EXIT_FAILURE);
 
-    /*****  Creates and initialize the semaphores   *****/
-    /****************************************************/
-    createSemaphores();
-
-    initializeSemaphores();
-    /****************************************************/
-    /****************************************************/
-
-    /*****  Creates and initialize the messages queues  *****/
+    /*****  Creates and initialize the IPC Facilities   *****/
     /********************************************************/
-    // Creates the global queue
-    int msgq_global_id = msgget(IPC_PRIVATE, IPC_CREAT | IPC_EXCL);
-    TEST_ERROR;
+    createIPCFacilties();
 
-    // Creates the messages queue for transaction pools
-    int msgq_tp_id[SO_NODES_NUM];
-    TEST_ERROR;
-    /********************************************************/
-    /********************************************************/
-
-    /*****  Initialization of shared memory segments    *****/
-    /********************************************************/
-    regPartsIds[0] = shmget(IPC_PRIVATE, REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
-    regPartsIds[1] = shmget(IPC_PRIVATE, REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
-    regPartsIds[2] = shmget(IPC_PRIVATE, REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
-    regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
-    regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
-    regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
-    TEST_ERROR;
-
-    shm_id_users = shmget(IPC_PRIVATE, SO_USERS_NUM * sizeof(ProcListElem), S_IRUSR | S_IWUSR);
-    usersList = (ProcListElem *)shmat(shm_id_users, NULL, 0);
-    TEST_ERROR;
+    initializeIPCFacilities();
     /********************************************************/
     /********************************************************/
 
@@ -290,11 +291,13 @@ int main(int argc, char *argv[])
             nodesList[i].procId = getpid();
             nodesList[i].procState = ACTIVE;
 
+            // Initialize messages queue for transactions pools
+            tpList[i].procId = getpid();
+            tpList[i].msgQId = msgget(getpid(), IPC_CREAT | IPC_EXCL);
+            TEST_ERROR;
+
             sops.sem_op = 0;
             semop(fairStartSem, &sops, 1);
-
-            msgq_tp_id[i] = msgget(getpid(), IPC_CREAT | IPC_EXCL);
-            TEST_ERROR;
 
             // Temporary part to get the process to do something
             do_stuff(2);
@@ -318,16 +321,14 @@ int main(int argc, char *argv[])
 
     // Momentary management for the termination of the simulation
     while ((child_pid = wait(&status)) != -1)
-    {
         printf("PARENT: PID=%d. Got info of child with PID=%d\n", getpid(), child_pid);
-    }
     if (errno == ECHILD)
     {
         printf("In PID=%d, no more child processes\n", getpid());
         // Deallocate messages queues
-        msgctl(msgq_global_id, IPC_RMID, NULL);
+        msgctl(globalQueueId, IPC_RMID, NULL);
         for (int i = 0; i < SO_NODES_NUM; i++)
-            msgctl(msgq_tp_id[i], IPC_RMID, NULL);
+            msgctl(tpList[i].msgQId, IPC_RMID, NULL);
         // Release shared memories
         shmdt(regPtrs[0]);
         shmdt(regPtrs[1]);
@@ -339,15 +340,19 @@ int main(int argc, char *argv[])
         semctl(rdPartSem, 1, IPC_RMID);
         semctl(rdPartSem, 2, IPC_RMID);
         semctl(wrPartSem, 0, IPC_RMID);
-        semctl(rdPartSem, 1, IPC_RMID);
-        semctl(rdPartSem, 2, IPC_RMID);
+        semctl(wrPartSem, 1, IPC_RMID);
+        semctl(wrPartSem, 2, IPC_RMID);
         // Deallocate shared memory
         shmctl(regPartsIds[0], 0, IPC_RMID);
         shmctl(regPartsIds[1], 0, IPC_RMID);
         shmctl(regPartsIds[2], 0, IPC_RMID);
-        shmctl(shm_id_users, 0, IPC_RMID);
+        //shmctl(shm_id_users, 0, IPC_RMID);
         //TEST_ERROR;
         free(regPtrs);
+        free(regPartsIds);
+        free(usersList);
+        free(nodesList);
+        free(tpList);
         exit(EXIT_SUCCESS);
     }
     else

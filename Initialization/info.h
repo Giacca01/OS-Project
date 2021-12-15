@@ -78,11 +78,11 @@ typedef struct // Modificato 10/12/2021
 
 // Il singolo elemento della lista degli amici è una coppia
 // -(PID del processo a cui è riferita, lista di pid e stato degli amici)
-/*
-typedef struct { // Modificato 10/12/2021
+typedef struct
+{ // Modificato 10/12/2021
     long int ownerId;
     ProcListElem friends;
-} FriendsList;*/
+} FriendsList;
 
 typedef struct // Modificato 10/12/2021
 {
@@ -107,6 +107,6 @@ typedef struct
 {
     long int mType; // Pid of the receiver, taken with getppid (children) or from dedicated arrays (parent)
     GlobalMsgContent msgContent;
-    ProcListElem newFriend;  // garbage if msgcontent == NEWNODE
+    ProcListElem *friends;   // garbage if msgcontent == NEWNODE
     Transaction transaction; // garbage if msgContent == NEWFRIEND
 } MsgGlobalQueue;
