@@ -105,3 +105,13 @@ typedef struct{
     ProcListElem newFriend;  // garbage if msgcontent == NEWNODE
     Transaction transaction; // garbage if msgContent == NEWFRIEND
 }MsgGlobalQueue;
+
+/*
+ * Fields:
+ * mType = pid of node which the transaction is sent
+ * transaction = transaction sent to the node
+ */
+typedef struct {
+    long int mType; /* pid of node - not that important, the transaction pool is private to the node */
+    Transaction transaction;
+} MsgTP;
