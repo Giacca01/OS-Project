@@ -11,7 +11,29 @@
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <sys/sem.h>
+/*#include <sys/ipc.h> VEDERE SE SERVA*/
 #include "./Error/error.h"
+#define SEMFILEPATH "../semfile.txt"
+#define FAIRSTARTSEED 1
+#define WRPARTSEED 2
+#define RDPARTSEED 3
+#define USERLISTSEED 4
+#define PARTMUTEXSEED 5
+
+#define SHMFILEPATH "../shmfile.txt"
+#define REGPARTONESEED 1
+#define REGPARTTWOSEED 2
+#define REGPARTTHREESEED 3
+#define USERSLISTSEED 4
+#define NDOESLISTSEED 5
+#define NOREADERSONESEED 6
+#define NOREADERSTWOSEED 7
+#define NOREADERSTHREESEED 8
+#define NOUSRSEGRDERSSEED 9
+
+#define MSGFILEPATH "../msgfile.txt"
+// il seed è il pid del proprietario
+// i figli lo preleveranno dalla lista dei nodi
 
 #define SO_REGISTRY_SIZE 200
 /*Right now it's not reentrant, we should modify it*/
@@ -33,8 +55,7 @@
 #define INIT_TRANSACTION -1                       
 #define REG_PARTITION_COUNT 3                     
 #define SO_BLOCK_SIZE 10                          /* Modificato 10/12/2021*/
-#define SO_USER_NUM 10                            /* Modificato 10/12/2021*/
-#define SO_NODES_NUM 7                            /* Modificato 10/12/2021*/
+                          /* Modificato 10/12/2021*/
 
 typedef enum
 {
