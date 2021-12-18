@@ -1,6 +1,6 @@
 /*
     Cose da fare:
-        Test
+        Test: Testare persistenza associazione
         Refactoring
         Handler CTRL + C
 */
