@@ -32,8 +32,8 @@
 #define NOUSRSEGRDERSSEED 9
 
 #define MSGFILEPATH "../msgfile.txt"
-// il seed è il pid del proprietario
-// i figli lo preleveranno dalla lista dei nodi
+/* il seed è il pid del proprietario
+i figli lo preleveranno dalla lista dei nodi*/
 
 #define SO_REGISTRY_SIZE 200
 /*Right now it's not reentrant, we should modify it*/

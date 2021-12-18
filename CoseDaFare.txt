@@ -1,5 +1,6 @@
 -Aggiungere definizione semafori: Ok
--FInire deallocazione facilities
+-FInire deallocazione facilities: OK
+-Definire procedure d'errore: OK
 -Testare mia parte master
--Fare disegno facilities
--Definire procedure d'errore
+- Fare makefile per master
+-Fare disegno facilities: (Ho fatto la descrizione)
