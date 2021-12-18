@@ -1,6 +1,7 @@
 -Aggiungere definizione semafori: Ok
 -FInire deallocazione facilities: OK
 -Definire procedure d'errore: OK
+-Fare disegno facilities: Ok(Ho fatto la descrizione)
+-Fare vettore per mutex partizioni
 -Testare mia parte master
 - Fare makefile per master
--Fare disegno facilities: (Ho fatto la descrizione)
