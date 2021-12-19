@@ -19,13 +19,14 @@
 #define RDPARTSEED 3
 #define USERLISTSEED 4
 #define PARTMUTEXSEED 5
+#define NODELISTSEED 6
 
 #define SHMFILEPATH "../shmfile.txt"
 #define REGPARTONESEED 1
 #define REGPARTTWOSEED 2
 #define REGPARTTHREESEED 3
 #define USERSLISTSEED 4
-#define NDOESLISTSEED 5
+#define NODESLISTSEED 5
 #define NOREADERSONESEED 6
 #define NOREADERSTWOSEED 7
 #define NOREADERSTHREESEED 8
@@ -49,19 +50,31 @@ i figli lo preleveranno dalla lista dei nodi*/
         exit(EXIT_FAILURE);                  \
     }
 
+#define FTOK_TEST_ERROR(key) \
+    key == -1 ? unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: ") : 0
+
+#define SEM_TEST_ERROR(id) \
+    id == -1 ? unsafeErrorPrint("Master: semget failed during semaphore creation. Error: ") : 0
+
+#define SHM_TEST_ERROR(id) \
+    id == -1 ? unsafeErrorPrint("Master: shmget failed during shared memory segment creation. Error: ") : 0
+
+#define MSG_TEST_ERROR(id) \
+    id == -1 ? unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: ") : 0
+
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
-#define REG_PARTITION_SIZE (SO_REGISTRY_SIZE / 3) 
-#define REWARD_TRANSACTION -1                     
-#define INIT_TRANSACTION -1                       
-#define REG_PARTITION_COUNT 3                     
-#define SO_BLOCK_SIZE 10                          /* Modificato 10/12/2021*/
-                          /* Modificato 10/12/2021*/
+#define REG_PARTITION_SIZE (SO_REGISTRY_SIZE / 3)
+#define REWARD_TRANSACTION -1
+#define INIT_TRANSACTION -1
+#define REG_PARTITION_COUNT 3
+#define SO_BLOCK_SIZE 10 /* Modificato 10/12/2021*/
+                         /* Modificato 10/12/2021*/
 
 typedef enum
 {
     TERMINATED = 0,
     ACTIVE
-} States; 
+} States;
 
 /* Nella documentazione fare disegno di sta roba*/
 typedef struct
@@ -69,7 +82,7 @@ typedef struct
     /* meglio mettere la struct e non il singolo campo
     così non ci sono rischi di portablità*/
     struct timespec timestamp;
-    long int sender;    /* Sender's PID*/
+    long int sender;   /* Sender's PID*/
     long int receiver; /* Receiver's PID*/
     float amountSend;
     float reward;
@@ -98,7 +111,7 @@ typedef struct /* Modificato 10/12/2021*/
 typedef struct /* Modificato 10/12/2021*/
 {
     long int procId;
-    States procState;  /* dA ignorare se il processo è un nodo*/
+    States procState; /* dA ignorare se il processo è un nodo*/
 } ProcListElem;
 
 /* Il singolo elemento della lista degli amici è una coppia
@@ -138,11 +151,16 @@ typedef enum
 
 /* attenzione!!!! Per friends va fatta una memcopy
  non si può allocare staticamente perchè la sua dimensione è letta a runtime*/
-typedef struct{
+typedef struct
+{
     long int mType; /* Pid of the receiver, taken with getppid (children) or from dedicated arrays (parent)*/
     GlobalMsgContent msgContent;
-    ProcListElem * friends;  /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS*/
+    ProcListElem *friends;   /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS*/
     Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT*/
-}MsgGlobalQueue;
+} MsgGlobalQueue;
 
-typedef enum{FALSE = 0, TRUE} boolean;
+typedef enum
+{
+    FALSE = 0,
+    TRUE
+} boolean;
