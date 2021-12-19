@@ -30,27 +30,27 @@ void deallocateFacilities(int *);
 /*****        Global structures        *****/
 /*******************************************/
 Register **regPtrs = NULL;
-int *regPartsIds=NULL;
+int *regPartsIds = NULL;
 
 int usersListId = -1;
-ProcListElem *usersList=NULL;
+ProcListElem *usersList = NULL;
 
 int nodesListId = -1;
-ProcListElem *nodesList=NULL;
+ProcListElem *nodesList = NULL;
 
-TPElement *tpList=NULL;
+TPElement *tpList = NULL;
 
-int globalQueueId=-1;
+int globalQueueId = -1;
 
-int fairStartSem=-1; // Id of the set that contais the three semaphores
-                  // used to write on the register's partitions
-int wrPartSem=-1;    // Id of the set that contais the three semaphores
-                  // used to write on the register's partitions
-int rdPartSem=-1;    // Id of the set that contais the three semaphores
-                  // used to read from the register's partitions
-int mutexPartSem = -1; // id of the set that contains the three sempagores used to
-                        // to access the number of readers variables of the registers partitions
-                        // in mutual exclusion
+int fairStartSem = -1; // Id of the set that contais the three semaphores
+                       // used to write on the register's partitions
+int wrPartSem = -1;    // Id of the set that contais the three semaphores
+                       // used to write on the register's partitions
+int rdPartSem = -1;    // Id of the set that contais the three semaphores
+                       // used to read from the register's partitions
+int mutexPartSem = -1; // id of the set that contains the three sempahores used to
+                       // to access the number of readers variables of the registers partitions
+                       // in mutual exclusion
 
 // Si dovrebbe fare due vettori
 int noReadersPartOne = -1; // id of the shared memory segment that contains the variable used to syncronize
@@ -58,22 +58,24 @@ int noReadersPartOne = -1; // id of the shared memory segment that contains the 
 int *noReadersPartOnePtr = NULL;
 
 int noReadersPartTwo = -1; // id of the shared memory segment that contains the variable used to syncronize
-                                              // readers and writes access to second register's partition
+                           // readers and writes access to second register's partition
 int *noReadersPartTwoPtr = NULL;
 
 int noReadersPartThree = -1; // id of the shared memory segment that contains the variable used to syncronize
-                           // readers and writes access to third register's partition
+                             // readers and writes access to third register's partition
 int *noReadersPartThreePtr = NULL;
 
-int userListSem = -1; // Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
-                    // to read and write users list
+int userListSem = -1;      // Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
+                           // to read and write users list
 int noUserSegReaders = -1; // id of the shared memory segment that contains the variable used to syncronize
                            // readers and writes access to users list
 int *noUserSegReadersPtr = NULL;
 
+int nodeListSem = -1; // Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
+                      // to read and write nodes list
+
 int noTerminated = 0; // NUmber of processes that terminated before end of simulation
 /******************************************/
-
 
 /***** Definition of global variables that contain *****/
 /***** the values ​​of the configuration parameters  *****/
@@ -119,7 +121,7 @@ int readConfigParameters()
     char line[14][MAX_LENGTH];
     // Counter of the number of lines in the file
     int k = 0;
-    char * aus = NULL;
+    char *aus = NULL;
     int exitCode = 0;
 
     // Handles any error in opening the file
@@ -128,7 +130,9 @@ int readConfigParameters()
         aus = sprintf(aus, "Error: could not open file %s", filename);
         unsafeErrorPrint(aus);
         exitCode = -1;
-    } else {
+    }
+    else
+    {
         // Inserts the lines read from the file into the array
         while (fgets(line[k], MAX_LENGTH, fp))
             k++;
@@ -145,8 +149,6 @@ int readConfigParameters()
         fclose(fp);
     }
 
-    
-
     return exitCode;
 }
 /************************************************************************/
@@ -162,7 +164,6 @@ void createIPCFacilties()
         regPtrs[i] = (Register *)malloc(REG_PARTITION_SIZE * sizeof(Register));
     regPartsIds = (int *)malloc(REG_PARTITION_COUNT * sizeof(int));
 
-
     usersList = (ProcListElem *)malloc(SO_USERS_NUM * sizeof(ProcListElem));
 
     nodesList = (ProcListElem *)malloc(SO_NODES_NUM * sizeof(ProcListElem));
@@ -177,94 +178,132 @@ void createIPCFacilties()
 void initializeIPCFacilities()
 {
     union semun arg;
-    unsigned short tmp = {1, 1, 1};
+    unsigned short *aux = {1, 1, 1};
     // Initialization of semaphores
-    key_t tmp = ftok(SEMFILEPATH, FAIRSTARTSEED);
-    // CORREGGERE: questo controllo va fatto per tutte le ftok
-    if (tmp == -1)
-        unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: ");
-    else {
-        fairStartSem = semget(tmp, 1, IPC_CREAT | 0600);
-        //TEST_ERROR; CORREGGERE    
+    key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
+    FTOK_TEST_ERROR(key);
+    fairStartSem = semget(key, 1, IPC_CREAT | 0600);
+    SEM_TEST_ERROR(fairStartSem);
 
-        wrPartSem = semget(ftok(SEMFILEPATH, WRPARTSEED), 3, IPC_CREAT | 0600);
-        //TEST_ERROR; CORREGGERE   ;
+    key = ftok(SEMFILEPATH, WRPARTSEED);
+    FTOK_TEST_ERROR(key);
+    wrPartSem = semget(key, 3, IPC_CREAT | 0600);
+    SEM_TEST_ERROR(wrPartSem);
 
-        rdPartSem = semget(ftok(SEMFILEPATH, RDPARTSEED), 3, IPC_CREAT | 0600);
-        //TEST_ERROR; CORREGGERE   ;
+    key = ftok(SEMFILEPATH, RDPARTSEED);
+    FTOK_TEST_ERROR(key);
+    rdPartSem = semget(key, 3, IPC_CREAT | 0600);
+    SEM_TEST_ERROR(rdPartSem);
 
-        userListSem = semget(ftok(SEMFILEPATH, USERLISTSEED), 3, IPC_CREAT | 0600);
-        //TEST_ERROR; CORREGGERE   ;
+    key = ftok(SEMFILEPATH, USERLISTSEED);
+    FTOK_TEST_ERROR(key);
+    userListSem = semget(key, 3, IPC_CREAT | 0600);
+    SEM_TEST_ERROR(userListSem);
 
-        mutexPartSem = semget(ftok(SEMFILEPATH, PARTMUTEXSEED), 3, IPC_CREAT | 0600);
-        //TEST_ERROR; CORREGGERE   ;
+    key = ftok(SEMFILEPATH, NODELISTSEED);
+    FTOK_TEST_ERROR(key);
+    nodeListSem = semget(key, 3, IPC_CREAT | 0600);
+    SEM_TEST_ERROR(nodeListSem);
 
-        arg.val = SO_USERS_NUM + SO_NODES_NUM + 1;
-        semctl(fairStartSem, 0, SETVAL, arg);
+    key = ftok(SEMFILEPATH, PARTMUTEXSEED);
+    FTOK_TEST_ERROR(key);
+    mutexPartSem = semget(key, 3, IPC_CREAT | 0600);
+    SEM_TEST_ERROR(mutexPartSem);
 
-        // CORREGGERE: sostiturie con una sola syscall come sotto
-        semctl(rdPartSem, 0, SETVAL, 1);
-        semctl(rdPartSem, 1, SETVAL, 1);
-        semctl(rdPartSem, 2, SETVAL, 1);
+    arg.val = SO_USERS_NUM + SO_NODES_NUM + 1;
+    semctl(fairStartSem, 0, SETVAL, arg);
 
-        // CORREGGERE: sostiturie con una sola syscall come sotto (**)
-        semctl(wrPartSem, 0, SETVAL, SO_USERS_NUM + SO_NODES_NUM + 1);
-        semctl(wrPartSem, 1, SETVAL, SO_USERS_NUM + SO_NODES_NUM + 1);
-        semctl(wrPartSem, 2, SETVAL, SO_USERS_NUM + SO_NODES_NUM + 1);
+    arg.array = aux;
+    semctl(rdPartSem, 0, SETALL, arg);
 
-        arg.val = 1;
-        semctl(userListSem, 0, SETVAL, arg); // mutex
-        arg.val = SO_USERS_NUM + SO_NODES_NUM + 1;
-        semctl(userListSem, 1, SETVAL, arg); // read
-        arg.val = 0;
-        semctl(userListSem, 2, SETVAL, arg); // write
+    aux[0] = aux[1] = aux[2] = SO_USERS_NUM + SO_NODES_NUM + 1;
+    arg.array = aux;
+    semctl(wrPartSem, 0, SETALL, arg);
 
-        // (**)
-        arg.array = tmp;
-        semctl(mutexPartSem, 0, SETALL, arg);
-        /*****  Creates and initialize the messages queues  *****/
-        /********************************************************/
-        // Creates the global queue
-        globalQueueId = msgget(IPC_PRIVATE, IPC_CREAT | IPC_EXCL);
-        //TEST_ERROR; CORREGGERE   ;
-        /********************************************************/
-        /********************************************************/
+    arg.val = 1;
+    semctl(userListSem, 0, SETVAL, arg); // mutex
+    arg.val = SO_USERS_NUM + SO_NODES_NUM + 1;
+    semctl(userListSem, 1, SETVAL, arg); // read
+    arg.val = 0;
+    semctl(userListSem, 2, SETVAL, arg); // write
 
-        /*****  Initialization of shared memory segments    *****/
-        /********************************************************/
-        regPartsIds[0] = shmget(ftok(SHMFILEPATH, REGPARTONESEED), REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
-        regPartsIds[1] = shmget(ftok(SHMFILEPATH, REGPARTTWOSEED), REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
-        regPartsIds[2] = shmget(ftok(SHMFILEPATH, REGPARTTHREESEED), REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
-        regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
-        regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
-        regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
-        //TEST_ERROR; CORREGGERE   ;
+    arg.val = 1;
+    semctl(nodeListSem, 0, SETVAL, arg); // mutex
+    arg.val = SO_USERS_NUM + SO_NODES_NUM + 1;
+    semctl(nodeListSem, 1, SETVAL, arg); // read
+    arg.val = 0;
+    semctl(nodeListSem, 2, SETVAL, arg); // write
 
-        usersListId = shmget(ftok(SHMFILEPATH, USERLISTSEED), SO_USERS_NUM * sizeof(ProcListElem), S_IRUSR | S_IWUSR);
-        usersList = (ProcListElem *)shmat(usersListId, NULL, 0);
-        //TEST_ERROR; CORREGGERE   ;
+    aux[0] = aux[1] = aux[2] = 1;
+    arg.array = aux;
+    semctl(mutexPartSem, 0, SETALL, arg);
 
-        nodesListId = shmget(ftok(SHMFILEPATH, NDOESLISTSEED), SO_NODES_NUM * sizeof(ProcListElem), S_IRUSR | S_IWUSR);
-        nodesList = (ProcListElem *)shmat(nodesListId, NULL, 0);
-        //TEST_ERROR; CORREGGERE   ;
+    /*****  Creates and initialize the messages queues  *****/
+    /********************************************************/
+    // Creates the global queue
+    globalQueueId = msgget(IPC_PRIVATE, IPC_CREAT | IPC_EXCL);
+    MSG_TEST_ERROR(globalQueueId);
+    /********************************************************/
+    /********************************************************/
 
-        // Aggiungere segmenti per variabili condivise
-        noReadersPartOne = shmget(ftok(SHMFILEPATH, NOREADERSONESEED), sizeof(SO_USERS_NUM), S_IRUSR | S_IWUSR);
-        noReadersPartOnePtr = (int *)shmat(noReadersPartOne, NULL, 0);
-        *noReadersPartOnePtr = 0;
+    /*****  Initialization of shared memory segments    *****/
+    /********************************************************/
+    key = ftok(SHMFILEPATH, REGPARTONESEED);
+    FTOK_TEST_ERROR(key);
+    regPartsIds[0] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(regPartsIds[0]);
+    key = ftok(SHMFILEPATH, REGPARTTWOSEED);
+    FTOK_TEST_ERROR(key);
+    regPartsIds[1] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(regPartsIds[1]);
+    key = ftok(SHMFILEPATH, REGPARTTHREESEED);
+    FTOK_TEST_ERROR(key);
+    regPartsIds[2] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(regPartsIds[2]);
+    regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
+    regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
+    regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
 
-        noReadersPartTwo = shmget(ftok(SHMFILEPATH, NOREADERSTWOSEED), sizeof(SO_USERS_NUM), S_IRUSR | S_IWUSR);
-        noReadersPartTwoPtr = (int *)shmat(noReadersPartTwo, NULL, 0);
-        *noReadersPartTwoPtr = 0;
+    key = ftok(SHMFILEPATH, USERLISTSEED);
+    FTOK_TEST_ERROR(key);
+    usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(usersListId);
+    usersList = (ProcListElem *)shmat(usersListId, NULL, 0);
 
-        noReadersPartThree = shmget(ftok(SHMFILEPATH, NOREADERSTHREESEED), sizeof(SO_USERS_NUM), S_IRUSR | S_IWUSR);
-        noReadersPartThreePtr = (int *)shmat(noReadersPartThree, NULL, 0);
-        *noReadersPartThreePtr = 0;
+    key = ftok(SHMFILEPATH, NODESLISTSEED);
+    FTOK_TEST_ERROR(key);
+    nodesListId = shmget(key, SO_NODES_NUM * sizeof(ProcListElem), S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(nodesListId);
+    nodesList = (ProcListElem *)shmat(nodesListId, NULL, 0);
 
-        noUserSegReaders = shmget(ftok(SHMFILEPATH, NOUSRSEGRDERSSEED), sizeof(SO_USERS_NUM), S_IRUSR | S_IWUSR);
-        noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
-        *noUserSegReadersPtr = 0;
-    }
+    // Aggiungere segmenti per variabili condivise
+    key = ftok(SHMFILEPATH, NOREADERSONESEED);
+    FTOK_TEST_ERROR(key);
+    noReadersPartOne = shmget(key, sizeof(SO_USERS_NUM), S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(noReadersPartOne);
+    noReadersPartOnePtr = (int *)shmat(noReadersPartOne, NULL, 0);
+    *noReadersPartOnePtr = 0;
+
+    key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
+    FTOK_TEST_ERROR(key);
+    noReadersPartTwo = shmget(key, sizeof(SO_USERS_NUM), S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(noReadersPartTwo);
+    noReadersPartTwoPtr = (int *)shmat(noReadersPartTwo, NULL, 0);
+    *noReadersPartTwoPtr = 0;
+
+    key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
+    FTOK_TEST_ERROR(key);
+    noReadersPartThree = shmget(key, sizeof(SO_USERS_NUM), S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(noReadersPartThree);
+    noReadersPartThreePtr = (int *)shmat(noReadersPartThree, NULL, 0);
+    *noReadersPartThreePtr = 0;
+
+    key = ftok(SHMFILEPATH, NOUSRSEGRDERSSEED);
+    FTOK_TEST_ERROR(key);
+    noUserSegReaders = shmget(key, sizeof(SO_USERS_NUM), S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(noUserSegReaders);
+    noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
+    *noUserSegReadersPtr = 0;
 
     /********************************************************/
     /********************************************************/
@@ -302,16 +341,21 @@ int main(int argc, char *argv[])
 {
     pid_t child_pid;
     int status;
-    struct sembuf sops;
+    struct sembuf sops[3];
     sigset_t set;
     struct sigaction act;
     int fullRegister = TRUE;
     int exitCode = EXIT_FAILURE;
+    key_t key;
     int i = 0;
 
     // Set common semaphore options
-    sops.sem_num = 0;
-    sops.sem_flg = 0;
+    sops[0].sem_num = 0;
+    sops[0].sem_flg = 0;
+    sops[1].sem_num = 2;
+    sops[1].sem_flg = 0;
+    sops[2].sem_num = 2;
+    sops[2].sem_flg = 0;
 
     printf("Master: setting up simulation timer...\n");
     /* No previous alarms were set, so it must return 0*/
@@ -361,22 +405,27 @@ int main(int argc, char *argv[])
                         switch (child_pid = fork())
                         {
                         case -1:
-                            //Handle error correggere
-                            //TEST_ERROR;
+                            //Handle error
+                            unsafeErrorPrint("Master: fork failed. Error: ");
                             exit(EXIT_FAILURE);
                         case 0:
                             // The process tells the father that it is ready to run
                             // and that it waits for all processes to be ready
-                            sops.sem_op = -1;
-                            semop(fairStartSem, &sops, 1);
+                            sops[0].sem_op = -1;
+                            semop(fairStartSem, &sops[0], 1);
 
                             // Save users processes pid and state into usersList
-                            // ACCEDERE IN MUTUA ESCLUSIONE CORREGGERE
+                            sops[1].sem_op = -1;
+                            semop(userListSem, &sops[1], 1);
+
                             usersList[i].procId = getpid();
                             usersList[i].procState = ACTIVE;
 
-                            sops.sem_op = 0;
-                            semop(fairStartSem, &sops, 1);
+                            sops[1].sem_op = 1;
+                            semop(userListSem, &sops[1], 1);
+
+                            sops[0].sem_op = 0;
+                            semop(fairStartSem, &sops[0], 1);
 
                             // Temporary part to get the process to do something
                             do_stuff(1);
@@ -399,26 +448,33 @@ int main(int argc, char *argv[])
                         {
                         case -1:
                             // Handle error
-                            //TEST_ERROR; CORREGGERE
+                            unsafeErrorPrint("Master: fork failed. Error: ");
                             exit(EXIT_FAILURE);
                         case 0:
                             // The process tells the father that it is ready to run
                             // and that it waits for all processes to be ready
-                            sops.sem_op = -1;
-                            semop(fairStartSem, &sops, 1);
+                            sops[0].sem_op = -1;
+                            semop(fairStartSem, &sops[0], 1);
 
                             // Save users processes pid and state into usersList
-                            // ACCEDERE IN MUTUA ESCLUSIONE CORREGGERE
+                            sops[2].sem_op = -1;
+                            semop(nodeListSem, &sops[2], 1);
+
                             nodesList[i].procId = getpid();
                             nodesList[i].procState = ACTIVE;
 
+                            sops[2].sem_op = 1;
+                            semop(nodeListSem, &sops[2], 1);
+
                             // Initialize messages queue for transactions pools
                             tpList[i].procId = getpid();
-                            tpList[i].msgQId = msgget(ftok(MSGFILEPATH, getpid()), IPC_CREAT | IPC_EXCL);
-                            //TEST_ERROR; CORREGGERE
+                            key = ftok(MSGFILEPATH, getpid());
+                            FTOK_TEST_ERROR(key);
+                            tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL);
+                            MSG_TEST_ERROR(tpList[i].msgQId);
 
-                            sops.sem_op = 0;
-                            semop(fairStartSem, &sops, 1);
+                            sops[0].sem_op = 0;
+                            semop(fairStartSem, &sops[0], 1);
 
                             // Temporary part to get the process to do something
                             do_stuff(2);
@@ -436,10 +492,10 @@ int main(int argc, char *argv[])
                     // The father also waits for all the children
                     // to be ready to continue the execution
 
-                    sops.sem_op = -1;
-                    semop(fairStartSem, &sops, 1);
-                    sops.sem_op = 0;
-                    semop(fairStartSem, &sops, 1);
+                    sops[0].sem_op = -1;
+                    semop(fairStartSem, &sops[0], 1);
+                    sops[0].sem_op = 0;
+                    semop(fairStartSem, &sops[0], 1);
 
                     /* master lifecycle*/
                     while (1)
@@ -467,7 +523,6 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        
     }
 
     /* POSTCONDIZIONE: all'esecuzione di questa system call
@@ -871,18 +926,23 @@ void deallocateFacilities(int *exitCode)
     write(STDOUT_FILENO,
           "Master: deallocating users' list segment...\n",
           strlen("Master: deallocating users' list segment...\n"));
-    if (shmdt(usersList) == -1){
+    if (shmdt(usersList) == -1)
+    {
         safeErrorPrint("Master: failed to detach from users' list segment. Error: ");
         *exitCode = EXIT_FAILURE;
-    } else {
-        if (shmctl(usersListId, IPC_RMID, NULL) == -1){
+    }
+    else
+    {
+        if (shmctl(usersListId, IPC_RMID, NULL) == -1)
+        {
             safeErrorPrint("Master: failed to remove users' list segment. Error: ");
             *exitCode = EXIT_FAILURE;
-        } else {
-            write(STDOUT_FILENO, 
-                "Master: users' list memory segment successfully removed.\n", 
-                strlen("Master: users list memory segment successfully removed.\n")
-            );
+        }
+        else
+        {
+            write(STDOUT_FILENO,
+                  "Master: users' list memory segment successfully removed.\n",
+                  strlen("Master: users list memory segment successfully removed.\n"));
             free(usersList);
         }
     }
