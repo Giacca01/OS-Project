@@ -137,12 +137,40 @@ typedef enum
 } GlobalMsgContent;
 
 /* attenzione!!!! Per friends va fatta una memcopy
- non si può allocare staticamente perchè la sua dimensione è letta a runtime*/
-typedef struct{
-    long int mType; /* Pid of the receiver, taken with getppid (children) or from dedicated arrays (parent)*/
+ non si può allocare staticamente perchè la sua dimensione è letta a runtime */
+typedef struct
+{
+    long int mType; /* Pid of the receiver, taken with getppid (children) or from dedicated arrays (parent) */
     GlobalMsgContent msgContent;
-    ProcListElem * friends;  /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS*/
-    Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT*/
-}MsgGlobalQueue;
+    /* ProcListElem * friends;  /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
+    /*
+     * Abbiamo rimosso la definizione precedente in quanto friends non può essere allocato staticamente,
+     * quindi era necessario definirlo dinamicamente prima di inviare il messaggio sulla coda; questo
+     * però comporta che quando il ricevitore (processo diverso da quello che ha mandato il messaggio) 
+     * prova ad accedere a tale array, si verifica un errore di segmentazione perché il processo cerca
+     * di accedere ad una zona di memoria che non è la sua ma è di un altro processo. Per questo motivo,
+     * dopo aver valutato attentamente le diverse opzioni per risolvere questo problema, si è deciso di non 
+     * mandare la lista di nodi amici tramite un singolo messaggio ma di mandarla tramite più messaggi 
+     * sulla coda globale e starà quindi al nodo destinatario leggere i messaggi dalla coda e creare la 
+     * sua lista di nodi amici.
+     */
+    ProcListElem friend; /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
+    Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+} MsgGlobalQueue;
 
-typedef enum{FALSE = 0, TRUE} boolean;
+typedef enum
+{
+    FALSE = 0, 
+    TRUE
+} boolean;
+
+/*
+ * Fields:
+ * mType = pid of node which the transaction is sent
+ * transaction = transaction sent to the node
+ */
+typedef struct
+{
+    long int mType; /* pid of node - not that important, the transaction pool is private to the node */
+    Transaction transaction;
+} MsgTP;
