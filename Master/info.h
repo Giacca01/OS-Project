@@ -172,14 +172,19 @@ typedef struct
     Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
 } MsgGlobalQueue;
 
-typedef enum{FALSE = 0, TRUE} boolean;
+typedef enum
+{
+    FALSE = 0, 
+    TRUE
+} boolean;
 
 /*
  * Fields:
  * mType = pid of node which the transaction is sent
  * transaction = transaction sent to the node
  */
-typedef struct {
+typedef struct
+{
     long int mType; /* pid of node - not that important, the transaction pool is private to the node */
     Transaction transaction;
 } MsgTP;
