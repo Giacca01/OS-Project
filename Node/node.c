@@ -1,12 +1,4 @@
 #include "node.h"
-/*
-    Persistenza associazione handler
-    Reentrrancy
-    Generazione numeri
-    Correggere allocazione regPtrs
-    Refactoring e stampe
-    aggiunta handler di fine simulazione
-*/
 int wrPartSem = -1;
 Register **regPtrs = NULL;
 int tpId = -1;
@@ -249,22 +241,24 @@ void sembufInit(struct sembuf *sops, int op)
 
 void reinsertTransactions(Block failedTrs)
 {
+    char * aus = NULL;
+
+    aus = (char *)calloc(sizeof(char), 50);
     while (failedTrs.bIndex == 0)
     {
         failedTrs.bIndex--;
         if (msgsnd(tpId, &(failedTrs.transList[failedTrs.bIndex]), sizeof(Transaction), 0) == -1)
         {
             /*
-                Segnalazione errore
+                Dovremmo segnalarlo al sender???
             */
-        }
-        else
-        {
-            /*
-                Reinserimento completato
-            */
+            sprintf(aus, "Node: failed to reinsert transaction number %d.", failedTrs.bIndex);
+            unsafeErrorPrint(aus);
         }
     }
+    printf("Node: Transactions reinserted successfully!\n");
+
+    free(aus);
 }
 
 void endOfExecution()
@@ -284,20 +278,18 @@ void endOfExecution()
 
     while (regPtrs != NULL)
     {
-        if (shmctl(*regPtrs, IPC_RMID, NULL) == -1)
+        if (shmdt(*regPtrs) == -1)
         {
             /*
-            Segnalazione errore
-           */
-        }
-        else
-        {
-            /*
-            Messaggio successo
-           */
+                Implementare un meccanismo di retry??
+                Contando che non è un errore così frequente si potrebbe anche ignorare...
+            */
+            unsafeErrorPrint("Node: failed to detach from register's partition. Error: ");
         }
         regPtrs++;
     }
 
     free(regPtrs);
+
+    printf("Node: cleanup operations completed. Process is about to end its execution...\n");
 }
