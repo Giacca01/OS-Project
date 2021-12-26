@@ -8,6 +8,8 @@
         Correzione stampe in handler
         Modifica procedure d'errore in modo che __LINE__ sia indicativo
         e modifica macro che stampa l'errore
+        Sistemare kill
+        Vedere perchè ci siano più processi master
 */
 #define _GNU_SOURCE
 #include <time.h>
@@ -107,7 +109,7 @@ void deallocateFacilities(int *);
 /***************************************************************/
 void assignEnvironmentVariables()
 {
-    /*CORREGGERE*/
+    /*CORREGGERE, mancano alcuni parametri tra cui soprattutto SO_SIM_SEC*/
     SO_USERS_NUM = atoi(getenv("SO_USERS_NUM"));
     SO_NODES_NUM = atoi(getenv("SO_NODES_NUM"));
     SO_SIM_SEC = atoi(getenv("SO_SIM_SEC"));
@@ -270,7 +272,7 @@ void initializeIPCFacilities()
     mutexPartSem = semget(key, 3, IPC_CREAT | 0600);
     SEM_TEST_ERROR(mutexPartSem);
 
-    arg.val = SO_USERS_NUM + SO_NODES_NUM + 1;
+    arg.val = SO_USERS_NUM + SO_NODES_NUM; /*+1*/
     semctl(fairStartSem, 0, SETVAL, arg);
 
     arg.array = aux;
@@ -425,6 +427,9 @@ int main(int argc, char *argv[])
     printf("PID MASTER: %ld\n", (long)getpid());
     printf("Master: setting up simulation timer...\n");
     /* No previous alarms were set, so it must return 0*/
+    /*
+        CORREGGERE, va letta da file
+    */
     SO_SIM_SEC = 200;
     printf("Master simulation lasts %d seconnds\n", SO_SIM_SEC);
     if (alarm(SO_SIM_SEC) != 0)
@@ -437,13 +442,6 @@ int main(int argc, char *argv[])
             unsafeErrorPrint("Master: failed to initialize signals mask. Error: ");
         else
         {
-            /*
-            if (sigdelset(&set, SIGALRM) == -1){
-                unsafeErrorPrint("Master: failed to unblock SIGSALARM signal. Error: ");
-            } else if (sigdelset(&set, SIGUSR1) == -1)
-            {
-                unsafeErrorPrint("Master: failed to unblock full register signal. Error: ");
-            }*/
             /* We block all the signals during the execution of the handler*/
             act.sa_handler = endOfSimulation;
             act.sa_mask = set;
@@ -476,7 +474,7 @@ int main(int argc, char *argv[])
                         printf("Master: initializating IPC facilitites...\n");
                         /*
                             Fare una funzione che ritorna un valore come createIPCFacilties
-                            in modo da poter eliminare le facilities IPC
+                            in modo da poter eliminare le facilities IPC in caso di errore
                         */
                         initializeIPCFacilities();
                         /********************************************************/
@@ -487,7 +485,7 @@ int main(int argc, char *argv[])
                         printf("Master: forking user processes...\n");
                         for (i = 0; i < SO_USERS_NUM; i++)
                         {
-                            printf("Master: user number %d", i);
+                            printf("Master: user number %d\n", i);
                             /*
                                 CORREGGERE: manca l'error handling
                                 e tutte queste semop son ogiuste??
@@ -502,7 +500,7 @@ int main(int argc, char *argv[])
                                 /*
                                 // The process tells the father that it is ready to run
                                 // and that it waits for all processes to be ready*/
-                                printf("User starts its execution....\n");
+                                printf("User of PID %ld starts its execution....\n", (long)getpid());
                                 /*
                                     For test's sake
                                 */
@@ -526,6 +524,8 @@ int main(int argc, char *argv[])
 
                                 printf("User %d is waiting for simulation to start....\n", i);
                                 sops[0].sem_op = 0;
+                                sops[0].sem_num = 0;
+                                sops[0].sem_flg = 0;
                                 semop(fairStartSem, &sops[0], 1);
 
                                 /* Temporary part to get the process to do something*/
@@ -535,6 +535,7 @@ int main(int argc, char *argv[])
                                 break;
 
                             default:
+                                sops[0].sem_num = 0;
                                 sops[0].sem_op = -1;
                                 sops[0].sem_flg = IPC_NOWAIT;
                                 semop(fairStartSem, &sops[0], 1);
@@ -560,21 +561,25 @@ int main(int argc, char *argv[])
                                 /*
                                 // The process tells the father that it is ready to run
                                 // and that it waits for all processes to be ready*/
-                                printf("Node starts its execution....\n");
+                                printf("Node of PID %ld starts its execution....\n", (long)getpid());
                                 /*sops[0].sem_op = -1;
                                 semop(fairStartSem, &sops[0], 1);*/
-                                signal(SIGALRM, SIG_IGN);
+                                /*
+                                    Provvisorio
+                                */
+                                signal(SIGALRM, SIG_IGN);  
                                 signal(SIGUSR1, tmpHandler);
 
                                 /* Save users processes pid and state into usersList*/
-                                sops[2].sem_op = -1;
+                                sops[1].sem_op = -1;
                                 sops[1].sem_num = 2;
                                 semop(nodeListSem, &sops[2], 1);
 
                                 nodesList[i].procId = getpid();
                                 nodesList[i].procState = ACTIVE;
 
-                                sops[2].sem_op = 1;
+                                /*Perchè c'era 2???*/
+                                sops[1].sem_op = 1;
                                 sops[1].sem_num = 2;
                                 semop(nodeListSem, &sops[2], 1);
 
@@ -587,6 +592,8 @@ int main(int argc, char *argv[])
 
                                 printf("Node %d is waiting for simulation to start....\n", i);
                                 sops[0].sem_op = 0;
+                                sops[0].sem_num = 0;
+                                sops[0].sem_flg = 0;
                                 semop(fairStartSem, &sops[0], 1);
 
                                 /* Temporary part to get the process to do something*/
@@ -597,6 +604,7 @@ int main(int argc, char *argv[])
                                 break;
 
                             default:
+                                sops[0].sem_num = 0;
                                 sops[0].sem_op = -1;
                                 sops[0].sem_flg = IPC_NOWAIT;
                                 semop(fairStartSem, &sops[0], 1);
@@ -612,6 +620,8 @@ int main(int argc, char *argv[])
                         /*sops[0].sem_op = -1;
                     semop(fairStartSem, &sops[0], 1);*/
                         sops[0].sem_op = 0;
+                        sops[0].sem_num = 0;
+                        sops[0].sem_flg = 0;
                         semop(fairStartSem, &sops[0], 1);
 
                         /* master lifecycle*/
@@ -624,12 +634,12 @@ int main(int argc, char *argv[])
 						this should be inserted in the master lifecycle*/
                             printf("Master: checking if register's partitions are full...\n");
                             fullRegister = TRUE;
-                            for (i = 0; i < 3 && fullRegister; i++)
+                            for (i = 0; i < REG_PARTITION_COUNT && fullRegister; i++)
                             {
                                 printf("Master: number of blocks is %d\n", regPtrs[i]->nBlocks);
                                 printf("Master: Max size %d\n", REG_PARTITION_SIZE);
                                 /*sleep(5);*/
-                                if (regPtrs[i]->nBlocks < REG_PARTITION_SIZE) /*CORREGGERE*/
+                                if (regPtrs[i]->nBlocks < REG_PARTITION_SIZE)
                                     fullRegister = FALSE;
                             }
 
@@ -676,9 +686,9 @@ void endOfSimulation(int sig)
 	// reach every children with just one system call).
 	// how to check if everyone was signaled (it returns true even if
 	// only one signal was sent)*/
-    char *terminationMessage = (char *)calloc(700, sizeof(char));
+    char *terminationMessage = (char *)calloc(100, sizeof(char));
     int ret = -1;
-    char *aus = (char *)calloc(700, sizeof(char));
+    char *aus = (char *)calloc(100, sizeof(char));
     int i = 0;
     /*
 	// Contiene una exit, perchè potrebbe essere ivocato in maniera
@@ -698,15 +708,18 @@ void endOfSimulation(int sig)
 	// fallisce se non viene inviato a nessuno
 	// ma inviato != consegnato???*/
     /*
-        Aggiornare tenendo conto del fatto che gli utenti potrebbero già essere terminati
+        Aggiornare tenendo conto del fatto che gli utenti potrebbero già essere terminati:
+        in tal caso il meccanismo di retry è inutile
+        Bisogna fare solo la wait senza mandare il segnale
+        In ogni caso, se non si riescono a terminare i processi dopo n tentativi deallocare comunque le facilities
     */
-    printf("PID DELL'IDIOTA: %ld\n", (long)getpid());
-    fflush(stdout);
-    write(STDOUT_FILENO,
-          "Master: trying to terminate simulation...\n",
-          strlen("Master: trying to terminate simulation...\n"));
-    for (i = 0; i < NO_ATTEMPS && !done; i++)
-    {
+    printf("Master: PID %ld\nMaster: parent PID %ld\n", (long int)getpid(), (long)getppid());
+    if (terminationMessage == NULL || aus == NULL)
+        safeErrorPrint("Master: failed to alloacate memory. Error: ");
+    else {
+        write(STDOUT_FILENO,
+              "Master: trying to terminate simulation...\n",
+              strlen("Master: trying to terminate simulation...\n"));
         /* error check*/
         if (kill(0, SIGUSR1) == 0)
         {
@@ -723,8 +736,7 @@ void endOfSimulation(int sig)
             write(STDOUT_FILENO,
                   "Master: waiting for children to terminate...\n",
                   strlen("Master: waiting for children to terminate...\n"));
-            while (wait(NULL) != -1)
-                ;
+            while (wait(NULL) != -1);
 
             if (errno == ECHILD)
             {
@@ -736,10 +748,6 @@ void endOfSimulation(int sig)
                 write(STDOUT_FILENO,
                       "Master: simulation terminated successfully. Printing report...\n",
                       strlen("Master: simulation terminated successfully. Printing report...\n"));
-                if (sig == SIGALRM)
-                    aus = "Termination reason: end of simulation.\n";
-                else
-                    aus = "Termination reason: register book is full.\n";
 
                 /* Users and nodes budgets*/
                 /*printBudget();*/
@@ -748,43 +756,25 @@ void endOfSimulation(int sig)
 				in teoria non si può usare nemmno sprintf*/
 
                 /* processes terminated before end of simulation*/
-                terminationMessage = "Prova";
-                printf("CHE PALLE: %s\n", terminationMessage);
-                /*
-                ret = sprintf(terminationMessage,
-                              "Processes terminated before end of simulation: %d\n",
-                              noTerminated);
-                printf("Kekw");
-                if (ret <= 0)
-                {
-                    safeErrorPrint("Master: sprintf failed to format process count's string. ");
-                    exitCode = EXIT_FAILURE;
-                }*/
-                /*
-                printf("Kekw");*/
+                /*printf("Processes terminated before end of simulation: %d\n", noTerminated);*/
+                ret = sprintf(terminationMessage, "Processes terminated before end of simulation: %d\n", noTerminated);
+                
                 /* Blocks in register*/
-                /*
                 ret = sprintf(aus, "There are %d blocks in the register.\n",
                               regPtrs[0]->nBlocks + regPtrs[1]->nBlocks + regPtrs[2]->nBlocks);
-                if (ret <= 0)
-                {
-                    safeErrorPrint("Master: sprintf failed to format number of blocks' string. ");
-                    exitCode = EXIT_FAILURE;
-                } else 
-                    strcat(terminationMessage, aus);*/
+                strcat(terminationMessage, aus);
+
+                if (sig == SIGALRM)
+                    strcat(terminationMessage, "Termination reason: end of simulation.\n");
+                else
+                    strcat(terminationMessage, "Termination reason: register is full\n");
+                    
 
                 /* Writes termination message on standard output*/
-                /*
-                ret = write(STDOUT_FILENO, terminationMessage, strlen(terminationMessage));
-                if (ret == -1)
-                {
-                    safeErrorPrint("Master: failed to write termination message. Error: ");
-                    exitCode = EXIT_FAILURE;
-                }
-
+                write(STDOUT_FILENO, terminationMessage, strlen(terminationMessage));
                 write(STDOUT_FILENO,
                       "Master: report printed successfully. Deallocating IPC facilities...\n",
-                      strlen("Master: report printed successfully. Deallocating IPC facilities...\n"));*/
+                      strlen("Master: report printed successfully. Deallocating IPC facilities...\n"));
                 /* deallocate facilities*/
                 deallocateFacilities(&exitCode);
                 done = TRUE;
@@ -793,17 +783,17 @@ void endOfSimulation(int sig)
             {
                 safeErrorPrint("Master: an error occurred while waiting for children. Description: ");
             }
-
             /* Releasing local variables' memory*/
             free(terminationMessage);
             free(aus);
         }
         else
             safeErrorPrint("Master: failed to signal children for end of simulation. Error: ");
-    }
 
-    if (!done)
-        exitCode = EXIT_FAILURE;
+        if (!done)
+            exitCode = EXIT_FAILURE;
+    }
+    
 
     exit(exitCode);
 }
@@ -1026,7 +1016,7 @@ void deallocateFacilities(int *exitCode)
 			-free dynamically allocated memory: Ok
 	*/
 
-    char *aus = (char *)malloc(30 * sizeof(char));
+    char *aus = (char *)calloc(100, sizeof(char));
     int msgLength = 0;
     int i = 0;
 
@@ -1088,7 +1078,6 @@ void deallocateFacilities(int *exitCode)
             write(STDOUT_FILENO,
                   "Master: users' list memory segment successfully removed.\n",
                   strlen("Master: users list memory segment successfully removed.\n"));
-            free(usersList);
         }
     }
 
@@ -1113,7 +1102,10 @@ void deallocateFacilities(int *exitCode)
             write(STDOUT_FILENO,
                   "Master: nodes' list memory segment successfully removed.\n",
                   strlen("Master: nodes list memory segment successfully removed.\n"));
-            free(nodesList);
+            /*
+                Non serve: abbiamo già deallocato il segmento di memoria condivisa
+            */
+            /*free(nodesList);*/
         }
     }
 
@@ -1125,10 +1117,8 @@ void deallocateFacilities(int *exitCode)
             msgLength = sprintf(aus,
                                 "Master: failed to detach from partition number %d shared variable segment.\n",
                                 (i + 1));
-            if (msgLength < 0)
-                safeErrorPrint("Master: failed to format output message in IPC deallocation.");
-            else
-                write(STDERR_FILENO, aus, msgLength); /* by doing this we avoid calling strlength*/
+
+            write(STDERR_FILENO, aus, msgLength); /* by doing this we avoid calling strlength*/
             *exitCode = EXIT_FAILURE;
         }
         else
@@ -1138,10 +1128,7 @@ void deallocateFacilities(int *exitCode)
                 msgLength = sprintf(aus,
                                     "Master: failed to remove partition number %d shared variable segment.",
                                     (i + 1));
-                if (msgLength < 0)
-                    safeErrorPrint("Master: failed to format output message in IPC deallocation.");
-                else
-                    write(STDERR_FILENO, aus, msgLength);
+                write(STDERR_FILENO, aus, msgLength);
 
                 *exitCode = EXIT_FAILURE;
             }
@@ -1153,7 +1140,6 @@ void deallocateFacilities(int *exitCode)
                 write(STDOUT_FILENO, aus, msgLength);
             }
         }
-        free(noReadersPartitionsPtrs[i]);
     }
     free(noReadersPartitions);
 
@@ -1169,10 +1155,7 @@ void deallocateFacilities(int *exitCode)
             msgLength = sprintf(aus,
                                 "Master: failed to remove transaction pool of process %ld",
                                 (long)tpList->procId);
-            if (msgLength < 0)
-                safeErrorPrint("Master: failed to format output message in IPC deallocation.");
-            else
-                write(STDERR_FILENO, aus, msgLength);
+            write(STDERR_FILENO, aus, msgLength);
 
             *exitCode = EXIT_FAILURE;
         }
@@ -1183,6 +1166,7 @@ void deallocateFacilities(int *exitCode)
                                 tpList->procId);
             write(STDOUT_FILENO, aus, msgLength);
         }
+        
     }
     free(tpList);
 
@@ -1200,10 +1184,7 @@ void deallocateFacilities(int *exitCode)
     if (msgctl(globalQueueId, IPC_RMID, NULL) == -1)
     {
         msgLength = sprintf(aus, "Master: failed to remove global message queue");
-        if (msgLength < 0)
-            safeErrorPrint("Master: failed to format output message in IPC deallocation.");
-        else
-            write(STDERR_FILENO, aus, msgLength);
+        write(STDERR_FILENO, aus, msgLength);
         *exitCode = EXIT_FAILURE;
     }
     else
@@ -1220,10 +1201,7 @@ void deallocateFacilities(int *exitCode)
     if (semctl(wrPartSem, 0, IPC_RMID) == -1)
     {
         msgLength = sprintf(aus, "Master: failed to remove partions' writing semaphores");
-        if (msgLength < 0)
-            safeErrorPrint("Master: failed to format output message in IPC deallocation.");
-        else
-            write(STDERR_FILENO, aus, msgLength);
+        write(STDERR_FILENO, aus, msgLength);
         *exitCode = EXIT_FAILURE;
     }
     else
@@ -1240,10 +1218,7 @@ void deallocateFacilities(int *exitCode)
     if (semctl(rdPartSem, 0, IPC_RMID) == -1)
     {
         msgLength = sprintf(aus, "Master: failed to remove partions' reading semaphores");
-        if (msgLength < 0)
-            safeErrorPrint("Master: failed to format output message in IPC deallocation.");
-        else
-            write(STDERR_FILENO, aus, msgLength);
+        write(STDERR_FILENO, aus, msgLength);
         *exitCode = EXIT_FAILURE;
     }
     else
@@ -1260,10 +1235,7 @@ void deallocateFacilities(int *exitCode)
     if (semctl(fairStartSem, 0, IPC_RMID) == -1)
     {
         msgLength = sprintf(aus, "Master: failed to remove partions' reading semaphores");
-        if (msgLength < 0)
-            safeErrorPrint("Master: failed to format output message in IPC deallocation.");
-        else
-            write(STDERR_FILENO, aus, msgLength);
+        write(STDERR_FILENO, aus, msgLength);
         *exitCode = EXIT_FAILURE;
     }
     else
