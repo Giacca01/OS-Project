@@ -70,19 +70,19 @@ int main()
                     sembufInit(reservation, -1);
                     sembufInit(release, 1);
                     /*
-            Cosa succede in caso di errore?
-            Terminiamo il ciclo?
-            Oppure segnaliamo l'errore e procediamo
-            con la prossima elaborazione?
-        */
+                        Cosa succede in caso di errore?
+                        Terminiamo il ciclo?
+                        Oppure segnaliamo l'errore e procediamo
+                        con la prossima elaborazione?
+                    */
                     printf("Node: starting lifecycle...\n");
                     while (!waitForTerm)
                     {
                         /*
-                PRECONDIZIONE:
-                    minSim e maxSim sono state caricate leggendole
-                    dalle variabili d'ambiente
-            */
+                            PRECONDIZIONE:
+                                minSim e maxSim sono state caricate leggendole
+                                dalle variabili d'ambiente
+                        */
                         /*generates a random number in [minSim, maxSim]*/
                         printf("Node: elaborating transactions' block...\n");
                         simTime = rand() % (maxSim + 1) + minSim;
@@ -106,15 +106,15 @@ int main()
 			                while (i < SO_BLOCK_SIZE-1) 
 			                {
 			                    /* now receiving the message (transaction from TP) */
-			                    num_bytes = msgrcv(tpListId, &new_trans, sizeof(new_trans)-sizeof(long), getpid(), 0);
+			                    num_bytes = msgrcv(tpId, &new_trans, sizeof(new_trans)-sizeof(long), getpid(), 0);
 
 			                    if (num_bytes >= 0) 
 			                    {
 			                        /* read transaction from tpList */
-			                        extractedBlock.transList[i++] = new_trans.transaction;
+			                        extractedBlock.transList[i] = new_trans.transaction;
 			                        /* adding reward of transaction in amountSend of reward_transaction */
 			                        rew_tran.amountSend += new_trans.transaction.reward;
-			                        extractedBlock.bIndex = i;
+			                        extractedBlock.bIndex = i++;
 			                    }
 			                    else
 			                    {
@@ -123,68 +123,69 @@ int main()
 
 			                    /*
 			                     * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
-			                     * and waits for a message on queue; we will exit this cycle when we read the requested 
+			                     * and waits for a message on queue; it will exit this cycle when it reads the requested 
 			                     * number of transactions (put in extractedBlock.transList)
 			                     */
 			                }
 
-			                /* putting reward transaction in extracted block */
-			                extractedBlock.transList[i] = rew_tran;
-
 			                /* creating candidate block by coping transactions in extracted block */
+                            /* VEDERE SE CAMBIARE - PER ME È PERDITA DI TEMPO (es. togliendo candidateBlock e usando direttamente extractedBlock */
 			                i = 0;
-			                while(i < SO_BLOCK_SIZE)
+			                while(i < SO_BLOCK_SIZE-1)
 			                {
 			                    candidateBlock.transList[i] = extractedBlock.transList[i];
 			                    i++;
 			                }
-			                candidateBlock.bIndex = i;
+			                
+                            /* putting reward transaction in extracted block */
+			                candidateBlock.transList[i] = rew_tran;
+                            candidateBlock.bIndex = i;
 
                             /*
-                    Writes the block of transactions "elaborated"
-                    on the register
-                */
+                                Writes the block of transactions "elaborated"
+                                on the register
+                            */
                             /*
-                    PRECONDIZIONE:
-                        extractedBlock.bIndex == SO_BLOCK_SIZE - 1
-                        extractedBlock.transList == Transazioni da scrivere sul blocco 
-                                                    estratte dalla transaction pool
+                                    PRECONDIZIONE:
+                                        extractedBlock.bIndex == SO_BLOCK_SIZE - 1
+                                        extractedBlock.transList == Transazioni da scrivere sul blocco 
+                                                                    estratte dalla transaction pool
 
-                        candidateBlock.bIndex == SO_BLOCK_SIZE
-                        candidateBlock.transList == Transazioni da scrivere sul blocco 
-                                                    estratte dalla transaction pool + transazione di reward
-               */
+                                        candidateBlock.bIndex == SO_BLOCK_SIZE
+                                        candidateBlock.transList == Transazioni da scrivere sul blocco 
+                                                                    estratte dalla transaction pool + transazione di reward
+                            */
                             /*
-                    Due possibilità:
-                        -eseguire le wait sui semafori delle partizioni in maniera atomica, facendo
-                        cioè si che il processo venga sbloccato solo quanto sarà possibile accedere in mutua
-                        esclusione a tutte e tre le partizioni
-                        -oppure, eseguire la wait sulla partizione i-esima, vedere se ci sia spazio per un nuovo
-                        blocco e solo in caso negativo procedere con la wait sul semaforo della partizione i+1-esima
+                                Due possibilità:
+                                    -eseguire le wait sui semafori delle partizioni in maniera atomica, facendo
+                                    cioè si che il processo venga sbloccato solo quanto sarà possibile accedere in mutua
+                                    esclusione a tutte e tre le partizioni
+                                    -oppure, eseguire la wait sulla partizione i-esima, vedere se ci sia spazio per un nuovo
+                                    blocco e solo in caso negativo procedere con la wait sul semaforo della partizione i+1-esima
 
-                        Il primo approccio consente di eseguire n operazioni con una sola system call, mentre il secondo
-                        evita che il processo rimanga sospeso per accedere in mutua esclusione a partizioni sulle quali 
-                        non scriverà
-        
-                        Io ho implementato il primo approccio
-                */
+                                    Il primo approccio consente di eseguire n operazioni con una sola system call, mentre il secondo
+                                    evita che il processo rimanga sospeso per accedere in mutua esclusione a partizioni sulle quali 
+                                    non scriverà
+                    
+                                    Io ho implementato il primo approccio
+                            */
                             /*
-                Entry section
-               */
+                                Entry section
+                            */
                             printf("Node: trying to write transactions on registr...\n");
                             if (semop(wrPartSem, reservation, REG_PARTITION_COUNT) == -1)
                                 unsafeErrorPrint("Node: failed to reserve register partitions' semaphore. Error: ");
                             else
                             {
                                 /*
-                            PRECONDIZIONE:
-                                Il processo arriva qui soolo dopo aver guadagnato l'accesso
-                                in mutua esclusione a tutte le partizioni
-                        */
+                                    PRECONDIZIONE:
+                                        Il processo arriva qui soolo dopo aver guadagnato l'accesso
+                                        in mutua esclusione a tutte le partizioni
+                                */
 
                                 /*
-                        Verifica esitenza spazio libero sul registro
-                    */
+                                    Verifica esitenza spazio libero sul registro
+                                */
                                 for (i = 0; i < REG_PARTITION_COUNT && !available; i++)
                                 {
                                     if (regPtrs[i]->nBlocks != REG_PARTITION_SIZE)
@@ -192,28 +193,28 @@ int main()
                                 }
 
                                 /*
-                    Postcondizione: i == indirizzo della partizione libera
-                    se available == FALSE ==> registro pieno
-                   */
+                                    Postcondizione: i == indirizzo della partizione libera
+                                    se available == FALSE ==> registro pieno
+                                */
 
                                 if (available)
                                 {
                                     /*
-                        Inserimento blocco
-                      */
+                                        Inserimento blocco
+                                    */
                                     /*
-                            Precondizione: nBlocks == Prima posizione libera nel blocco
-                        */
+                                        Precondizione: nBlocks == Prima posizione libera nel blocco
+                                    */
                                     /*
-                            Quando questa istruzione verà eseguita verrà fatta una copia
-                            per valore di candidateBlock.
-                            È inefficiente, ma non possiamo fare altrimenti
-                            se vogliamo condividere la transazione tra processi registri
-                       */
+                                            Quando questa istruzione verà eseguita verrà fatta una copia
+                                            per valore di candidateBlock.
+                                            È inefficiente, ma non possiamo fare altrimenti
+                                            se vogliamo condividere la transazione tra processi registri
+                                    */
                                     /*
-                        regPtrs[i] PUNTATORE ad un di tipo register allocato nel segmento
-                        di memoria condivisa, che rappresenta l'i-esima partizione del registro
-                      */
+                                        regPtrs[i] PUNTATORE ad un di tipo register allocato nel segmento
+                                        di memoria condivisa, che rappresenta l'i-esima partizione del registro
+                                    */
                                     newBlockPos = &(regPtrs[i]->nBlocks);
                                     regPtrs[i]->blockList[*newBlockPos] = candidateBlock;
                                     (*newBlockPos)++;
@@ -221,8 +222,8 @@ int main()
                                 else
                                 {
                                     /*
-                        Registro pieno ==> invio segnale di fine simulazione
-                      */
+                                        Registro pieno ==> invio segnale di fine simulazione
+                                    */
                                     printf("Node: no space left on register. Rollingback and signaling end of simulation...\n");
                                     reinsertTransactions(extractedBlock);
                                     if (kill(getppid(), SIGUSR1) == -1)
@@ -234,8 +235,8 @@ int main()
                                 }
 
                                 /*
-                        Exit section
-                    */
+                                    Exit section
+                                */
                                 printf("Node: releasing register's partition...\n");
                                 if (semop(wrPartSem, release, REG_PARTITION_COUNT) == -1)
                                     unsafeErrorPrint("Node: failed to release register partitions' semaphore. Error: ");
@@ -244,23 +245,23 @@ int main()
                         else
                         {
                             /*
-                    A node can only be interrupted by the end of simulation signal
-                */
+                                A node can only be interrupted by the end of simulation signal
+                            */
                             unsafeErrorPrint("Node: an unexpected event occured before the end of the computation.");
                         }
                     }
 
                     /*
-                Node wait for the master to detect that the register is full.
-                By doing this we take the process out of the ready queue, therefore
-                increasing the chance of  the master being scheduled and detecting the
-                end of simulation (it will happen, because the master checks it every time)
-                (or at least, the timer will elapse and the simulation will utimately end)
-            */
+                        Node wait for the master to detect that the register is full.
+                        By doing this we take the process out of the ready queue, therefore
+                        increasing the chance of  the master being scheduled and detecting the
+                        end of simulation (it will happen, because the master checks it every time)
+                        (or at least, the timer will elapse and the simulation will utimately end)
+                    */
                     /*
-            In the case tha node has successfully signaled the master, the process
-            waits to be signaled so that its end-of-execution handler will be executed.
-           */
+                        In the case tha node has successfully signaled the master, the process
+                        waits to be signaled so that its end-of-execution handler will be executed.
+                    */
                     printf("Node: waiting for end of simulation signal...\n");
                     pause();
                 }
