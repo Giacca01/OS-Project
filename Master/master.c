@@ -61,7 +61,7 @@ int mutexPartSem = -1; /* id of the set that contains the three sempagores used 
                         in mutual exclusion*/
 
 /* Si dovrebbe fare due vettori*/
-int *noReadersPartitions = NULL;      /* Pointer to the array contains the ids of the shared memory segments 
+int *noReadersPartitions = NULL;      /* Pointer to the array contains the ids of the shared memory segments
                                 // where the variables used to syncronize
                                  // readers and writes access to register's partition are stored
 // noReadersPartitions[0]: id of first partition's shared variable
@@ -90,9 +90,16 @@ int noTerminated = 0; /* NUmber of processes that terminated before end of simul
 /***** Definition of global variables that contain *****/
 /***** the values ​​of the configuration parameters  *****/
 /*******************************************************/
-/* CORREGGERE: ci servono per tutti i parametri letti da file*/
-int SO_USERS_NUM,   /* Number of user processes NOn è "statico" ???*/
-    SO_NODES_NUM,   /* Number of node processes ?? NOn è "statico" ???*/
+int SO_USERS_NUM, /* Number of user processes NOn è "statico" ???*/
+    SO_NODES_NUM, /* Number of node processes ?? NOn è "statico" ???*/
+    SO_REWARD,
+    SO_MIN_TRANS_GEN_NSEC,
+    SO_MAX_TRANS_GEN_NSEC,
+    SO_RETRY,
+    SO_TP_SIZE,
+    SO_MIN_TRANS_PROC_NSEC,
+    SO_MAX_TRANS_PROC_NSEC,
+    SO_BUDGET_INIT,
     SO_SIM_SEC,     /* Duration of the simulation*/
     SO_FRIENDS_NUM; /* Number of friends*/
 /*******************************************************/
@@ -109,14 +116,24 @@ void deallocateFacilities(int *);
 /***************************************************************/
 void assignEnvironmentVariables()
 {
-    /*CORREGGERE, mancano alcuni parametri tra cui soprattutto SO_SIM_SEC*/
     SO_USERS_NUM = atoi(getenv("SO_USERS_NUM"));
     SO_NODES_NUM = atoi(getenv("SO_NODES_NUM"));
+    SO_REWARD = atoi(getenv("SO_REWARD"));
+    SO_MIN_TRANS_GEN_NSEC = atoi(getenv("SO_MIN_TRANS_GEN_NSEC"));
+    SO_MAX_TRANS_GEN_NSEC = atoi(getenv("SO_MAX_TRANS_GEN_NSEC"));
+    SO_RETRY = atoi(getenv("SO_RETRY"));
+    SO_TP_SIZE = atoi(getenv("SO_TP_SIZE"));
+    SO_MIN_TRANS_PROC_NSEC = atoi(getenv("SO_MIN_TRANS_PROC_NSEC"));
+    SO_MAX_TRANS_PROC_NSEC = atoi(getenv("SO_MAX_TRANS_PROC_NSEC"));
+    SO_BUDGET_INIT = atoi(getenv("SO_BUDGET_INIT"));
     SO_SIM_SEC = atoi(getenv("SO_SIM_SEC"));
-    SO_FRIENDS_NUM = atoi(getenv("SO_FRIENDS_NUM")); 
+    SO_FRIENDS_NUM = atoi(getenv("SO_FRIENDS_NUM"));
 }
 /***************************************************************/
 /***************************************************************/
+
+struct timespec now;
+int *extractedFriendsIndex;
 
 /***** Function that reads the file containing the configuration    *****/
 /***** parameters to save them as environment variables             *****/
@@ -173,7 +190,7 @@ boolean createIPCFacilties()
     boolean ret = FALSE;
 
     /* CORREGGERE USANDO CALLOC E FARE SEGNALAZIONE ERRORI
-    */
+     */
     regPtrs = (Register **)malloc(REG_PARTITION_COUNT * sizeof(Register *));
     /*
         È sbagliato: con questo ciclo allochiamo già le partizioni
@@ -305,7 +322,8 @@ void initializeIPCFacilities()
     /*****  Creates and initialize the messages queues  *****/
     /********************************************************/
     /* Creates the global queue*/
-    globalQueueId = msgget(IPC_PRIVATE, IPC_CREAT | IPC_EXCL);
+    key = ftok(MSGFILEPATH, GLOBALMSGSEED);
+    globalQueueId = msgget(key, IPC_CREAT | IPC_EXCL | 0600);
     MSG_TEST_ERROR(globalQueueId);
     /********************************************************/
     /********************************************************/
@@ -380,7 +398,7 @@ void busy_cpu(unsigned long loops)
     /*
         for (i = 0; i < loops; i++)
     {
-        
+
         //my_var = my_var > 1 ? my_var - 1 : my_var;
     }
     */
@@ -402,6 +420,47 @@ void do_stuff(int t)
 /**************************************************************/
 /**************************************************************/
 
+void estrai(int k)
+{
+    int x, p;
+    int count;
+    int i = 0;
+
+    int n;
+
+    for (count = 0; count < SO_FRIENDS_NUM; count++)
+    {
+        do
+        {
+            clock_gettime(CLOCK_REALTIME, &now);
+            n = now.tv_nsec % SO_NODES_NUM;
+        } while (k == n);
+        extractedFriendsIndex[count] = n;
+    }
+
+    while (i < SO_FRIENDS_NUM)
+    {
+        int r;
+        do
+        {
+            clock_gettime(CLOCK_REALTIME, &now);
+            r = now.tv_nsec % SO_NODES_NUM;
+        } while (r == k);
+
+        for (x = 0; x < i; x++)
+        {
+            if (extractedFriendsIndex[x] == r)
+            {
+                break;
+            }
+        }
+        if (x == i)
+        {
+            extractedFriendsIndex[i++] = r;
+        }
+    }
+}
+
 void tmpHandler(int sig);
 
 int main(int argc, char *argv[])
@@ -409,12 +468,16 @@ int main(int argc, char *argv[])
     pid_t child_pid;
     int status;
     struct sembuf sops[3];
+    struct msgbuff mybuf;
     sigset_t set;
     struct sigaction act;
     int fullRegister = TRUE;
     int exitCode = EXIT_FAILURE;
     key_t key;
-    int i = 0;
+    int i = 0, j = 0;
+
+    char *argVec[] = {NULL};
+    char *envVec[] = {NULL};
 
     /* Set common semaphore options*/
     sops[0].sem_num = 0;
@@ -424,13 +487,15 @@ int main(int argc, char *argv[])
     sops[2].sem_num = 2;
     sops[2].sem_flg = 0;
 
+    extractedFriendsIndex = (int *)malloc(SO_FRIENDS_NUM * sizeof(int));
+
     printf("PID MASTER: %ld\n", (long)getpid());
     printf("Master: setting up simulation timer...\n");
     /* No previous alarms were set, so it must return 0*/
     /*
         CORREGGERE, va letta da file
     */
-    SO_SIM_SEC = 200;
+    /* SO_SIM_SEC = 200; */
     printf("Master simulation lasts %d seconnds\n", SO_SIM_SEC);
     if (alarm(SO_SIM_SEC) != 0)
         unsafeErrorPrint("Master: failed to set simulation timer. ");
@@ -510,18 +575,6 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = -1;
                                 semop(fairStartSem, &sops[0], 1);*/
 
-                                /* Save users processes pid and state into usersList*/
-                                sops[1].sem_op = -1;
-                                sops[1].sem_num = 2;
-                                semop(userListSem, &sops[1], 1);
-
-                                usersList[i].procId = getpid();
-                                usersList[i].procState = ACTIVE;
-
-                                sops[1].sem_op = 1;
-                                sops[1].sem_num = 2;
-                                semop(userListSem, &sops[1], 1);
-
                                 printf("User %d is waiting for simulation to start....\n", i);
                                 sops[0].sem_op = 0;
                                 sops[0].sem_num = 0;
@@ -539,6 +592,19 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = -1;
                                 sops[0].sem_flg = IPC_NOWAIT;
                                 semop(fairStartSem, &sops[0], 1);
+
+                                /* Save users processes pid and state into usersList*/
+                                sops[1].sem_op = -1;
+                                sops[1].sem_num = 2;
+                                semop(userListSem, &sops[1], 1);
+
+                                usersList[i].procId = child_pid;
+                                usersList[i].procState = ACTIVE;
+
+                                sops[1].sem_op = 1;
+                                sops[1].sem_num = 2;
+                                semop(userListSem, &sops[1], 1);
+
                                 break;
                             }
                         }
@@ -567,21 +633,8 @@ int main(int argc, char *argv[])
                                 /*
                                     Provvisorio
                                 */
-                                signal(SIGALRM, SIG_IGN);  
+                                signal(SIGALRM, SIG_IGN);
                                 signal(SIGUSR1, tmpHandler);
-
-                                /* Save users processes pid and state into usersList*/
-                                sops[1].sem_op = -1;
-                                sops[1].sem_num = 2;
-                                semop(nodeListSem, &sops[2], 1);
-
-                                nodesList[i].procId = getpid();
-                                nodesList[i].procState = ACTIVE;
-
-                                /*Perchè c'era 2???*/
-                                sops[1].sem_op = 1;
-                                sops[1].sem_num = 2;
-                                semop(nodeListSem, &sops[2], 1);
 
                                 /* Initialize messages queue for transactions pools*/
                                 tpList[i].procId = getpid();
@@ -589,12 +642,6 @@ int main(int argc, char *argv[])
                                 FTOK_TEST_ERROR(key);
                                 tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL);
                                 MSG_TEST_ERROR(tpList[i].msgQId);
-
-                                printf("Node %d is waiting for simulation to start....\n", i);
-                                sops[0].sem_op = 0;
-                                sops[0].sem_num = 0;
-                                sops[0].sem_flg = 0;
-                                semop(fairStartSem, &sops[0], 1);
 
                                 /* Temporary part to get the process to do something*/
                                 /*do_stuff(2);*/
@@ -608,6 +655,19 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = -1;
                                 sops[0].sem_flg = IPC_NOWAIT;
                                 semop(fairStartSem, &sops[0], 1);
+
+                                /* Save users processes pid and state into usersList*/
+                                sops[1].sem_op = -1;
+                                sops[1].sem_num = 2;
+                                semop(nodeListSem, &sops[2], 1);
+
+                                nodesList[i].procId = getpid();
+                                nodesList[i].procState = ACTIVE;
+
+                                sops[1].sem_op = 1;
+                                sops[1].sem_num = 2;
+                                semop(nodeListSem, &sops[2], 1);
+
                                 break;
                             }
                         }
@@ -616,6 +676,17 @@ int main(int argc, char *argv[])
 
                         /* The father also waits for all the children
                         // to be ready to continue the execution*/
+                        for (i = 0; i < SO_NODES_NUM; i++)
+                        {
+                            estrai(i);
+                            mybuf.mtype = nodesList[i].procId;
+                            for (j = 0; j < SO_FRIENDS_NUM; j++)
+                            {
+                                mybuf.pid = nodesList[extractedFriendsIndex[j]].procId;
+                                msgsnd(globalQueueId, &mybuf, sizeof(pid_t), 0);
+                                /* printf("Message %d[%d] delivered...\n", snd_kids[i], j); */
+                            }
+                        }
 
                         /*sops[0].sem_op = -1;
                     semop(fairStartSem, &sops[0], 1);*/
@@ -630,8 +701,8 @@ int main(int argc, char *argv[])
                         while (1 && child_pid)
                         {
                             /* check if register is full: in that case it must
-						 signal itself ? No
-						this should be inserted in the master lifecycle*/
+                         signal itself ? No
+                        this should be inserted in the master lifecycle*/
                             printf("Master: checking if register's partitions are full...\n");
                             fullRegister = TRUE;
                             for (i = 0; i < REG_PARTITION_COUNT && fullRegister; i++)
@@ -646,7 +717,7 @@ int main(int argc, char *argv[])
                             if (fullRegister)
                             {
                                 /* it contains an exit call
-							 so no need to set exit code*/
+                             so no need to set exit code*/
                                 printf("Master: all register's partitions are full. Terminating simulation...\n");
                                 endOfSimulation(SIGUSR1);
                             }
@@ -663,7 +734,7 @@ int main(int argc, char *argv[])
     }
 
     /* POSTCONDIZIONE: all'esecuzione di questa system call
-		l'handler di fine simulazione è già stato eseguito*/
+        l'handler di fine simulazione è già stato eseguito*/
     exit(exitCode);
 }
 
@@ -680,33 +751,33 @@ void freeGlobalVariables()
 
 void endOfSimulation(int sig)
 { /* IT MUST BE REENTRANT!!!!
-	// Notify children
-	// sends termination signal to all the processes
-	// that are part of the master's group (in this case we
-	// reach every children with just one system call).
-	// how to check if everyone was signaled (it returns true even if
-	// only one signal was sent)*/
+    // Notify children
+    // sends termination signal to all the processes
+    // that are part of the master's group (in this case we
+    // reach every children with just one system call).
+    // how to check if everyone was signaled (it returns true even if
+    // only one signal was sent)*/
     char *terminationMessage = (char *)calloc(100, sizeof(char));
     int ret = -1;
     char *aus = (char *)calloc(100, sizeof(char));
     int i = 0;
     /*
-	// Contiene una exit, perchè potrebbe essere ivocato in maniera
-	// asincrona durante l'esecuzione del ciclo di vita
-	// in tal caso l'esecuzione dovrebbe terminare dopo l'esecuzione
-	// dell'handler senza eseguire il codice rimanente del ciclo di vita
-	// cosa che potrebbe anche causare degli errori
-	// per il riferimento a zone di memoria non più allocate
-	// in case of error we don't stop the whole procedure
-	// but we signal it by setting the exit code to EXIT_FAILURE*/
+    // Contiene una exit, perchè potrebbe essere ivocato in maniera
+    // asincrona durante l'esecuzione del ciclo di vita
+    // in tal caso l'esecuzione dovrebbe terminare dopo l'esecuzione
+    // dell'handler senza eseguire il codice rimanente del ciclo di vita
+    // cosa che potrebbe anche causare degli errori
+    // per il riferimento a zone di memoria non più allocate
+    // in case of error we don't stop the whole procedure
+    // but we signal it by setting the exit code to EXIT_FAILURE*/
     int exitCode = EXIT_SUCCESS;
     boolean done = FALSE;
 
     /*
-	// viene inviato anche al master stesso ? In teoria no
-	// come assicurarsi che venga inviato a tutti?
-	// fallisce se non viene inviato a nessuno
-	// ma inviato != consegnato???*/
+    // viene inviato anche al master stesso ? In teoria no
+    // come assicurarsi che venga inviato a tutti?
+    // fallisce se non viene inviato a nessuno
+    // ma inviato != consegnato???*/
     /*
         Aggiornare tenendo conto del fatto che gli utenti potrebbero già essere terminati:
         in tal caso il meccanismo di retry è inutile
@@ -716,7 +787,8 @@ void endOfSimulation(int sig)
     printf("Master: PID %ld\nMaster: parent PID %ld\n", (long int)getpid(), (long)getppid());
     if (terminationMessage == NULL || aus == NULL)
         safeErrorPrint("Master: failed to alloacate memory. Error: ");
-    else {
+    else
+    {
         write(STDOUT_FILENO,
               "Master: trying to terminate simulation...\n",
               strlen("Master: trying to terminate simulation...\n"));
@@ -724,27 +796,28 @@ void endOfSimulation(int sig)
         if (kill(0, SIGUSR1) == 0)
         {
             /*
-			// wait for children
-			// dovremmo aspettare solo la ricezione del segnale di terminazione????
-			// mettere nell'handler
-			// dovremmo usare waitpid e teastare che i figli siano
-			// terminati correttamente ? Sarebbe complicato
-			// meglio inserire nel figlio un meccanismo che tenta più volte la stampa
-			// in caso di errore
-			// in teoria questo si sblocca solo dopo la terminazione di tutti i figli
-			// quindi ha senso fare così*/
+            // wait for children
+            // dovremmo aspettare solo la ricezione del segnale di terminazione????
+            // mettere nell'handler
+            // dovremmo usare waitpid e teastare che i figli siano
+            // terminati correttamente ? Sarebbe complicato
+            // meglio inserire nel figlio un meccanismo che tenta più volte la stampa
+            // in caso di errore
+            // in teoria questo si sblocca solo dopo la terminazione di tutti i figli
+            // quindi ha senso fare così*/
             write(STDOUT_FILENO,
                   "Master: waiting for children to terminate...\n",
                   strlen("Master: waiting for children to terminate...\n"));
-            while (wait(NULL) != -1);
+            while (wait(NULL) != -1)
+                ;
 
             if (errno == ECHILD)
             {
                 /*
-				// print report: we use the write system call: slower, but async-signal-safe
-				// Termination message composition
-				// we use only one system call for performances' sake.
-				// termination reason*/
+                // print report: we use the write system call: slower, but async-signal-safe
+                // Termination message composition
+                // we use only one system call for performances' sake.
+                // termination reason*/
                 write(STDOUT_FILENO,
                       "Master: simulation terminated successfully. Printing report...\n",
                       strlen("Master: simulation terminated successfully. Printing report...\n"));
@@ -753,12 +826,12 @@ void endOfSimulation(int sig)
                 /*printBudget();*/
 
                 /*Per la stampa degli errori non si può usare perror, perchè non è elencata* tra la funzioni signal
-				in teoria non si può usare nemmno sprintf*/
+                in teoria non si può usare nemmno sprintf*/
 
                 /* processes terminated before end of simulation*/
                 /*printf("Processes terminated before end of simulation: %d\n", noTerminated);*/
                 ret = sprintf(terminationMessage, "Processes terminated before end of simulation: %d\n", noTerminated);
-                
+
                 /* Blocks in register*/
                 ret = sprintf(aus, "There are %d blocks in the register.\n",
                               regPtrs[0]->nBlocks + regPtrs[1]->nBlocks + regPtrs[2]->nBlocks);
@@ -768,7 +841,6 @@ void endOfSimulation(int sig)
                     strcat(terminationMessage, "Termination reason: end of simulation.\n");
                 else
                     strcat(terminationMessage, "Termination reason: register is full\n");
-                    
 
                 /* Writes termination message on standard output*/
                 write(STDOUT_FILENO, terminationMessage, strlen(terminationMessage));
@@ -793,7 +865,6 @@ void endOfSimulation(int sig)
         if (!done)
             exitCode = EXIT_FAILURE;
     }
-    
 
     exit(exitCode);
 }
@@ -805,7 +876,7 @@ void printBudget()
     ProcListElem *usr = NULL; /* non sono da deallocare, altrimenti cancelli la lista di processi*/
     ProcListElem *node = NULL;
     float balance = 0; /* leggendo la transazione di inizializzazione (i.e. la prima indirizzata la processo)
-					    verrà inizializzata a SO_BUDGET_INIT*/
+                        verrà inizializzata a SO_BUDGET_INIT*/
     char *balanceString = NULL;
     int ret = 0;
     int i = 0;
@@ -829,8 +900,8 @@ void printBudget()
     {
         usr = usersList;
         /* è un algoritmo di complessità elevata
-		// vedere se sia possibile ridurla
-		// for each user...*/
+        // vedere se sia possibile ridurla
+        // for each user...*/
         while (usr != NULL)
         {
             pid = (long)(usr->procId);
@@ -840,11 +911,11 @@ void printBudget()
             {
                 reg = regPtrs[i];
                 /* we scan every block in the partition
-				// and every transaction in it to compute the balance*/
+                // and every transaction in it to compute the balance*/
                 for (j = 0; j < REG_PARTITION_SIZE; j++)
                 {
                     /* necessary in order not to lose
-					// the transaction list pointer*/
+                    // the transaction list pointer*/
                     tList = (reg->blockList[i]).transList;
                     for (k = 0; k < SO_BLOCK_SIZE; k++)
                     {
@@ -910,9 +981,9 @@ void printBudget()
                                 for (k = 0; k < noRemainingMsg; k++)
                                 {
                                     /* reads the first message from the transaction pool
-									// the last parameter is not  that necessary, given
-									// that we know there's still at least one message
-									// and no one is reading but the master*/
+                                    // the last parameter is not  that necessary, given
+                                    // that we know there's still at least one message
+                                    // and no one is reading but the master*/
                                     if (msgrcv(qId, &msg, sizeof(msg), 0, IPC_NOWAIT) == -1)
                                     {
                                         sprintf(balanceString,
@@ -949,17 +1020,17 @@ void printBudget()
             {
                 reg = regPtrs[i];
                 /* note that we start from one because there's no
-				// initialization blocks for nodes*/
+                // initialization blocks for nodes*/
                 for (j = 1; j < REG_PARTITION_SIZE; j++)
                 {
                     tList = (reg->blockList[i]).transList;
                     for (k = 0; k < SO_BLOCK_SIZE; k++)
                     {
                         /*
-						// non c'è il rischio di contare più volte le transazioni
-						/// perchè cerchiamo solo quella di reward e l'implementazione
-						// del nodo garantisce che c'è ne sia una sola per blocco
-						// serve testare*/
+                        // non c'è il rischio di contare più volte le transazioni
+                        /// perchè cerchiamo solo quella di reward e l'implementazione
+                        // del nodo garantisce che c'è ne sia una sola per blocco
+                        // serve testare*/
                         if (tList[k].sender == REWARD_TRANSACTION && tList[k].receiver == pid)
                             balance += tList[k].amountSend;
                         tList++;
@@ -989,32 +1060,32 @@ void printBudget()
 void deallocateFacilities(int *exitCode)
 {
     /*
-	// Ovviamente i processi figli dovranno scollegarsi
-	// dai segmenti e chiudere i loro riferimenti alla coda
-	// ed ai semafori prima di terminare
+    // Ovviamente i processi figli dovranno scollegarsi
+    // dai segmenti e chiudere i loro riferimenti alla coda
+    // ed ai semafori prima di terminare
 
-	// Precondizione: tutti i processi figli si sono scollegati dai segmenti di memoria
-	// In generale, tutti i figli hanno chiuso i loro riferimenti alle facilities IPC
-	// ne siamo certi perchè questa procedura viene richiamata solo dopo aver atteso la terminazione di ogni figlio
+    // Precondizione: tutti i processi figli si sono scollegati dai segmenti di memoria
+    // In generale, tutti i figli hanno chiuso i loro riferimenti alle facilities IPC
+    // ne siamo certi perchè questa procedura viene richiamata solo dopo aver atteso la terminazione di ogni figlio
 
-	// Cosa fare se una delle system call usate per la deallocazione fallisce?*/
+    // Cosa fare se una delle system call usate per la deallocazione fallisce?*/
     /*
-		L'idea è quella di implementare l'eliminazione di ogni facility in maniera indipendente
-		dalle altre (i.e. l'eliminazione della n + 1 viene effettuata anche se quella dell'n-esima è fallita)
-		ma di non implementare un meccanismo tale per cui si tenta ripetutamente di eliminare
-		la facility n-esima qualora una delle system call coinvolte fallisca
-	*/
+        L'idea è quella di implementare l'eliminazione di ogni facility in maniera indipendente
+        dalle altre (i.e. l'eliminazione della n + 1 viene effettuata anche se quella dell'n-esima è fallita)
+        ma di non implementare un meccanismo tale per cui si tenta ripetutamente di eliminare
+        la facility n-esima qualora una delle system call coinvolte fallisca
+    */
 
     /*
-		TODO:
-			-dellocate registers partition: OK
-			-deallocate registers ids' array: OK
-			-deallocate users and nodes lists (serve fare la malloc o basta deallocare il segmento???): Ok
-			-deallocate friensd' shared memory segment: OK
-			-deallocate transaction pools' message queues: OK
-			-deallocate semaphores: Ok
-			-free dynamically allocated memory: Ok
-	*/
+        TODO:
+            -dellocate registers partition: OK
+            -deallocate registers ids' array: OK
+            -deallocate users and nodes lists (serve fare la malloc o basta deallocare il segmento???): Ok
+            -deallocate friensd' shared memory segment: OK
+            -deallocate transaction pools' message queues: OK
+            -deallocate semaphores: Ok
+            -free dynamically allocated memory: Ok
+    */
 
     char *aus = (char *)calloc(100, sizeof(char));
     int msgLength = 0;
@@ -1166,7 +1237,6 @@ void deallocateFacilities(int *exitCode)
                                 tpList->procId);
             write(STDOUT_FILENO, aus, msgLength);
         }
-        
     }
     free(tpList);
 
