@@ -67,10 +67,10 @@ i figli lo preleveranno dalla lista dei nodi*/
         unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: ");\
 
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
-#define REG_PARTITION_SIZE 3/*CORREGGERE*/
 #define REWARD_TRANSACTION -1
 #define INIT_TRANSACTION -1
 #define REG_PARTITION_COUNT 3
+#define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + 2) / 3) /*CORREGGERE*/
 #define SO_BLOCK_SIZE 10 /* Modificato 10/12/2021*/
                          /* Modificato 10/12/2021*/
 
