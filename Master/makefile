@@ -1,10 +1,9 @@
 CC=gcc
 CFLAGS=-ansi -pedantic-errors -Wall
 
-
-error: error.c error.h
-	${CC} ${CFLAGS} 
-# ???
+# SISTEMARE
 # mettere una regola che compili tutto
 master: master.c info.h
-	${CC} ${CFLAGS}
+	cp Error/error.o ./error.o
+	${CC} -c ${CFLAGS} master.c -o master.o
+	${CC} master.o error.o

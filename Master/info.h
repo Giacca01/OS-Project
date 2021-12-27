@@ -34,10 +34,10 @@
 #define NONODESEGRDERSSEED 10
 
 #define MSGFILEPATH "../msgfile.txt"
-// il seed è il pid del proprietario
-// i figli lo preleveranno dalla lista dei nodi
+/* il seed è il pid del proprietario
+i figli lo preleveranno dalla lista dei nodi*/
 
-#define SO_REGISTRY_SIZE 200
+#define SO_REGISTRY_SIZE 1000 /*Perchè con 300 non va???*/
 /*Right now it's not reentrant, we should modify it*/
 #define EXIT_ON_ERROR                        \
     if (errno)                               \
@@ -51,31 +51,33 @@
         exit(EXIT_FAILURE);                  \
     }
 
-#define FTOK_TEST_ERROR(key) \
-    key == -1 ? unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: ") : 0
+#define FTOK_TEST_ERROR(key)    \
+    if (key == -1)                          \
+        unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: ");\
 
 #define SEM_TEST_ERROR(id) \
-    id == -1 ? unsafeErrorPrint("Master: semget failed during semaphore creation. Error: ") : 0
+    if (id == -1)   \
+        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: ");\
 
 #define SHM_TEST_ERROR(id) \
-    id == -1 ? unsafeErrorPrint("Master: shmget failed during shared memory segment creation. Error: ") : 0
+    if (id == -1)   \
+        unsafeErrorPrint("Master: shmget failed during shared memory segment creation. Error: ");\
 
 #define MSG_TEST_ERROR(id) \
-    id == -1 ? unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: ") : 0
+    if (id == -1) \
+        unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: ");\
 
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
-#define REG_PARTITION_SIZE (SO_REGISTRY_SIZE / 3)
+#define REG_PARTITION_SIZE 3/*CORREGGERE*/
 #define REWARD_TRANSACTION -1
 #define INIT_TRANSACTION -1
 #define REG_PARTITION_COUNT 3
 #define SO_BLOCK_SIZE 10 /* Modificato 10/12/2021*/
                          /* Modificato 10/12/2021*/
 
-typedef enum
-{
-    TERMINATED = 0,
-    ACTIVE
-} States;
+    typedef enum { TERMINATED = 0,
+                   ACTIVE
+    } States;
 
 /* Nella documentazione fare disegno di sta roba*/
 typedef struct
