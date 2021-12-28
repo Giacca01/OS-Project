@@ -657,15 +657,15 @@ int main(int argc, char *argv[])
                                 semop(fairStartSem, &sops[0], 1);
 
                                 /* Save users processes pid and state into usersList*/
-                                sops[1].sem_op = -1;
-                                sops[1].sem_num = 2;
+                                sops[2].sem_op = -1;
+                                sops[2].sem_num = 2;
                                 semop(nodeListSem, &sops[2], 1);
 
                                 nodesList[i].procId = getpid();
                                 nodesList[i].procState = ACTIVE;
 
-                                sops[1].sem_op = 1;
-                                sops[1].sem_num = 2;
+                                sops[2].sem_op = 1;
+                                sops[2].sem_num = 2;
                                 semop(nodeListSem, &sops[2], 1);
 
                                 break;
