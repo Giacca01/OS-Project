@@ -93,6 +93,49 @@ void assignEnvironmentVariables()
 /***************************************************************/
 /***************************************************************/
 
+int readConfigParameters()
+{
+    char *filename = "params.txt";
+    FILE *fp = fopen(filename, "r");
+    /* Reading line by line, max 128 bytes*/
+    const unsigned MAX_LENGTH = 128;
+    /* Array that will contain the lines read from the file
+    // each "row" of the "matrix" will contain a different file line*/
+    char line[14][128];
+    /* Counter of the number of lines in the file*/
+    int k = 0;
+    char *aus = NULL;
+    int exitCode = 0;
+    int i = 0;
+
+    /* Handles any error in opening the file*/
+    if (fp == NULL)
+    {
+        sprintf(aus, "Error: could not open file %s", filename);
+        unsafeErrorPrint(aus);
+        exitCode = -1;
+    }
+    else
+    {
+        /* Inserts the lines read from the file into the array*/
+        while (fgets(line[k], MAX_LENGTH, fp))
+            k++;
+
+        /* It inserts the parameters read into environment variables*/
+        for (i = 0; i < k; i++)
+            putenv(line[i]);
+
+        /* Assigns the values ​​of the environment
+        // variables to the global variables defined above*/
+        assignEnvironmentVariables();
+
+        /* Close the file*/
+        fclose(fp);
+    }
+
+    return exitCode;
+}
+
 /****   Function that creates the ipc structures used in the project    *****/
 /****************************************************************************/
 boolean createIPCFacilties()
@@ -231,6 +274,7 @@ int main()
     long rcv_type;
     pid_t *friends_node;
     int contMex = 0;
+    int i;
 
     /*Set common semaphore options*/
     sops[0].sem_num = 0;
@@ -241,7 +285,7 @@ int main()
     sops[2].sem_flg = 0;
 
     /* Assigns the values ​​of the environment variables to the global variables */
-    assignEnvironmentVariables();
+    readConfigParameters();
 
     /* Allocate the array that will contain friends pid */
     friends_node = calloc(SO_NODES_NUM, sizeof(*friends_node));
@@ -261,18 +305,25 @@ int main()
             contMex++;
         }
 
+        for (i = 0; i < SO_FRIENDS_NUM; i++)
+        {
+            printf("Nodo %d -> Amico: %d\n", getpid(), friends_node[i]);
+        }
+
         /* Wait all processes are ready to start the simulation */
         printf("Node %ld is waiting for simulation to start....\n", (long)getpid());
         sops[0].sem_op = 0;
         sops[0].sem_num = 0;
         sops[0].sem_flg = 0;
         semop(fairStartSem, &sops[0], 1);
+
+        printf("Sono il nodo %d -> Eseguo!\n", getpid());
+        printf("Node done %d!\n", getpid());
     }
     else
     {
         freeGlobalVariables();
     }
-
     exit(EXIT_SUCCESS);
 }
 
@@ -311,9 +362,4 @@ void freeGlobalVariables()
         fprintf(stderr, "%s: %d. Errore in shmdt #%03d: %s\n", __FILE__, __LINE__, errno, strerror(errno));
         exit(EXIT_FAILURE);
     }
-    /*if (shmdt(noUserSegReaders) == -1)
-    {
-        fprintf(stderr, "%s: %d. Errore in shmdt #%03d: %s\n", __FILE__, __LINE__, errno, strerror(errno));
-        exit(EXIT_FAILURE);
-    }*/
 }
