@@ -142,14 +142,17 @@ typedef struct /* Modificato 10/12/2021*/
     the attached transaction has failed (this is used in case
     the receiver was a terminated user)   
 
-    FRIENDINIT: massage sent to user from master to initialize its friends list 
+    FRIENDINIT: message sent to user from master to initialize its friends list 
+
+    TERMINATEDUSER: message sent from user when it terminates its execution
 */
 typedef enum
 {
     NEWNODE = 0,
     NEWFRIEND,
     FAILEDTRANS,
-    FRIENDINIT
+    FRIENDINIT,
+    TERMINATEDUSER
 } GlobalMsgContent;
 
 /* attenzione!!!! Per friends va fatta una memcopy
@@ -170,8 +173,9 @@ typedef struct
      * sulla coda globale e starà quindi al nodo destinatario leggere i messaggi dalla coda e creare la 
      * sua lista di nodi amici.
      */
-    ProcListElem friend; /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
-    Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    ProcListElem friend; /* garbage if msgContent == NEWNODE || msgContent == FAILEDTRANS || msgContent == TERMINATEDUSER */
+    Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT || msgContent == TERMINATEDUSER */
+    pid_t userPid; /* pid of terminated user, garbage if msgContent != TERMINATEDUSER */
 } MsgGlobalQueue;
 
 typedef enum
