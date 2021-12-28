@@ -649,7 +649,7 @@ int main(int argc, char *argv[])
                                 sops[1].sem_num = 2;
                                 semop(nodeListSem, &sops[1], 1);
 
-                                nodesList[i].procId = getpid();
+                                nodesList[i].procId = child_pid;
                                 nodesList[i].procState = ACTIVE;
 
                                 /*Perchè c'era 2???*/
@@ -683,7 +683,7 @@ int main(int argc, char *argv[])
                                 sops[2].sem_num = 2;
                                 semop(nodeListSem, &sops[2], 1);
 
-                                nodesList[i].procId = getpid();
+                                nodesList[i].procId = child_pid;
                                 nodesList[i].procState = ACTIVE;
 
                                 sops[2].sem_op = 1;
