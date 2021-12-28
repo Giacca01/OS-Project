@@ -696,13 +696,6 @@ int main(int argc, char *argv[])
                                 signal(SIGALRM, SIG_IGN);
                                 signal(SIGUSR1, tmpHandler);
 
-                                /* Initialize messages queue for transactions pools*/
-                                tpList[i].procId = getpid();
-                                key = ftok(MSGFILEPATH, getpid());
-                                FTOK_TEST_ERROR(key);
-                                tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL);
-                                MSG_TEST_ERROR(tpList[i].msgQId);
-
                                 /* Temporary part to get the process to do something*/
                                 /*do_stuff(2);*/
                                 printf("Node done! PID:%d\n", getpid());
@@ -715,6 +708,13 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = -1;
                                 sops[0].sem_flg = IPC_NOWAIT;
                                 semop(fairStartSem, &sops[0], 1);
+					    
+				/* Initialize messages queue for transactions pools*/
+                                tpList[i].procId = child_pid;
+                                key = ftok(MSGFILEPATH, child_pid);
+                                FTOK_TEST_ERROR(key);
+                                tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL | 0600);
+                                MSG_TEST_ERROR(tpList[i].msgQId);
 
                                 /* Save users processes pid and state into usersList*/
                                 sops[2].sem_op = -1;
