@@ -1,6 +1,6 @@
 /*
     Cose da fare:
-        Test: Testare persistenza associazione: 
+        Test: Testare persistenza associazione:
             Su Linux funziona (purtroppo :D) senza bisogno
             di riagganciare l'handler
             PROVARE SU ALTRI SO
@@ -89,7 +89,7 @@ int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, r
     ATTENZIONE AL TIPO DI DATO!!!
 */
 int noTerminated = 0; /* NUmber of processes that terminated before end of simulation*/
-int noEffective = 0; /* Holds the effective number of child processes: must be implemented when a new node is created */
+int noEffective = 0;  /* Holds the effective number of child processes: must be implemented when a new node is created */
 /******************************************/
 
 /***** Definition of global variables that contain *****/
@@ -590,9 +590,10 @@ int main(int argc, char *argv[])
 
                                 /* Temporary part to get the process to do something*/
                                 do_stuff(1);
+                                printf("Eseguo user...\n");
                                 printf("User done! PID:%d\n", getpid());
-                                /*exit(i);*/
                                 busy_cpu(1);
+                                exit(i);
                                 break;
 
                             default:
@@ -644,32 +645,12 @@ int main(int argc, char *argv[])
                                 signal(SIGALRM, SIG_IGN);
                                 signal(SIGUSR1, tmpHandler);
 
-                                /* Save users processes pid and state into usersList*/
-                                sops[1].sem_op = -1;
-                                sops[1].sem_num = 2;
-                                semop(nodeListSem, &sops[1], 1);
-
-                                nodesList[i].procId = getpid();
-                                nodesList[i].procState = ACTIVE;
-
-                                /*Perchè c'era 2???*/
-                                sops[1].sem_op = 1;
-                                sops[1].sem_num = 2;
-                                semop(nodeListSem, &sops[1], 1);
-
-                                /* Initialize messages queue for transactions pools*/
-                                tpList[i].procId = (long)getpid();
-                                key = ftok(MSGFILEPATH, getpid());
-                                FTOK_TEST_ERROR(key);
-                                tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL);
-                                MSG_TEST_ERROR(tpList[i].msgQId);
-
                                 /* Temporary part to get the process to do something*/
                                 do_stuff(2);
+                                printf("Eseguo nodo...\n");
                                 printf("Node done! PID:%d\n", getpid());
-                                /*exit(i);*/
                                 busy_cpu(1);
-                                /*exit(i);*/
+                                exit(i);
                                 break;
 
                             default:
@@ -678,12 +659,19 @@ int main(int argc, char *argv[])
                                 sops[0].sem_flg = IPC_NOWAIT;
                                 semop(fairStartSem, &sops[0], 1);
 
+                                /*Initialize messages queue for transactions pools*/
+                                tpList[i].procId = (long)child_pid;
+                                key = ftok(MSGFILEPATH, child_pid);
+                                FTOK_TEST_ERROR(key);
+                                tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL);
+                                MSG_TEST_ERROR(tpList[i].msgQId);
+
                                 /* Save users processes pid and state into usersList*/
                                 sops[1].sem_op = -1;
                                 sops[1].sem_num = 2;
                                 semop(nodeListSem, &sops[1], 1);
 
-                                nodesList[i].procId = getpid();
+                                nodesList[i].procId = child_pid;
                                 nodesList[i].procState = ACTIVE;
 
                                 sops[1].sem_op = 1;
@@ -706,7 +694,6 @@ int main(int argc, char *argv[])
                             {
                                 mybuf.pid = nodesList[extractedFriendsIndex[j]].procId;
                                 msgsnd(globalQueueId, &mybuf, sizeof(pid_t), 0);
-                                /* printf("Message %d[%d] delivered...\n", snd_kids[i], j); */
                             }
                         }
 
@@ -796,10 +783,10 @@ void endOfSimulation(int sig)
     boolean done = FALSE;
 
     /*
-	// viene inviato anche al master stesso ? Sì
-	// come assicurarsi che venga inviato a tutti?
-	// fallisce se non viene inviato a nessuno
-	// ma inviato != consegnato???*/
+    // viene inviato anche al master stesso ? Sì
+    // come assicurarsi che venga inviato a tutti?
+    // fallisce se non viene inviato a nessuno
+    // ma inviato != consegnato???*/
     /*
         Aggiornare tenendo conto del fatto che gli utenti potrebbero già essere terminati:
         in tal caso il meccanismo di retry è inutile
@@ -816,44 +803,50 @@ void endOfSimulation(int sig)
               strlen("Master: trying to terminate simulation...\n"));
         /* error check*/
         fflush(stdout);
-        if (noTerminated < noEffective) {
+        if (noTerminated < noEffective)
+        {
             /*
                 There are still active children that need
                 to be notified the end of simulation
             */
-            for (i = 0; i < NO_ATTEMPS && !done; i++){
-                if (kill(0, SIGUSR1) == -1){
+            for (i = 0; i < NO_ATTEMPS && !done; i++)
+            {
+                if (kill(0, SIGUSR1) == -1)
+                {
                     safeErrorPrint("Master: failed to signal children for end of simulation. Error: ");
-                } else {
-                    write(STDOUT_FILENO, 
-                        "Master: end of simulation notified successfully to children.\n", 
-                        strlen("Master: end of simulation notified successfully to children.\n")
-                    );
+                }
+                else
+                {
+                    write(STDOUT_FILENO,
+                          "Master: end of simulation notified successfully to children.\n",
+                          strlen("Master: end of simulation notified successfully to children.\n"));
                     done = TRUE;
                 }
             }
-            
-        } else
+        }
+        else
             done = TRUE;
         /*
-			// wait for children
-			// dovremmo aspettare solo la ricezione del segnale di terminazione????
-			// mettere nell'handler
-			// dovremmo usare waitpid e teastare che i figli siano
-			// terminati correttamente ? Sarebbe complicato
-			// meglio inserire nel figlio un meccanismo che tenta più volte la stampa
-			// in caso di errore
-			// in teoria questo si sblocca solo dopo la terminazione di tutti i figli
-			// quindi ha senso fare così*/
-        if (done) {
+            // wait for children
+            // dovremmo aspettare solo la ricezione del segnale di terminazione????
+            // mettere nell'handler
+            // dovremmo usare waitpid e teastare che i figli siano
+            // terminati correttamente ? Sarebbe complicato
+            // meglio inserire nel figlio un meccanismo che tenta più volte la stampa
+            // in caso di errore
+            // in teoria questo si sblocca solo dopo la terminazione di tutti i figli
+            // quindi ha senso fare così*/
+        if (done)
+        {
             write(STDOUT_FILENO,
-                "Master: waiting for children to terminate...\n",
-                strlen("Master: waiting for children to terminate...\n"));
+                  "Master: waiting for children to terminate...\n",
+                  strlen("Master: waiting for children to terminate...\n"));
             /*
                 Conviene fare comunque la wait anche se tutti sono già terminati
                 in modo che non ci siano zombies
             */
-            while (wait(NULL) != -1);
+            while (wait(NULL) != -1)
+                ;
             if (errno == ECHILD)
             {
                 /*
@@ -899,13 +892,14 @@ void endOfSimulation(int sig)
                 safeErrorPrint("Master: an error occurred while waiting for children. Description: ");
             }
             write(STDOUT_FILENO, "Master: simulation terminated successfully!!!\n", strlen("Master: simulation terminated successfully!!!\n"));
-        } else {
+        }
+        else
+        {
             deallocateFacilities(&exitCode);
             exitCode = EXIT_FAILURE;
-            write(STDOUT_FILENO, 
-                "Master: failed to terminate children. IPC facilties will be deallocated anyway.\n", 
-                strlen("Master: failed to terminate children. IPC facilties will be deallocated anyway.\n")
-            );
+            write(STDOUT_FILENO,
+                  "Master: failed to terminate children. IPC facilties will be deallocated anyway.\n",
+                  strlen("Master: failed to terminate children. IPC facilties will be deallocated anyway.\n"));
         }
     }
     /* Releasing local variables' memory*/
@@ -1139,7 +1133,7 @@ void deallocateFacilities(int *exitCode)
     char *aus = (char *)calloc(100, sizeof(char));
     int msgLength = 0;
     int i = 0;
-    TPElement * tmp;
+    TPElement *tmp;
 
     printf("**********Il deallocatore è %ld**********\n", (long)getpid());
     printf("**********Il padre del deallocatore è %ld**********\n", (long)getppid());
@@ -1302,9 +1296,9 @@ void deallocateFacilities(int *exitCode)
         printf("Id coda: %d\n", *(tmp).msgQId);
         printf("Id Processo: %ld\n", *tmp.procId);
         fflush(stdout);
-        
+
         tmp++;
-        
+
     }*/
     free(tpList);
 
