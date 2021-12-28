@@ -33,6 +33,7 @@
 #define NOUSRSEGRDERSSEED 9
 
 #define MSGFILEPATH "../msgfile.txt"
+#define GLOBALMSGSEED 1
 /* il seed è il pid del proprietario
 i figli lo preleveranno dalla lista dei nodi*/
 
@@ -70,7 +71,7 @@ i figli lo preleveranno dalla lista dei nodi*/
 #define REWARD_TRANSACTION -1
 #define INIT_TRANSACTION -1
 #define REG_PARTITION_COUNT 3
-#define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + 2) / 3) /*CORREGGERE*/
+#define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + REG_PARTITION_COUNT - 1) / 3) /*CORREGGERE*/
 #define SO_BLOCK_SIZE 10 /* Modificato 10/12/2021*/
                          /* Modificato 10/12/2021*/
 
@@ -166,3 +167,8 @@ typedef enum
     FALSE = 0,
     TRUE
 } boolean;
+
+struct msgbuff {
+    long mtype;
+    pid_t pid;
+};

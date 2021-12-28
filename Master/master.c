@@ -681,14 +681,14 @@ int main(int argc, char *argv[])
                                 /* Save users processes pid and state into usersList*/
                                 sops[1].sem_op = -1;
                                 sops[1].sem_num = 2;
-                                semop(nodeListSem, &sops[2], 1);
+                                semop(nodeListSem, &sops[1], 1);
 
                                 nodesList[i].procId = getpid();
                                 nodesList[i].procState = ACTIVE;
 
                                 sops[1].sem_op = 1;
                                 sops[1].sem_num = 2;
-                                semop(nodeListSem, &sops[2], 1);
+                                semop(nodeListSem, &sops[1], 1);
 
                                 break;
                             }
@@ -1271,6 +1271,7 @@ void deallocateFacilities(int *exitCode)
     /*
             Per il momento va in errore perchè non ci sono ancora le code
         */
+    /*
     write(STDOUT_FILENO,
           "Master: deallocating transaction pools...\n",
           strlen("Master: deallocating transaction pools...\n"));
@@ -1294,7 +1295,7 @@ void deallocateFacilities(int *exitCode)
                                 (long)tpList[i].procId);
             write(STDOUT_FILENO, aus, msgLength);
         }
-    }
+    }*/
     /*
     while (tmp != NULL)
     {
