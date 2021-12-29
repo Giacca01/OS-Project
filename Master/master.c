@@ -95,6 +95,8 @@ int *noNodeSegReadersPtr = NULL;
 */
 int noTerminated = 0; /* Number of processes that terminated before end of simulation */
 int noEffective = 0; /* Holds the effective number of child processes: must be implemented when a new node is created */
+
+int tplLength = 0; /* AGGIUNTO DA STEFANO - keeps tpList length */
 /******************************************/
 
 /***** Definition of global variables that contain *****/
@@ -553,8 +555,8 @@ int main(int argc, char *argv[])
     /* declaring of message for new transaction pool of new node */
     MsgTP new_trans;
 
-    /* declaring of variables for sending transactions over TP of new node */
-    int tpl_length, tp_new_node;
+    /* declaring of variable for sending transactions over TP of new node */
+    int tp_new_node;
 
     /* declaring of variables for budget update */
     Block block;
@@ -756,6 +758,7 @@ int main(int argc, char *argv[])
                                 FTOK_TEST_ERROR(key);
                                 tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL);
                                 MSG_TEST_ERROR(tpList[i].msgQId);
+                                tplLength++; /* updating tpList length */
 
                                 /* Save users processes pid and state into usersList*/
                                 sops[1].sem_op = -1;
@@ -1680,19 +1683,19 @@ int main(int argc, char *argv[])
 	                                        /* CAPIRE SE DA ULTIME DISPOSIZIONI SI DEVE ANCORA FARE O NO */
 
 	                                        /* add a new entry to the tpList array */
-	                                        tpList = (TPElement *)realloc(tpList, sizeof(*tpList) + sizeof(TPElement));
-	                                        tpl_length = sizeof(*tpList)/sizeof(TPElement); /* get tpList length */
+                                            tplLength++;
+	                                        tpList = (TPElement *)realloc(tpList, sizeof(TPElement) * tplLength);
 	                                        /* Initialize messages queue for transactions pools */
-	                                        tpList[tpl_length-1].procId = getpid();
-	                                        tpList[tpl_length-1].msgQId = msgget(ftok(MSGFILEPATH, getpid()), IPC_CREAT | IPC_EXCL | 0600);
+	                                        tpList[tplLength-1].procId = getpid();
+	                                        tpList[tplLength-1].msgQId = msgget(ftok(MSGFILEPATH, getpid()), IPC_CREAT | IPC_EXCL | 0600);
                                         
-	                                        if(tpList[tpl_length-1].msgQId == -1)
+	                                        if(tpList[tplLength-1].msgQId == -1)
 	                                        {
 	                                            unsafeErrorPrint("Master: failed to create the message queue for the transaction pool of the new node process. Error: ");
 	                                            exit(EXIT_FAILURE); /* VA SOSTITUITO CON EndOfSimulation ??? */
 	                                        }
 
-	                                        tp_new_node = tpList[tpl_length-1].msgQId;
+	                                        tp_new_node = tpList[tplLength-1].msgQId;
 	                                        /* here we have to insert transactions read from global queue in new node TP*/
 	                                        for(tr_written = 0; tr_written < c_msg_read; tr_written++)
 	                                        {   /* c_msg_read is the number of transactions actually read */
@@ -1849,6 +1852,15 @@ int main(int argc, char *argv[])
     /* POSTCONDIZIONE: all'esecuzione di questa system call
         l'handler di fine simulazione è già stato eseguito*/
     exit(exitCode);
+}
+
+/* Function to free the space dedicated to the budget list */
+void budgetlist_free(budgetlist p)
+{
+	if (p == NULL) return;
+	
+	budgetlist_free(p->next);
+	free(p);
 }
 
 void tmpHandler(int sig)
@@ -2369,6 +2381,34 @@ void deallocateFacilities(int *exitCode)
     /*
             Per il momento va in errore perchè non ci sono ancora le code
         */
+    
+    /********* AGGIUNTO DA STEFANO *********/
+
+    for(i = 0; i < tplLength; i++)
+    {
+        /*printf("Id coda: %d\n", tpList[i].msgQId);
+        printf("Id Processo: %ld\n", tpList[i].procId);
+        fflush(stdout);*/
+        if (msgctl(tpList[i].msgQId, IPC_RMID, NULL) == -1)
+        {
+            msgLength = sprintf(aus,
+                                "Master: failed to remove transaction pool of process %ld",
+                                (long)tpList[i].procId);
+            write(STDERR_FILENO, aus, msgLength);
+
+            *exitCode = EXIT_FAILURE;
+        }
+        else
+        {
+            msgLength = sprintf(aus,
+                                "Master: transaction pool of node of PID %ld successfully removed.\n",
+                                tpList[i].procId);
+            write(STDOUT_FILENO, aus, msgLength);
+        }
+    }
+
+    /********* END OF AGGIUNTO DA STEFANO *********/
+    
     /*
     write(STDOUT_FILENO,
           "Master: deallocating transaction pools...\n",
