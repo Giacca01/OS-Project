@@ -1,15 +1,19 @@
 /*
     Cose da fare:
-        Test: Testare persistenza associazione
+        Test: Testare persistenza associazione:
+            Su Linux funziona (purtroppo :D) senza bisogno
+            di riagganciare l'handler
+            PROVARE SU ALTRI SO
         Refactoring
         Handler CTRL + C
         Handler per graceful termination
-        SO_REGISTRY_SIZE (MANCANO dei parametri)
+        REG_PARTITION_SIZE: OK
         Correzione stampe in handler
         Modifica procedure d'errore in modo che __LINE__ sia indicativo
         e modifica macro che stampa l'errore
-        Sistemare kill
-        Vedere perchè ci siano più processi master
+        Sistemare kill: Ok
+        Vedere perchè ci siano più processi master: A quanto pare non ci sono
+        Fare in modo che kill non segnali il master
 */
 #define _GNU_SOURCE
 #include <time.h>
@@ -72,19 +76,14 @@ int **noReadersPartitionsPtrs = NULL; /* Pointer to the array contains the varia
 // noReadersPartitions[0]: pointer to the first partition's shared variable
 // noReadersPartitions[1]: pointer to the second partition's shared variable
 // noReadersPartitions[2]: pointer to the third partition's shared variable*/
-int userListSem = -1;                 /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used
+int userListSem = -1;                 /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
                     // to read and write users list*/
 int noUserSegReaders = -1;            /* id of the shared memory segment that contains the variable used to syncronize
                            // readers and writes access to users list*/
 int *noUserSegReadersPtr = NULL;
 
-int nodeListSem = -1; /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used
-                         // to read and write nodes list*/
-
-/* IO L'HO AGGIUNTO; CHIEDERE SE VA BENE O SE NON SERVE */
-int noNodeSegReaders = -1; /* id of the shared memory segment that contains the variable used to syncronize
-                              readers and writers access to nodes list */
-int *noNodeSegReadersPtr = NULL;
+int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
+                      // to read and write nodes list*/
 
 /*
     ATTENZIONE AL TIPO DI DATO!!!
@@ -428,9 +427,9 @@ void do_stuff(int t)
         printf("Hi, I'm a node, my pid is %d\n", getpid());
     /*srand(time(0));*/
 
-    (regPtrs[0]->nBlocks)++;
-    (regPtrs[1]->nBlocks)++;
-    (regPtrs[2]->nBlocks)++;
+    regPtrs[0]->nBlocks = REG_PARTITION_SIZE;
+    regPtrs[1]->nBlocks = REG_PARTITION_SIZE;
+    regPtrs[2]->nBlocks = REG_PARTITION_SIZE;
     /*busy_cpu(rand() % 1000000000);*/
 }
 /**************************************************************/
@@ -479,28 +478,6 @@ void estrai(int k)
 
 void tmpHandler(int sig);
 
-/**************** CAPIRE SE SPOSTARE IN INFO.H O SE LASCIARE QUI ****************/
-
-/* struct that rappresents a process and its budget*/
-typedef struct proc_budget {
-	pid_t proc_pid;
-	int budget;
-	int p_type; /* type of node: 0 if user, 1 if node */
-	struct proc_budget * next;
-} proc_budget;
-
-/* list of budgets for every user and node process */
-typedef proc_budget* budgetlist;
-
-/* function that frees the space allocated for budgetlist p */
-void budgetlist_free(budgetlist p);
-
-/* initialization of the budgetlist - array to maintain budgets read from ledger */
-budgetlist bud_list = NULL;
-
-/**************** CAPIRE SE SPOSTARE IN INFO.H O SE LASCIARE QUI ****************/
-
-
 int main(int argc, char *argv[])
 {
     pid_t child_pid;
@@ -510,7 +487,7 @@ int main(int argc, char *argv[])
     struct sigaction act;
     int fullRegister = TRUE;
     int exitCode = EXIT_FAILURE;
-	key_t key;
+    key_t key;
     int i = 0, j = 0;
 
     /* elements for creation of budgetlist */
@@ -533,7 +510,7 @@ int main(int argc, char *argv[])
     int c_users_active, c_nodes_active;
 
     /* declaring message structures used with global queue */
-    MsgGlobalQueue msg_from_node, msg_from_user, msg_to_node, msg_to_master;
+    MsgGlobalQueue msg_from_node, msg_from_user, msg_to_node;
 
     /* declaring counter for transactions read from global queue */
     int c_msg_read;
@@ -654,7 +631,7 @@ int main(int argc, char *argv[])
                             case -1:
                                 /*Handle error*/
                                 unsafeErrorPrint("Master: fork failed. Error: ");
-                            	exit(EXIT_FAILURE); /* VA SOSTITUITO CON EndOfSimulation ??? */
+                                exit(EXIT_FAILURE);
                             case 0:
                                 /*
                                 // The process tells the father that it is ready to run
@@ -677,8 +654,10 @@ int main(int argc, char *argv[])
 
                                 /* Temporary part to get the process to do something*/
                                 do_stuff(1);
+                                printf("Eseguo user...\n");
                                 printf("User done! PID:%d\n", getpid());
                                 busy_cpu(1);
+                                exit(i);
                                 break;
 
                             default:
@@ -716,7 +695,7 @@ int main(int argc, char *argv[])
                             case -1:
                                 /* Handle error*/
                                 unsafeErrorPrint("Master: fork failed. Error: ");
-                            	exit(EXIT_FAILURE); /* VA SOSTITUITO CON EndOfSimulation ??? */
+                                exit(EXIT_FAILURE);
                             case 0:
                                 /*
                                 // The process tells the father that it is ready to run
@@ -730,18 +709,12 @@ int main(int argc, char *argv[])
                                 signal(SIGALRM, SIG_IGN);
                                 signal(SIGUSR1, tmpHandler);
 
-                                /* Initialize messages queue for transactions pools*/
-                                tpList[i].procId = getpid();
-                                key = ftok(MSGFILEPATH, getpid());
-                                FTOK_TEST_ERROR(key);
-                                tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL);
-                                MSG_TEST_ERROR(tpList[i].msgQId);
-
                                 /* Temporary part to get the process to do something*/
-                                /*do_stuff(2);*/
+                                do_stuff(2);
+                                printf("Eseguo nodo...\n");
                                 printf("Node done! PID:%d\n", getpid());
                                 busy_cpu(1);
-                                /*exit(i);*/
+                                exit(i);
                                 break;
 
                             default:
@@ -750,17 +723,24 @@ int main(int argc, char *argv[])
                                 sops[0].sem_flg = IPC_NOWAIT;
                                 semop(fairStartSem, &sops[0], 1);
 
+                                /*Initialize messages queue for transactions pools*/
+                                tpList[i].procId = (long)child_pid;
+                                key = ftok(MSGFILEPATH, child_pid);
+                                FTOK_TEST_ERROR(key);
+                                tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL);
+                                MSG_TEST_ERROR(tpList[i].msgQId);
+
                                 /* Save users processes pid and state into usersList*/
-                                sops[2].sem_op = -1;
-                                sops[2].sem_num = 2;
-                                semop(nodeListSem, &sops[2], 1);
+                                sops[1].sem_op = -1;
+                                sops[1].sem_num = 2;
+                                semop(nodeListSem, &sops[1], 1);
 
                                 nodesList[i].procId = child_pid;
                                 nodesList[i].procState = ACTIVE;
 
-                                sops[2].sem_op = 1;
-                                sops[2].sem_num = 2;
-                                semop(nodeListSem, &sops[2], 1);
+                                sops[1].sem_op = 1;
+                                sops[1].sem_num = 2;
+                                semop(nodeListSem, &sops[1], 1);
 
                                 break;
                             }
@@ -946,7 +926,6 @@ int main(int argc, char *argv[])
                             {
                                 mybuf.pid = nodesList[extractedFriendsIndex[j]].procId;
                                 msgsnd(globalQueueId, &mybuf, sizeof(pid_t), 0);
-                                /* printf("Message %d[%d] delivered...\n", snd_kids[i], j); */
                             }
                         }
 
@@ -959,7 +938,7 @@ int main(int argc, char *argv[])
 
                         /* master lifecycle*/
                         printf("Master: starting lifecycle...\n");
-                        /*sleep(20);*/ /*CORREGGERE*/
+                        /*sleep(10);*/ /*CORREGGERE*/
                         while (1 && child_pid)
                         {
                             /* check if register is full: in that case it must
@@ -1845,15 +1824,6 @@ int main(int argc, char *argv[])
     exit(exitCode);
 }
 
-/* Function to free the space dedicated to the budget list */
-void budgetlist_free(budgetlist p)
-{
-	if (p == NULL) return;
-	
-	budgetlist_free(p->next);
-	free(p);
-}
-
 void tmpHandler(int sig)
 {
     printf("ONE LAST KEKW OF PID %ld\n", (long)getpid());
@@ -1890,7 +1860,7 @@ void endOfSimulation(int sig)
     boolean done = FALSE;
 
     /*
-    // viene inviato anche al master stesso ? In teoria no
+    // viene inviato anche al master stesso ? Sì
     // come assicurarsi che venga inviato a tutti?
     // fallisce se non viene inviato a nessuno
     // ma inviato != consegnato???*/
@@ -1909,9 +1879,31 @@ void endOfSimulation(int sig)
               "Master: trying to terminate simulation...\n",
               strlen("Master: trying to terminate simulation...\n"));
         /* error check*/
-        if (kill(0, SIGUSR1) == 0)
+        fflush(stdout);
+        if (noTerminated < noEffective)
         {
             /*
+                There are still active children that need
+                to be notified the end of simulation
+            */
+            for (i = 0; i < NO_ATTEMPS && !done; i++)
+            {
+                if (kill(0, SIGUSR1) == -1)
+                {
+                    safeErrorPrint("Master: failed to signal children for end of simulation. Error: ");
+                }
+                else
+                {
+                    write(STDOUT_FILENO,
+                          "Master: end of simulation notified successfully to children.\n",
+                          strlen("Master: end of simulation notified successfully to children.\n"));
+                    done = TRUE;
+                }
+            }
+        }
+        else
+            done = TRUE;
+        /*
             // wait for children
             // dovremmo aspettare solo la ricezione del segnale di terminazione????
             // mettere nell'handler
@@ -1921,12 +1913,17 @@ void endOfSimulation(int sig)
             // in caso di errore
             // in teoria questo si sblocca solo dopo la terminazione di tutti i figli
             // quindi ha senso fare così*/
+        if (done)
+        {
             write(STDOUT_FILENO,
                   "Master: waiting for children to terminate...\n",
                   strlen("Master: waiting for children to terminate...\n"));
+            /*
+                Conviene fare comunque la wait anche se tutti sono già terminati
+                in modo che non ci siano zombies
+            */
             while (wait(NULL) != -1)
                 ;
-
             if (errno == ECHILD)
             {
                 /*
@@ -1971,17 +1968,24 @@ void endOfSimulation(int sig)
             {
                 safeErrorPrint("Master: an error occurred while waiting for children. Description: ");
             }
-            /* Releasing local variables' memory*/
-            free(terminationMessage);
-            free(aus);
+            write(STDOUT_FILENO, "Master: simulation terminated successfully!!!\n", strlen("Master: simulation terminated successfully!!!\n"));
         }
         else
-            safeErrorPrint("Master: failed to signal children for end of simulation. Error: ");
-
-        if (!done)
+        {
+            deallocateFacilities(&exitCode);
             exitCode = EXIT_FAILURE;
+            write(STDOUT_FILENO,
+                  "Master: failed to terminate children. IPC facilties will be deallocated anyway.\n",
+                  strlen("Master: failed to terminate children. IPC facilties will be deallocated anyway.\n"));
+        }
     }
-
+    /* Releasing local variables' memory*/
+    free(terminationMessage);
+    /*
+                CORREGGERE: perchè la free va in errore ??
+                (Forse è per strcat)
+            */
+    /*free(aus);*/
     exit(exitCode);
 }
 
@@ -2206,7 +2210,11 @@ void deallocateFacilities(int *exitCode)
     char *aus = (char *)calloc(100, sizeof(char));
     int msgLength = 0;
     int i = 0;
+    TPElement *tmp;
 
+    printf("**********Il deallocatore è %ld**********\n", (long)getpid());
+    printf("**********Il padre del deallocatore è %ld**********\n", (long)getppid());
+    fflush(stdout);
     /* Deallocating register's partitions*/
     write(STDOUT_FILENO,
           "Master: deallocating register's paritions...\n",
@@ -2322,7 +2330,7 @@ void deallocateFacilities(int *exitCode)
             else
             {
                 msgLength = sprintf(aus,
-                                    "Master: register's partition number %d removed successfully.\n",
+                                    "Master: register's partition number %d shared variable segment removed successfully.\n",
                                     (i + 1));
                 write(STDOUT_FILENO, aus, msgLength);
             }
@@ -2331,18 +2339,22 @@ void deallocateFacilities(int *exitCode)
     free(noReadersPartitions);
 
     /* Transaction pools list deallocation*/
+    /*
+            Per il momento va in errore perchè non ci sono ancora le code
+        */
+    /*
     write(STDOUT_FILENO,
           "Master: deallocating transaction pools...\n",
           strlen("Master: deallocating transaction pools...\n"));
-    
-    while (tpList != NULL)
-    {
-
-        if (msgctl(tpList->msgQId, IPC_RMID, NULL) == -1)
+    tmp = tpList;
+    for (i = 0; tpList + i != NULL; i++){
+        printf("Id coda: %d\n", tpList[i].msgQId);
+        printf("Id Processo: %ld\n", (long)tpList[i].procId);
+        if (msgctl(tpList[i].msgQId, IPC_RMID, NULL) == -1)
         {
             msgLength = sprintf(aus,
-                                "Master: failed to remove transaction pool of process %ld",
-                                (long)tpList->procId);
+                                "Master: failed to remove transaction pool of process %ld\n",
+                                (long)tpList[i].procId);
             write(STDERR_FILENO, aus, msgLength);
 
             *exitCode = EXIT_FAILURE;
@@ -2351,10 +2363,20 @@ void deallocateFacilities(int *exitCode)
         {
             msgLength = sprintf(aus,
                                 "Master: transaction pool of node of PID %ld successfully removed.\n",
-                                tpList->procId);
+                                (long)tpList[i].procId);
             write(STDOUT_FILENO, aus, msgLength);
         }
-    }
+    }*/
+    /*
+    while (tmp != NULL)
+    {
+        printf("Id coda: %d\n", *(tmp).msgQId);
+        printf("Id Processo: %ld\n", *tmp.procId);
+        fflush(stdout);
+
+        tmp++;
+
+    }*/
     free(tpList);
 
     /* Deallocating process friends array*/
@@ -2438,7 +2460,7 @@ void deallocateFacilities(int *exitCode)
           strlen("Master: deallocating users' list semaphores...\n"));
     if (semctl(userListSem, 0, IPC_RMID) == -1)
     {
-        sprintf(aus, "Master: failed to remove users' list semaphores");
+        sprintf(aus, "Master: failed to remove users' list semaphores\n");
         write(STDERR_FILENO, aus, msgLength);
         *exitCode = EXIT_FAILURE;
     }
@@ -2455,7 +2477,7 @@ void deallocateFacilities(int *exitCode)
           strlen("Master: deallocating register's paritions mutex semaphores...\n"));
     if (semctl(mutexPartSem, 0, IPC_RMID) == -1)
     {
-        sprintf(aus, "Master: failed to remove register's paritions mutex semaphores");
+        sprintf(aus, "Master: failed to remove register's paritions mutex semaphores\n");
         write(STDERR_FILENO, aus, msgLength);
         *exitCode = EXIT_FAILURE;
     }
@@ -2466,12 +2488,15 @@ void deallocateFacilities(int *exitCode)
               strlen("Master: register's paritions mutex semaphores successfully removed.\n"));
     }
 
+    /*
+        Correggere: per il momento l'eliminazione di questo semaforo fallisce
+    */
     write(STDOUT_FILENO,
           "Master: deallocating user list's semaphores...\n",
           strlen("Master: deallocating user list's semaphores...\n"));
     if (semctl(userListSem, 0, IPC_RMID) == -1)
     {
-        sprintf(aus, "Master: failed to remove user list's semaphores");
+        sprintf(aus, "Master: failed to remove user list's semaphores\n");
         write(STDERR_FILENO, aus, msgLength);
         *exitCode = EXIT_FAILURE;
     }
