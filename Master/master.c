@@ -85,6 +85,11 @@ int *noUserSegReadersPtr = NULL;
 int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
                       // to read and write nodes list*/
 
+/* IO L'HO AGGIUNTO; CHIEDERE SE VA BENE O SE NON SERVE */
+int noNodeSegReaders = -1; /* id of the shared memory segment that contains the variable used to syncronize
+                              readers and writers access to nodes list */
+int *noNodeSegReadersPtr = NULL;
+
 /*
     ATTENZIONE AL TIPO DI DATO!!!
 */
@@ -477,6 +482,28 @@ void estrai(int k)
 }
 
 void tmpHandler(int sig);
+
+
+/**************** CAPIRE SE SPOSTARE IN INFO.H O SE LASCIARE QUI ****************/
+
+/* struct that rappresents a process and its budget*/
+typedef struct proc_budget {
+	pid_t proc_pid;
+	int budget;
+	int p_type; /* type of node: 0 if user, 1 if node */
+	struct proc_budget * next;
+} proc_budget;
+
+/* list of budgets for every user and node process */
+typedef proc_budget* budgetlist;
+
+/* function that frees the space allocated for budgetlist p */
+void budgetlist_free(budgetlist p);
+
+/* initialization of the budgetlist - array to maintain budgets read from ledger */
+budgetlist bud_list = NULL;
+
+/**************** CAPIRE SE SPOSTARE IN INFO.H O SE LASCIARE QUI ****************/
 
 int main(int argc, char *argv[])
 {
