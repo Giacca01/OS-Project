@@ -89,7 +89,8 @@ int *noNodeSegReadersPtr = NULL;
 /*
     ATTENZIONE AL TIPO DI DATO!!!
 */
-int noTerminated = 0; // NUmber of processes that terminated before end of simulation
+int noTerminated = 0; /* Number of processes that terminated before end of simulation */
+int noEffective = 0; /* Holds the effective number of child processes: must be implemented when a new node is created */
 /******************************************/
 
 /***** Definition of global variables that contain *****/
@@ -386,7 +387,7 @@ void initializeIPCFacilities()
     /* AGGIUNTO DA STEFANO */
 	key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
     FTOK_TEST_ERROR(key);
-	noNodeSegReaders = shmget(key, sizeof(SO_NODES_NUM), S_IRUSR | S_IWUSR);
+	noNodeSegReaders = shmget(key, sizeof(SO_NODES_NUM), IPC_CREAT | S_IRUSR | S_IWUSR);
 	SHM_TEST_ERROR(noNodeSegReaders);
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
     *noNodeSegReadersPtr = 0;
@@ -503,7 +504,6 @@ budgetlist bud_list = NULL;
 int main(int argc, char *argv[])
 {
     pid_t child_pid;
-    int status;
     struct sembuf sops[3];
     struct msgbuff mybuf;
     sigset_t set;
@@ -519,22 +519,45 @@ int main(int argc, char *argv[])
 
 	/* definition of objects necessary for nanosleep */
 	struct timespec onesec, tim;
-	onesec.tv_sec=1;
-	onesec.tv_nsec=0;
 	
 	/* definition of indexes for cycles */
 	int k, ct_updates;
 
 	/* array that keeps memory of the block we stopped reading budgets for every partition of register  */
 	int prev_read_nblock[REG_PARTITION_COUNT];
-	for(i = 0; i < REG_PARTITION_COUNT; i++)
-		prev_read_nblock[i] = 0; /* qui memorizzo il blocco a cui mi sono fermato allo scorso ciclo nella i-esima partizione */
 
 	int ind_block; /* indice per scorrimento blocchi */
 	int ind_tr_in_block = 0; /* indice per scorrimento transazioni in blocco */
 
     /* counters for active user and node processes */
     int c_users_active, c_nodes_active;
+
+    /* declaring message structures used with global queue */
+    MsgGlobalQueue msg_from_node, msg_from_user, msg_to_node, msg_to_master;
+
+    /* declaring counter for transactions read from global queue */
+    int c_msg_read;
+    
+    /* declaration of array of transactions for new node creation*/
+    Transaction * transanctions_read;
+
+    /* variables for new node creation */
+    int * id_new_friends; /* array to keep track of already chosen new friends */
+    int new; /* flag */
+    int index, tr_written;
+
+    /* declaring of message for new transaction pool of new node */
+    MsgTP new_trans;
+
+    /* declaring of variables for sending transactions over TP of new node */
+    int tpl_length, tp_new_node;
+
+    /* declaring of variables for budget update */
+    Block block;
+    Transaction trans;
+
+    /* variables that keeps track of user terminated */
+    int noUserTerminated = 0;
 
     char *argVec[] = {NULL};
     char *envVec[] = {NULL};
@@ -548,6 +571,14 @@ int main(int argc, char *argv[])
     sops[2].sem_flg = 0;
 
     extractedFriendsIndex = (int *)malloc(SO_FRIENDS_NUM * sizeof(int));
+	
+    /* setting data for waiting for one second */
+    onesec.tv_sec=1;
+	onesec.tv_nsec=0;
+
+    /* erasing of prev_read_nblock array */
+    for(i = 0; i < REG_PARTITION_COUNT; i++)
+		prev_read_nblock[i] = 0; /* qui memorizzo il blocco a cui mi sono fermato allo scorso ciclo nella i-esima partizione */
 
     printf("PID MASTER: %ld\n", (long)getpid());
     printf("Master: setting up simulation timer...\n");
@@ -556,7 +587,7 @@ int main(int argc, char *argv[])
         CORREGGERE, va letta da file
     */
     /* SO_SIM_SEC = 200; */
-    printf("Master simulation lasts %d seconnds\n", SO_SIM_SEC);
+    printf("Master simulation lasts %d seconds\n", SO_SIM_SEC);
     if (alarm(SO_SIM_SEC) != 0)
         unsafeErrorPrint("Master: failed to set simulation timer. ");
     else
@@ -590,6 +621,9 @@ int main(int argc, char *argv[])
                         exit(EXIT_FAILURE);
                     else
                         printf("Master: configuration parameters read successfully!!!\n");
+
+                    noEffective = SO_NODES_NUM + SO_USERS_NUM;
+                    noTerminated = 0;
 
                     /*****  Creates and initialize the IPC Facilities   *****/
                     /********************************************************/
@@ -779,7 +813,7 @@ int main(int argc, char *argv[])
                             new_el = malloc(sizeof(*new_el));
                             /* DEVO ACCEDERVI IN MUTUA ESCLUSIONE */
                             new_el->proc_pid = usersList[i].procId;
-                            new_el->budget = atoi(getenv("SO_BUDGET_INIT"));
+                            new_el->budget = SO_BUDGET_INIT;
                             new_el->p_type = 0;
                             new_el->next = bud_list;
                             bud_list = new_el;
@@ -1192,13 +1226,13 @@ int main(int argc, char *argv[])
 	                                    /* ciclo di scorrimento dei blocchi della i-esima partizione */
 	                                    while(ind_block < regPtrs[i]->nBlocks)
 	                                    { /* CONTROLLARE SE GIUSTO O SE DEVO USARE REG_PARTITION_SIZE */
-	                                        Block block = regPtrs[i]->blockList[ind_block]; /* restituisce il blocco di indice ind_block */
+	                                        block = regPtrs[i]->blockList[ind_block]; /* restituisce il blocco di indice ind_block */
 	                                        ind_tr_in_block = 0;
                                         
 	                                        /* scorro la lista di transizioni del blocco di indice ind_block */
 	                                        while(ind_tr_in_block < SO_BLOCK_SIZE)
 	                                        {
-	                                            Transaction trans = block.transList[ind_tr_in_block]; /* restituisce la transazione di indice ind_tr_in_block */
+	                                            trans = block.transList[ind_tr_in_block]; /* restituisce la transazione di indice ind_tr_in_block */
                                             
 	                                            ct_updates = 0; /* conta il numero di aggiornamenti di budget fatti per la transazione (totale 2, uno per sender e uno per receiver) */
 	                                            if(trans.sender == -1)
@@ -1306,15 +1340,15 @@ int main(int argc, char *argv[])
 
                             /**** PRINT BUDGET OF EVERY PROCESS ****/
                             /***************************************/
-		  
+                            
                             /* print budget of every process with associated PID */
                             printf("Master: Budget of processes:\n");
                             for(el_list = bud_list; el_list != NULL; el_list = el_list->next)
                             {
-                                if(el_list->p_type) /* Budget of user process */
-                                    printf("Master:  - USER PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
-                                else /* Budget of node process */
+                                if(el_list->p_type) /* Budget of node process */
                                     printf("Master:  - NODE PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                else /* Budget of user process */
+                                    printf("Master:  - USER PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
                             }
 
                             /**** END OF PRINT BUDGET OF EVERY PROCESS ****/
@@ -1326,20 +1360,14 @@ int main(int argc, char *argv[])
 	                         * creation of a new node process if a transaction doesn't fit in 
 	                         * any transaction pool of existing node processes
 	                         */
-	                        MsgGlobalQueue msg_from_node;
-	                        int c_msg_read;
 	                        c_msg_read = 0;
-	                        int SO_TP_SIZE = atoi(getenv("SO_TP_SIZE"));
-	                        Transaction transanctions_read[SO_TP_SIZE]; /* array of transactions read from global queue */
+	                        transanctions_read = (Transaction*)calloc(SO_TP_SIZE, sizeof(Transaction)); /* array of transactions read from global queue */
 
 	                        /* messages reading cycle */
-	                        /* MSG_COPY solo LINUX, non va bene..... */
-	                        /* IN CASO DECIDIAMO CHE NON VADA BENE MSG_COPY, DEVO TOGLIERLO E SE NON È IL MESSAGGIO CHE VOGLIO LO DEVO RISCRIVERE SULLA CODA */
-	                        while(msgrcv(globalQueueId, &msg_from_node, sizeof(msg_from_node)-sizeof(long), getpid(), IPC_NOWAIT | MSG_COPY) != -1 && c_msg_read < SO_TP_SIZE)
+	                        while(msgrcv(globalQueueId, &msg_from_node, sizeof(msg_from_node)-sizeof(long), (long)getpid(), IPC_NOWAIT | MSG_COPY) != -1 && c_msg_read < SO_TP_SIZE)
 	                        {
 	                            /* come dimensione specifichiamo sizeof(msg_from_node)-sizeof(long) perché bisogna specificare la dimensione del testo, non dell'intera struttura */
 	                            /* come mType prendiamo i messaggi destinati al Master, cioè il suo pid (prende il primo messaggio con quel mType) */
-	                            /* prendiamo il messaggio con flag MSG_COPY perché altrimenti se non è di tipo NEWNODE lo elimineremmo */
                             
 	                            /* in questo caso cerchiamo i messaggi con msgContent NEWNODE */
 	                            if(msg_from_node.msgContent == NEWNODE)
@@ -1355,15 +1383,17 @@ int main(int argc, char *argv[])
 	                                /* DA TESTARE !!!!!! */
                                 
 	                                c_msg_read++;
-
-	                                /* Removing the message that we have consumed from the global queue */
-	                                if(msgrcv(globalQueueId, &msg_from_node, sizeof(msg_from_node)-sizeof(long), getpid(), IPC_NOWAIT) == -1)
-	                                {
-	                                    unsafeErrorPrint("Master: failed to remove the transaction from the global queue. Error: ");
-	                                    exit(EXIT_FAILURE); /* VA SOSTITUITA CON EndOfSimulation ??? */
-	                                    /* This is necessary, otherwise the message won't be removed from queue and transaction processed two times (?) */
-	                                }
 	                            }
+                                else
+                                {
+                                    /* Reinserting the message that we have consumed from the global queue */
+	                                if(msgsnd(globalQueueId, &msg_from_node, sizeof(msg_from_node)-sizeof(long), 0) == -1)
+	                                {
+	                                    unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for new node creation. Error: ");
+	                                    exit(EXIT_FAILURE); /* VA SOSTITUITA CON EndOfSimulation ??? */
+	                                    /* This is necessary, otherwise the message won't be reinserted in queue and transaction lost forever */
+	                                }
+                                }
 	                        }
 
 	                        /* SHOULD CHECK IF ERRNO is ENOMSG, otherwise an error occurred */
@@ -1371,7 +1401,7 @@ int main(int argc, char *argv[])
 	                        {
 	                            if(c_msg_read == 0)
 	                            {
-	                                printf("Master: no creation of new node needed\n");
+	                                printf("Master: creation of new node not needed\n");
 	                            }
 	                            else 
 	                            {
@@ -1380,9 +1410,7 @@ int main(int argc, char *argv[])
 	                                /******* CREATION OF NEW NODE PROCESS *******/
 	                                /********************************************/
 
-	                                int id_new_friends[SO_FRIENDS_NUM]; /* array to keep track of already chosen new friends */
-	                                int new; /* flag */
-	                                int index, tr_written;
+	                                id_new_friends = (int*)calloc(SO_FRIENDS_NUM, sizeof(int)); /* array to keep track of already chosen new friends */
 
 	                                /* setting every entry of array to -1 (it rappresents "not chosen") */
 	                                for(i = 0; i < SO_FRIENDS_NUM; i++)
@@ -1405,6 +1433,9 @@ int main(int argc, char *argv[])
 	                                        new_el->p_type = 1;
 	                                        new_el->next = bud_list;
 	                                        bud_list = new_el;
+
+                                            /* Updating number of effective active processes */
+                                            noEffective++;
                                         
 	                                        srand(getpid()); /* we put it here so that for every new node we generate a different sequence */
 
@@ -1477,7 +1508,6 @@ int main(int argc, char *argv[])
 	                                                else
 	                                                {
 	                                                    /* declaration of node to send to new friend */
-	                                                    MsgGlobalQueue msg_to_node;
 	                                                    msg_to_node.mType = getpid();
 	                                                    msg_to_node.msgContent = FRIENDINIT;
 	                                                    msg_to_node.friend.procId = nodesList[index].procId;
@@ -1595,7 +1625,6 @@ int main(int argc, char *argv[])
 	                                                else
 	                                                {
 	                                                    /* here we notice the friend node of its new friend (the new node created here) */
-	                                                    MsgGlobalQueue msg_to_node;
 	                                                    msg_to_node.mType = nodesList[index].procId; /* devo accedervi in mutua esclusione (vedi foto Fede) */
 	                                                    msg_to_node.msgContent = NEWFRIEND;
 	                                                    msg_to_node.friend.procId = getpid();
@@ -1646,7 +1675,7 @@ int main(int argc, char *argv[])
 
 	                                        /* add a new entry to the tpList array */
 	                                        tpList = (TPElement *)realloc(tpList, sizeof(*tpList) + sizeof(TPElement));
-	                                        int tpl_length = sizeof(*tpList)/sizeof(TPElement); /* get tpList length */
+	                                        tpl_length = sizeof(*tpList)/sizeof(TPElement); /* get tpList length */
 	                                        /* Initialize messages queue for transactions pools */
 	                                        tpList[tpl_length-1].procId = getpid();
 	                                        tpList[tpl_length-1].msgQId = msgget(ftok(MSGFILEPATH, getpid()), IPC_CREAT | IPC_EXCL | 0600);
@@ -1657,11 +1686,10 @@ int main(int argc, char *argv[])
 	                                            exit(EXIT_FAILURE); /* VA SOSTITUITO CON EndOfSimulation ??? */
 	                                        }
 
-	                                        int tp_new_node = tpList[tpl_length-1].msgQId;
+	                                        tp_new_node = tpList[tpl_length-1].msgQId;
 	                                        /* here we have to insert transactions read from global queue in new node TP*/
 	                                        for(tr_written = 0; tr_written < c_msg_read; tr_written++)
 	                                        {   /* c_msg_read is the number of transactions actually read */
-	                                            MsgTP new_trans;
 	                                            new_trans.mType = getpid();
 	                                            memcpy(&new_trans.transaction, &transanctions_read[tr_written], sizeof(new_trans.transaction));
 	                                            if(msgsnd(tp_new_node, &new_trans, sizeof(new_trans)-sizeof(long), 0) == -1)
@@ -1674,6 +1702,8 @@ int main(int argc, char *argv[])
 
 	                                        /* TO COMPLETE....... */
 	                                        /*execve(...);*/ 
+
+                                            exit(EXIT_SUCCESS); /* da rimuovere con execve */
 	                                        break;
 	                                    default:
 	                                        /* MASTER */
@@ -1704,14 +1734,12 @@ int main(int argc, char *argv[])
                             /********************************/
                         
 	                        /* Check if a user process has terminated to update the usersList */
-                            MsgGlobalQueue msg_from_user;
-                            /* MSG_COPY solo LINUX, non va bene..... */
-                            /* IN CASO DECIDIAMO CHE NON VADA BENE MSG_COPY, DEVO TOGLIERLO E SE NON È IL MESSAGGIO CHE VOGLIO LO DEVO RISCRIVERE SULLA CODA */
-                            while(msgrcv(globalQueueId, &msg_from_user, sizeof(msg_from_user)-sizeof(long), getpid(), IPC_NOWAIT | MSG_COPY) != -1)
+                            noUserTerminated = 0; /* resetting user terminated counter */
+                            
+                            while(msgrcv(globalQueueId, &msg_from_user, sizeof(msg_from_user)-sizeof(long), getpid(), IPC_NOWAIT) != -1)
                             {
                                 /* come dimensione specifichiamo sizeof(msg_from_user)-sizeof(long) perché bisogna specificare la dimensione del testo, non dell'intera struttura */
                                 /* come mType prendiamo i messaggi destinati al Master, cioè il suo pid (prende il primo messaggio con quel mType) */
-                                /* prendiamo il messaggio con flag MSG_COPY perché altrimenti se non è di tipo TERMINATEDUSER lo elimineremmo */
                                 
                                 /* in questo caso cerchiamo i messaggi con msgContent TERMINATEDUSER */
                                 if(msg_from_user.msgContent == TERMINATEDUSER)
@@ -1734,7 +1762,12 @@ int main(int argc, char *argv[])
                                             {
                                                 /* we found the user process terminated */
                                                 usersList[i].procState = TERMINATED;
+                                                /* Updating number of terminated processes */
                                                 noTerminated++;
+                                                /* Updating number of user terminated counter*/
+                                                noUserTerminated++;
+                                                /* Updating number of effective active processes */
+                                                noEffective--;
                                                 break;
                                                 /* we stop the cycle now that we found the process */
                                             }
@@ -1751,15 +1784,18 @@ int main(int argc, char *argv[])
                                         }
                                         else 
                                         {
-                                            printf("Master: the user process with pid %ld has terminated\n", msg_from_user.userPid);
-                                            /* Removing the message that we have consumed from the global queue */
-                                            if(msgrcv(globalQueueId, &msg_from_user, sizeof(msg_from_user)-sizeof(long), getpid(), IPC_NOWAIT) == -1)
-                                            {
-                                                unsafeErrorPrint("Master: failed to remove the message of terminated user from the global queue. Error: ");
-                                                /* Is this is necessary ? */
-                                                /*exit(EXIT_FAILURE); /* VA SOSTITUITA CON EndOfSimulation ??? */
-                                            }
+                                            printf("Master: the user process with pid %5d has terminated\n", msg_from_user.userPid);
                                         }
+                                    }
+                                }
+                                else
+                                {
+                                    /* Reinserting the message that we have consumed from the global queue */
+                                    if(msgsnd(globalQueueId, &msg_from_user, sizeof(msg_from_user)-sizeof(long), 0) == -1)
+                                    {
+                                        unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated users. Error: ");
+                                        exit(EXIT_FAILURE); /* VA SOSTITUITA CON EndOfSimulation ??? */
+                                        /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
                                     }
                                 }
                             }
@@ -1767,7 +1803,8 @@ int main(int argc, char *argv[])
                             /* If errno is ENOMSG, no message of user termination on global queue, otherwise an error occured */
                             if(errno == ENOMSG) 
                             {
-                                printf("Master: no user process has terminated.\n");
+                                if(!noUserTerminated)
+                                    printf("Master: no user process has terminated.\n");
                             }
                             else 
 	                        {
@@ -1790,6 +1827,8 @@ int main(int argc, char *argv[])
 
 	                        /* now sleep for 1 second */
 	                        nanosleep(&onesec, &tim);
+
+                            printf("--------------- END OF CYCLE ---------------\n"); /* for debug purpose */
 	                    }
 					}
 					else 
@@ -2225,7 +2264,7 @@ void deallocateFacilities(int *exitCode)
         {
             write(STDOUT_FILENO,
                   "Master: users' list memory segment successfully removed.\n",
-                  strlen("Master: users list memory segment successfully removed.\n"));
+                  strlen("Master: users' list memory segment successfully removed.\n"));
         }
     }
 
@@ -2249,7 +2288,7 @@ void deallocateFacilities(int *exitCode)
         {
             write(STDOUT_FILENO,
                   "Master: nodes' list memory segment successfully removed.\n",
-                  strlen("Master: nodes list memory segment successfully removed.\n"));
+                  strlen("Master: nodes' list memory segment successfully removed.\n"));
             /*
                 Non serve: abbiamo già deallocato il segmento di memoria condivisa
             */
@@ -2295,6 +2334,7 @@ void deallocateFacilities(int *exitCode)
     write(STDOUT_FILENO,
           "Master: deallocating transaction pools...\n",
           strlen("Master: deallocating transaction pools...\n"));
+    
     while (tpList != NULL)
     {
 
