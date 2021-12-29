@@ -103,7 +103,10 @@ int main()
 			                clock_gettime(CLOCK_REALTIME, &rew_tran.timestamp); /* get timestamp for transaction */
 
 			                /* cycle for extract transaction from TP */
-			                while (i < SO_BLOCK_SIZE-1) 
+                            /*
+                                Estrae SO_BLOCK_SIZE-1 transazioni dalla transaction pool
+                            */
+                            while (i < SO_BLOCK_SIZE-1) 
 			                {
 			                    /* now receiving the message (transaction from TP) */
 			                    num_bytes = msgrcv(tpId, &new_trans, sizeof(new_trans)-sizeof(long), getpid(), 0);
@@ -114,10 +117,19 @@ int main()
 			                        extractedBlock.transList[i] = new_trans.transaction;
 			                        /* adding reward of transaction in amountSend of reward_transaction */
 			                        rew_tran.amountSend += new_trans.transaction.reward;
-			                        extractedBlock.bIndex = i++;
-			                    }
+
+                                    candidateBlock.transList[i] = new_trans.transaction;
+
+                                    extractedBlock.bIndex = i++;
+                                    candidateBlock.bIndex = i++;
+                                }
 			                    else
 			                    {
+                                    /*
+                                        Potrebbe avere senso far ripartire l'estrazione da capo ?
+                                        No, non cambierebbe nulla, ricordare che le transazioni nel TP
+                                        non sono legate, quindi in un blocco possono esserci transazioni qualsiasi
+                                    */
 			                        unsafeErrorPrint("Node: failed to retrieve transaction from Transaction Pool. Error: ");
 			                    }
 
@@ -130,16 +142,20 @@ int main()
 
 			                /* creating candidate block by coping transactions in extracted block */
                             /* VEDERE SE CAMBIARE - PER ME È PERDITA DI TEMPO (es. togliendo candidateBlock e usando direttamente extractedBlock */
-			                i = 0;
+			                /*
+                                Per ridurre la perdita di tempo si può spostare questa operazione dentro il ciclo di estrazione
+                            */
+                            /*
+                            i = 0;
 			                while(i < SO_BLOCK_SIZE-1)
 			                {
 			                    candidateBlock.transList[i] = extractedBlock.transList[i];
 			                    i++;
-			                }
+			                }*/
 			                
                             /* putting reward transaction in extracted block */
 			                candidateBlock.transList[i] = rew_tran;
-                            candidateBlock.bIndex = i;
+                            /*candidateBlock.bIndex = i;*/
 
                             /*
                                 Writes the block of transactions "elaborated"
