@@ -23,6 +23,8 @@
 #include "info.h"
 
 #define NO_ATTEMPS 3 /* Maximum number of attemps to terminate the simulation*/
+#define MAX_PRINT_PROCESSES 15 /* Maximum number of processes which we show budget, if noEffective > MAX_PRINT_PROCESSES we only print max and min budget */
+#define NO_ATTEMPTS_UPDATE_BUDGET 3 /* Number of attempts to update budget reading a block on register */
 
 union semun
 {
@@ -493,17 +495,37 @@ typedef struct proc_budget {
 	pid_t proc_pid;
 	int budget;
 	int p_type; /* type of node: 0 if user, 1 if node */
-	struct proc_budget * next;
+	struct proc_budget * prev; /* keeps link to previous node */
+    struct proc_budget * next; /* keeps link to next node */
 } proc_budget;
 
-/* list of budgets for every user and node process */
+/* linked list of budgets for every user and node process */
 typedef proc_budget* budgetlist;
+/* budgetlist is implemented as a linked list */
 
-/* function that frees the space allocated for budgetlist p */
+/* Function to free the space dedicated to the budget list p passed as argument */
 void budgetlist_free(budgetlist p);
 
-/* initialization of the budgetlist - array to maintain budgets read from ledger */
-budgetlist bud_list = NULL;
+/* 
+ * Function that inserts in the global list bud_list the node passed as
+ * argument in an ordered way (the list is ordered in ascending order).
+ */
+void insert_ordered(budgetlist);
+
+/*
+ * Function that searches in the gloabl list bud_list for an element with
+ * proc_pid as the one passed as first argument; if it's found, upgrades its budget
+ * adding the second argument, which is a positive or negative amount.
+ * It returns -1 in case an error happens, otherwise it returns 0 on success.
+ */
+int update_budget(pid_t, int);
+
+/* initialization of the budgetlist head - array to maintain budgets read from ledger */
+budgetlist bud_list_head = NULL;
+/* initialization of the budgetlist tail - array to maintain budgets read from ledger */
+budgetlist bud_list_tail = NULL;
+
+/**/
 
 /**************** CAPIRE SE SPOSTARE IN INFO.H O SE LASCIARE QUI ****************/
 
@@ -534,6 +556,13 @@ int main(int argc, char *argv[])
 
 	int ind_block; /* indice per scorrimento blocchi */
 	int ind_tr_in_block = 0; /* indice per scorrimento transazioni in blocco */
+    
+    /* variable that keeps track of the attempts to update a budget, 
+    if > NO_ATTEMPTS_UPDATE_BUDGET we switch to next block */
+    int bud_update_attempts = 0;
+
+    /* variable that keeps memory of the previous budget, used in print of budget */
+    int prev_bud = 0;
 
     /* counters for active user and node processes */
     int c_users_active, c_nodes_active;
@@ -825,8 +854,7 @@ int main(int argc, char *argv[])
                             new_el->proc_pid = usersList[i].procId;
                             new_el->budget = SO_BUDGET_INIT;
                             new_el->p_type = 0;
-                            new_el->next = bud_list;
-                            bud_list = new_el;
+                            insert_ordered(new_el); /* insert user on budgetlist */
                         }
 
                         /* we enter the critical section for the noUserSegReadersPtr variabile */
@@ -906,8 +934,7 @@ int main(int argc, char *argv[])
                             new_el->proc_pid = nodesList[i].procId;
                             new_el->budget = 0;
                             new_el->p_type = 1;
-                            new_el->next = bud_list;
-                            bud_list = new_el;
+                            insert_ordered(new_el); /* insert node on budgetlist */
                         }
 
                         /* we enter the critical section for the noNodeSegReadersPtr variabile */
@@ -1237,6 +1264,7 @@ int main(int argc, char *argv[])
 	                                    { /* CONTROLLARE SE GIUSTO O SE DEVO USARE REG_PARTITION_SIZE */
 	                                        block = regPtrs[i]->blockList[ind_block]; /* restituisce il blocco di indice ind_block */
 	                                        ind_tr_in_block = 0;
+                                            bud_update_attempts = 0; /* reset attempts */
                                         
 	                                        /* scorro la lista di transizioni del blocco di indice ind_block */
 	                                        while(ind_tr_in_block < SO_BLOCK_SIZE)
@@ -1253,6 +1281,17 @@ int main(int argc, char *argv[])
 	                                                */
 	                                            }
                                                 
+                                                /* update budget of sender of transaction, the amount is negative */
+                                                /* error checking not needed, already done in function */
+                                                if(update_budget(trans.sender, -(trans.amountSend)) == 0)
+                                                    ct_updates++;
+
+                                                /* update budget of receiver of transaction, the amount is positive */
+                                                /* error checking not needed, already done in function */
+                                                if(update_budget(trans.sender, trans.amountSend) == 0)
+                                                    ct_updates++;
+
+#if 0
 	                                            for(el_list = bud_list; el_list != NULL; el_list = el_list->next)
 	                                            {
 	                                                /* guardo sender --> devo decrementare di amountSend il suo budget */
@@ -1279,8 +1318,20 @@ int main(int argc, char *argv[])
 	                                                if(ct_updates == 2)
 	                                                    break;
 	                                            }
-
-	                                            ind_tr_in_block++;
+#endif
+                                                /* if we have done two updates, we can switch to next block, otherwise we stay on this */
+                                                if(ct_updates == 2)
+                                                {
+	                                                ind_tr_in_block++;
+                                                }
+                                                else
+                                                {
+                                                    /* we had a problem updating budgets from this block */
+                                                    bud_update_attempts++;
+                                                    /* if we already tryied NO_ATTEMPTS_UPDATE_BUDGET to update budget from this block, we change block */
+                                                    if(bud_update_attempts > NO_ATTEMPTS_UPDATE_BUDGET)
+                                                        ind_tr_in_block++;
+                                                }
 	                                        }
 
 	                                        ind_block++;
@@ -1351,13 +1402,54 @@ int main(int argc, char *argv[])
                             /***************************************/
                             
                             /* print budget of every process with associated PID */
-                            printf("Master: Budget of processes:\n");
-                            for(el_list = bud_list; el_list != NULL; el_list = el_list->next)
+                            if(noEffective <= MAX_PRINT_PROCESSES)
                             {
-                                if(el_list->p_type) /* Budget of node process */
-                                    printf("Master:  - NODE PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
-                                else /* Budget of user process */
-                                    printf("Master:  - USER PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                /* 
+                                 * the number of effective processes is lower or equal than the maximum we established, 
+                                 * so we print budget of all processes 
+                                 */
+                                printf("Master: Printing budget of all the processes.\n");
+                            
+                                for(el_list = bud_list_head; el_list != NULL; el_list = el_list->next)
+                                {
+                                    if(el_list->p_type) /* Budget of node process */
+                                        printf("Master:  - NODE PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                    else /* Budget of user process */
+                                        printf("Master:  - USER PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                }
+                            }
+                            else
+                            {
+                                /* 
+                                 * the number of effective processes is bigger than the maximum we established, so 
+                                 * we print only the maximum and minimum budget in the list 
+                                 */
+
+                                printf("Master: There are too many processes. Printing only minimum and maximum budgets.\n");
+                                
+                                /* printing minimum budget in budgetlist - we print all processes' budget that is minimum */
+                                el_list = bud_list_head;
+                                while(el_list != NULL && el_list->budget == bud_list_head->budget)
+                                {
+                                    if(el_list->p_type) /* Budget of node process */
+                                        printf("Master:  - NODE PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                    else /* Budget of user process */
+                                        printf("Master:  - USER PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                    
+                                    el_list = el_list->next;
+                                }
+
+                                /* printing maximum budget in budgetlist - we print all processes' budget that is maximum */
+                                el_list = bud_list_tail;
+                                while(el_list != NULL && el_list->budget == bud_list_tail->budget)
+                                {
+                                    if(el_list->p_type) /* Budget of node process */
+                                        printf("Master:  - NODE PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                    else /* Budget of user process */
+                                        printf("Master:  - USER PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                    
+                                    el_list = el_list->prev;
+                                }
                             }
 
                             /**** END OF PRINT BUDGET OF EVERY PROCESS ****/
@@ -1440,8 +1532,7 @@ int main(int argc, char *argv[])
 	                                        new_el->proc_pid = getpid();
 	                                        new_el->budget = 0;
 	                                        new_el->p_type = 1;
-	                                        new_el->next = bud_list;
-	                                        bud_list = new_el;
+                                            insert_ordered(new_el);
 
                                             /* Updating number of effective active processes */
                                             noEffective++;
@@ -1854,13 +1945,143 @@ int main(int argc, char *argv[])
     exit(exitCode);
 }
 
-/* Function to free the space dedicated to the budget list */
+/* Function to free the space dedicated to the budget list p passed as argument */
 void budgetlist_free(budgetlist p)
 {
 	if (p == NULL) return;
 	
 	budgetlist_free(p->next);
 	free(p);
+}
+
+/* 
+ * Function that inserts in the global list bud_list the node passed as
+ * argument in an ordered way (the list is ordered in ascending order).
+ */
+void insert_ordered(budgetlist new_el)
+{
+	budgetlist el;
+	budgetlist prev;
+	
+	/* insertion on empty list */
+	if(bud_list_head == NULL)
+	{
+		new_el->prev = NULL;
+		new_el->next = NULL;
+		bud_list_head = new_el;
+		bud_list_tail = new_el;
+		return;
+	}
+	
+	/* insertion on head of list */
+	if(new_el->budget <= bud_list_head->budget)
+	{
+		new_el->prev = NULL;
+		new_el->next = bud_list_head;
+		bud_list_head->prev = new_el;
+		bud_list_head = new_el;
+		return;
+	}
+	
+	/* insertion on tail of list */
+	if(new_el->budget >= bud_list_tail->budget)
+	{
+		new_el->next = NULL;
+		new_el->prev = bud_list_tail;
+		bud_list_tail->next = new_el;
+		bud_list_tail = new_el;
+		return;
+	}
+	
+	/* insertion in middle of list */
+	prev = bud_list_head;
+	
+	for(el = bud_list_head->next; el != NULL; el = el->next)
+	{
+		if(new_el->budget <= el->budget)
+		{
+			new_el->next = el;
+			el->prev = new_el;
+			
+			prev->next = new_el;
+			new_el->prev = prev;
+			return;
+		}
+		prev = el;
+	}
+}
+
+/*
+ * Function that searches in the gloabl list bud_list for an element with
+ * proc_pid as the one passed as first argument; if it's found, upgrades its budget
+ * adding the second argument, which is a positive or negative amount.
+ */
+int update_budget(pid_t remove_pid, int amount_changing)
+{
+    budgetlist new_el;
+	budgetlist el;
+	budgetlist prev;
+	int found = 0;
+    char *msg = NULL;
+	
+	/* check if budgetlist is NULL, if yes its an error */
+	if(bud_list_head == NULL)
+	{
+		safeErrorPrint("Master: Error in function update_budget: NULL list passed to the function\n");
+		return -1;
+	}
+	
+	if(bud_list_head->proc_pid == remove_pid)
+	{
+		/* se il nodo di cui aggiornare il budget è il primo della lista,
+		allora lo togliamo dalla lista (dopo lo reinseriremo) */
+		new_el = bud_list_head;
+		bud_list_head = bud_list_head->next;
+		bud_list_head->prev = NULL;
+		found = 1;
+	}
+	else if(bud_list_tail->proc_pid == remove_pid)
+	{
+		/* se il nodo di cui aggiornare il budget è l'ultimo della lista,
+		allora lo togliamo dalla lista (dopo lo reinseriremo) */
+		new_el = bud_list_tail;
+		bud_list_tail = bud_list_tail->prev;
+		bud_list_tail->next = NULL;
+		found = 1;
+	}
+	else
+	{	
+		/* il nodo di cui aggiornare il budget si trova a metà della lista,
+		dobbiamo cercarlo e rimuoverlo dalla lista (dopo lo reinseriremo) */
+		prev = bud_list_head;
+		
+		for(el = bud_list_head->next; el != NULL && !found; el = el->next)
+		{
+			if(el->proc_pid == remove_pid)
+			{
+				/* ho trovato il nodo da aggiornare, devo rimuoverlo */
+				/* devo modificare sia il riferimento al next che al prev */
+				prev->next = el->next;
+				(el->next)->prev = prev;
+				new_el = el;
+				found = 1;
+			}
+			prev = el;
+		}
+	}
+	
+	if(found == 0)
+	{
+		sprintf(msg, "Master: Trying to update budget but no element in budgetlist with pid %5d\n", remove_pid);
+		safeErrorPrint(msg);
+		return -1;
+	}
+	
+	/* update budget of removed element */
+	new_el->budget += amount_changing; /* amount_changing is a positive or negative value */
+	
+	insert_ordered(new_el);
+    return 0;
 }
 
 void tmpHandler(int sig)
@@ -2640,5 +2861,5 @@ void deallocateFacilities(int *exitCode)
     free(aus);
 
     /* Releasing budget list's memory */
-    budgetlist_free(bud_list);
+    budgetlist_free(bud_list_head);
 }
