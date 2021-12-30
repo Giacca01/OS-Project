@@ -2,6 +2,6 @@
 -FInire deallocazione facilities: OK
 -Definire procedure d'errore: OK
 -Fare disegno facilities: Ok(Ho fatto la descrizione)
--Fare vettore per mutex partizioni
--Testare mia parte master
-- Fare makefile per master
+-Fare vettore per mutex partizioni: Ok
+-Testare mia parte master: Ok
+- Fare makefile per master: Ok
