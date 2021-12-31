@@ -12,14 +12,13 @@
 #include <sys/msg.h>
 #include <sys/sem.h>
 /*#include <sys/ipc.h> VEDERE SE SERVA*/
-#include "./Error/error.h"
+#include "error.h"
 #define SEMFILEPATH "../semfile.txt"
 #define FAIRSTARTSEED 1
 #define WRPARTSEED 2
 #define RDPARTSEED 3
 #define USERLISTSEED 4
 #define PARTMUTEXSEED 5
-#define NODELISTSEED 6
 
 #define SHMFILEPATH "../shmfile.txt"
 #define REGPARTONESEED 1
@@ -37,7 +36,7 @@
 /* il seed è il pid del proprietario
 i figli lo preleveranno dalla lista dei nodi*/
 
-#define SO_REGISTRY_SIZE 1000 /*Perchè con 300 non va???*/
+#define SO_REGISTRY_SIZE 200
 /*Right now it's not reentrant, we should modify it*/
 #define EXIT_ON_ERROR                        \
     if (errno)                               \
@@ -51,33 +50,37 @@ i figli lo preleveranno dalla lista dei nodi*/
         exit(EXIT_FAILURE);                  \
     }
 
-#define FTOK_TEST_ERROR(key)    \
-    if (key == -1)                          \
-        unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: ");\
+#define FTOK_TEST_ERROR(key) \
+    if (key == -1)           \
+        unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: ");
 
 #define SEM_TEST_ERROR(id) \
-    if (id == -1)   \
-        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: ");\
+    if (id == -1)          \
+        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: ");
 
 #define SHM_TEST_ERROR(id) \
-    if (id == -1)   \
-        unsafeErrorPrint("Master: shmget failed during shared memory segment creation. Error: ");\
+    if (id == -1)          \
+        unsafeErrorPrint("Master: shmget failed during shared memory segment creation. Error: ");
 
-#define MSG_TEST_ERROR(id) \
-    if (id == -1) \
-        unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: ");\
-
+#define MSG_TEST_ERROR(id)                                                                 \
+    if (id == -1)                                                                          \
+        unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: "); \
+        
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
-#define REWARD_TRANSACTION -1
-#define INIT_TRANSACTION -1
-#define REG_PARTITION_COUNT 3
-#define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + REG_PARTITION_COUNT - 1) / 3) /*CORREGGERE*/
-#define SO_BLOCK_SIZE 10 /* Modificato 10/12/2021*/
-                         /* Modificato 10/12/2021*/
+#define REG_PARTITION_SIZE (SO_REGISTRY_SIZE / 3) 
+#define REWARD_TRANSACTION -1                     
+#define INIT_TRANSACTION -1                       
+#define REG_PARTITION_COUNT 3                     
+#define SO_BLOCK_SIZE 10                          /* Modificato 10/12/2021*/
+                          /* Modificato 10/12/2021*/
+#define CONF_MAX_LINE_SIZE 128 /* Configuration file's line maximum bytes length*/
+#define CONF_MAX_LINE_NO 14 /* Configuration file's maximum lines count*/
 
-    typedef enum { TERMINATED = 0,
-                   ACTIVE
-    } States;
+typedef enum
+{
+    TERMINATED = 0,
+    ACTIVE
+} States; 
 
 /* Nella documentazione fare disegno di sta roba*/
 typedef struct
@@ -85,7 +88,7 @@ typedef struct
     /* meglio mettere la struct e non il singolo campo
     così non ci sono rischi di portablità*/
     struct timespec timestamp;
-    long int sender;   /* Sender's PID*/
+    long int sender;    /* Sender's PID*/
     long int receiver; /* Receiver's PID*/
     float amountSend;
     float reward;
@@ -114,7 +117,7 @@ typedef struct /* Modificato 10/12/2021*/
 typedef struct /* Modificato 10/12/2021*/
 {
     long int procId;
-    States procState; /* dA ignorare se il processo è un nodo*/
+    States procState;  /* dA ignorare se il processo è un nodo*/
 } ProcListElem;
 
 /* Il singolo elemento della lista degli amici è una coppia
@@ -153,22 +156,46 @@ typedef enum
 } GlobalMsgContent;
 
 /* attenzione!!!! Per friends va fatta una memcopy
- non si può allocare staticamente perchè la sua dimensione è letta a runtime*/
+ non si può allocare staticamente perchè la sua dimensione è letta a runtime */
 typedef struct
 {
-    long int mType; /* Pid of the receiver, taken with getppid (children) or from dedicated arrays (parent)*/
+    long int mType; /* Pid of the receiver, taken with getppid (children) or from dedicated arrays (parent) */
     GlobalMsgContent msgContent;
-    ProcListElem *friends;   /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS*/
-    Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT*/
+    /* ProcListElem * friends;  /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
+    /*
+     * Abbiamo rimosso la definizione precedente in quanto friends non può essere allocato staticamente,
+     * quindi era necessario definirlo dinamicamente prima di inviare il messaggio sulla coda; questo
+     * però comporta che quando il ricevitore (processo diverso da quello che ha mandato il messaggio) 
+     * prova ad accedere a tale array, si verifica un errore di segmentazione perché il processo cerca
+     * di accedere ad una zona di memoria che non è la sua ma è di un altro processo. Per questo motivo,
+     * dopo aver valutato attentamente le diverse opzioni per risolvere questo problema, si è deciso di non 
+     * mandare la lista di nodi amici tramite un singolo messaggio ma di mandarla tramite più messaggi 
+     * sulla coda globale e starà quindi al nodo destinatario leggere i messaggi dalla coda e creare la 
+     * sua lista di nodi amici.
+     */
+    ProcListElem friend; /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
+    Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
 } MsgGlobalQueue;
 
 typedef enum
 {
-    FALSE = 0,
+    FALSE = 0, 
     TRUE
 } boolean;
 
-struct msgbuff {
-    long mtype;
-    pid_t pid;
-};
+/*
+ * Fields:
+ * mType = pid of node which the transaction is sent
+ * transaction = transaction sent to the node
+ */
+typedef struct
+{
+    long int mType; /* pid of node - not that important, the transaction pool is private to the node */
+    Transaction transaction;
+} MsgTP;
+
+typedef struct
+{
+    long mtype; /* type of message */
+    pid_t pid;  /* user-define message */
+} msgbuff;
