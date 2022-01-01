@@ -884,11 +884,7 @@ void sendTransaction()
         if (sigaction(SIGALRM, &actSendTrans, NULL) == -1){
             safeErrorPrint("Node: failed to set simulation's dispatch handler. Error: ");
         } else {
-            if (alarm(TRANS_FRIEND_INTERVAL) == 0)
-            {
-                
-            }
-            else
+            if (alarm(TRANS_FRIEND_INTERVAL) != 0)
             {
                 safeErrorPrint("Node: failed to set transaction's dispatch timer.");
             }
