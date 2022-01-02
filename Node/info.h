@@ -32,6 +32,7 @@
 #define NOUSRSEGRDERSSEED 9
 
 #define MSGFILEPATH "../msgfile.txt"
+#define GLOBALMSGSEED 1
 /* il seed è il pid del proprietario
 i figli lo preleveranno dalla lista dei nodi*/
 
@@ -49,6 +50,22 @@ i figli lo preleveranno dalla lista dei nodi*/
         exit(EXIT_FAILURE);                  \
     }
 
+#define FTOK_TEST_ERROR(key) \
+    if (key == -1)           \
+        unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: ");
+
+#define SEM_TEST_ERROR(id) \
+    if (id == -1)          \
+        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: ");
+
+#define SHM_TEST_ERROR(id) \
+    if (id == -1)          \
+        unsafeErrorPrint("Master: shmget failed during shared memory segment creation. Error: ");
+
+#define MSG_TEST_ERROR(id)                                                                 \
+    if (id == -1)                                                                          \
+        unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: "); \
+        
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
 #define REG_PARTITION_SIZE (SO_REGISTRY_SIZE / 3) 
 #define REWARD_TRANSACTION -1                     
@@ -56,6 +73,8 @@ i figli lo preleveranno dalla lista dei nodi*/
 #define REG_PARTITION_COUNT 3                     
 #define SO_BLOCK_SIZE 10                          /* Modificato 10/12/2021*/
                           /* Modificato 10/12/2021*/
+#define CONF_MAX_LINE_SIZE 128 /* Configuration file's line maximum bytes length*/
+#define CONF_MAX_LINE_NO 14 /* Configuration file's maximum lines count*/
 
 typedef enum
 {
@@ -174,3 +193,9 @@ typedef struct
     long int mType; /* pid of node - not that important, the transaction pool is private to the node */
     Transaction transaction;
 } MsgTP;
+
+typedef struct
+{
+    long mtype; /* type of message */
+    pid_t pid;  /* user-define message */
+} msgbuff;

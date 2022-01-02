@@ -288,7 +288,7 @@ int main()
     readConfigParameters();
 
     /* Allocate the array that will contain friends pid */
-    friends_node = calloc(SO_NODES_NUM, sizeof(*friends_node));
+    friends_node = calloc(SO_NODES_NUM, sizeof(pid_t));
     printf("Node %d: hooking up of IPC facilitites...\n", getpid());
 
     /* Hooks IPC Resources */
@@ -305,6 +305,9 @@ int main()
             contMex++;
         }
 
+        /*
+            PROVVISORIO, CORREGGERE
+        */
         for (i = 0; i < SO_FRIENDS_NUM; i++)
         {
             printf("Nodo %d -> Amico: %d\n", getpid(), friends_node[i]);
@@ -332,7 +335,7 @@ void freeGlobalVariables()
     int i;
 
     free(regPartsIds);
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < REG_PARTITION_COUNT; i++)
     {
         if (shmdt(regPtrs[i]) == -1)
         {
@@ -340,11 +343,8 @@ void freeGlobalVariables()
             exit(EXIT_FAILURE);
         }
     }
-    free(usersList);
-    free(nodesList);
-    free(tpList);
-    free(noReadersPartitions);
-    for (i = 0; i < 3; i++)
+    
+    for (i = 0; i < REG_PARTITION_COUNT; i++)
     {
         if (shmdt(noReadersPartitionsPtrs[i]) == -1)
         {
@@ -352,14 +352,18 @@ void freeGlobalVariables()
             exit(EXIT_FAILURE);
         }
     }
+    free(noReadersPartitions);
+
     if (shmdt(usersList) == -1)
     {
         fprintf(stderr, "%s: %d. Errore in shmdt #%03d: %s\n", __FILE__, __LINE__, errno, strerror(errno));
         exit(EXIT_FAILURE);
     }
+
     if (shmdt(nodesList) == -1)
     {
         fprintf(stderr, "%s: %d. Errore in shmdt #%03d: %s\n", __FILE__, __LINE__, errno, strerror(errno));
         exit(EXIT_FAILURE);
     }
+    free(tpList);
 }
