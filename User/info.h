@@ -74,6 +74,13 @@ i figli lo preleveranno dalla lista dei nodi*/
         return FALSE;\
     }
 
+#define SHMAT_TEST_ERROR(id, type)                                                         \
+    if (id == -1)                                                                          \
+    {                                                                                      \
+        unsafeErrorPrint(strcat(type, ": failed to attach to memory segment. Error: "));   \
+        return FALSE;                                                                      \
+    }
+
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
 #define REG_PARTITION_SIZE (SO_REGISTRY_SIZE / 3)
 #define REWARD_TRANSACTION -1

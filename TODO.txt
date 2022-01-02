@@ -1,8 +1,8 @@
 1) Inizializzare facilities
     -Allocazione var globali: Ok
-    -aggancio a facilities
+    -aggancio a facilities: Ok
     -letture var d'ambiente: Ok
-2) Leggere Variabili d'ambiente
+2) Leggere Variabili d'ambiente: Ok
 3) Calcolo bilancio
 4) Aggiornare file di intestazione
 5) Sistemazione e Test Nodo:
@@ -11,3 +11,5 @@
     -aggiungere var d'ambiente SO_HOPS
     -togliere lettura file: si fa solo nel master; nei figli
     si leggono solo le var d'ambiente
+6) Collegarsi alla lista dei nodi in sola lettura(user ok, modificare anche nodi)
+7) Fissare con precisione il numero di partizioni (per me va bene vincolarlo a 3)

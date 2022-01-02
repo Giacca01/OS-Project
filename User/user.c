@@ -60,7 +60,7 @@ int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, r
     Meglio usare long: i valori potrebbero essere molto grandi
 */
 long SO_USERS_NUM, /* Number of user processes NOn è "statico" ???*/
-    SO_NODES_NUM, /* Number of node processes ?? NOn è "statico" ???*/
+    SO_NODES_NUM,  /* Number of node processes ?? NOn è "statico" ???*/
     SO_REWARD,
     SO_MIN_TRANS_GEN_NSEC,
     SO_MAX_TRANS_GEN_NSEC,
@@ -78,13 +78,38 @@ long SO_USERS_NUM, /* Number of user processes NOn è "statico" ???*/
 boolean readParams();
 boolean allocateMemory();
 boolean initializeFacilities();
+double computeBalance(TransList *);
+void removeTransaction(TransList *, Transaction *);
 
-int main(){
-    if (readParams()){
-        if (allocateMemory()){
-            if (initializeFacilities()){
-
-            } else {
+int main()
+{
+    /*
+        List that contains all the transactions sent by a process.
+        We use it to keep track of the transactions sent by a process
+        the haven't been written on the register yet.
+        Dato che potrebbe essere molto grande bisognerebbe fare 
+        inserimento ordinato e ricerca dicotomica
+    */
+    /*
+        CORREGGERE: ALLOCARLO
+    */
+    TransList *transactionsSent = NULL;
+    long transCount = 0;
+    if (readParams())
+    {
+        if (allocateMemory())
+        {
+            if (initializeFacilities())
+            {
+                /*
+                    User's lifecycle
+                */
+                while (TRUE)
+                {
+                }
+            }
+            else
+            {
                 /*
                     Fine esecuzione + deallocazione
                 */
@@ -96,7 +121,9 @@ int main(){
             Fine esecuzione
         */
         }
-    } else {
+    }
+    else
+    {
         /*
             Fine esecuzione
         */
@@ -105,7 +132,8 @@ int main(){
     return 0;
 }
 
-boolean readParams(){
+boolean readParams()
+{
     /*
         strtol ci consente di verificare se si sia verificato
         un error (atol invece non setta errno e non c'è modo
@@ -153,7 +181,8 @@ boolean readParams(){
     return TRUE;
 }
 
-boolean allocateMemory(){
+boolean allocateMemory()
+{
     /* CORREGGERE USANDO CALLOC E FARE SEGNALAZIONE ERRORI
         (in caso di errore deallocare quanto già allocato e terminare la simulazione ??)
      */
@@ -246,20 +275,25 @@ boolean initializeFacilities()
     SHM_TEST_ERROR(regPartsIds[2]);
 
     regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
+    SHMAT_TEST_ERROR(regPtrs[0], "User");
     regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
+    SHMAT_TEST_ERROR(regPtrs[1], "User");
     regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
+    SHMAT_TEST_ERROR(regPtrs[2], "User");
 
     key = ftok(SHMFILEPATH, USERLISTSEED);
     FTOK_TEST_ERROR(key);
     usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), 0600);
     SHM_TEST_ERROR(usersListId);
-    usersList = (ProcListElem *)shmat(usersListId, NULL, 0);
+    usersList = (ProcListElem *)shmat(usersListId, NULL, SHM_RDONLY);
+    SHMAT_TEST_ERROR(usersList, "User");
 
     key = ftok(SHMFILEPATH, NODESLISTSEED);
     FTOK_TEST_ERROR(key);
     nodesListId = shmget(key, SO_NODES_NUM * sizeof(ProcListElem), 0600);
     SHM_TEST_ERROR(nodesListId);
-    nodesList = (ProcListElem *)shmat(nodesListId, NULL, 0);
+    nodesList = (ProcListElem *)shmat(nodesListId, NULL, SHM_RDONLY);
+    SHMAT_TEST_ERROR(nodesList, "User");
 
     /* Aggancio segmenti per variabili condivise*/
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
@@ -267,15 +301,113 @@ boolean initializeFacilities()
     noReadersPartitions[0] = shmget(key, sizeof(SO_USERS_NUM), 0600);
     SHM_TEST_ERROR(nodesListId);
     noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, 0);
+    SHMAT_TEST_ERROR(noReadersPartitionsPtrs[0], "User");
 
     noReadersPartitions[1] = shmget(ftok(SHMFILEPATH, NOREADERSTWOSEED), sizeof(SO_USERS_NUM), 0600);
     noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, 0);
+    SHMAT_TEST_ERROR(noReadersPartitionsPtrs[1], "User");
 
     noReadersPartitions[2] = shmget(ftok(SHMFILEPATH, NOREADERSTHREESEED), sizeof(SO_USERS_NUM), 0600);
     noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, 0);
+    SHMAT_TEST_ERROR(noReadersPartitionsPtrs[2], "User");
 
     noUserSegReaders = shmget(ftok(SHMFILEPATH, NOUSRSEGRDERSSEED), sizeof(SO_USERS_NUM), 0600);
     noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
+    SHMAT_TEST_ERROR(noUserSegReadersPtr, "User");
 
     return TRUE;
+}
+
+double computeBalance(TransList *transSent)
+{
+    double balance = SO_BUDGET_INIT;
+    int i;
+    Register *ptr;
+    int j;
+    int k;
+    pid_t procPid = getpid();
+
+    for (i = 0; i < REG_PARTITION_COUNT; i++)
+    {
+        ptr = regPtrs[i];
+        while (ptr != NULL)
+        {
+            for (j = 0; j < ptr->nBlocks; j++)
+            {
+                for (k = 0; k < SO_BLOCK_SIZE; k++)
+                {
+                    if (ptr->blockList[j].transList[k].receiver == procPid)
+                    {
+                        balance += ptr->blockList[j].transList[k].amountSend;
+                    }
+                    else if (ptr->blockList[j].transList[k].sender == procPid)
+                    {
+                        /*
+                    Togliamo le transazioni già presenti nel master
+                    dalla lista di quelle inviate
+                
+                */
+                        balance -= ptr->blockList[j].transList[k].amountSend + ptr->blockList[j].transList[k].reward;
+                        removeTransaction(transSent, &(ptr->blockList[j].transList[k]));
+                    }
+                }
+            }
+            ptr++;
+        }
+
+        /*
+            Precondizione: da transSent sono state eliminate le transazioni
+            già registrate nel master
+        */
+        while (transSent != NULL)
+        {
+            balance -= transSent->currTrans->amountSend + transSent->currTrans->reward;
+            transSent++;
+        }
+    }
+
+    return balance;
+}
+
+void removeTransaction(TransList *tList, Transaction *t)
+{
+    /*
+        Precondizione il vettore è ordinato per
+            -timestamp
+            -sender
+            -receiver
+    */
+    TransList *prev = NULL;
+    boolean done = FALSE;
+
+    while (tList != NULL && !done)
+    {
+        /*
+            CORREGGERE: i tempi si possono confrontare direttamente
+        */
+        if (tList->currTrans->timestamp.tv_nsec == t->timestamp.tv_nsec &&
+            tList->currTrans->sender == t->sender &&
+            tList->currTrans->receiver == t->receiver)
+        {
+            if (prev != NULL)
+            {
+                prev->nextTrans = tList->nextTrans;
+            }
+            else
+            {
+                /*
+                    Caso in cui la lista contiene un solo elemento
+                    (quindi tList->nextTrans è gia NULL)
+                */
+                tList->currTrans = NULL;
+            }
+
+            done = TRUE;
+        }
+        else
+        {
+            prev = tList;
+            tList = tList->nextTrans;
+        }
+    }
 }

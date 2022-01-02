@@ -16,4 +16,8 @@
         if (ptr == NULL)\
             unsafeErrorPrint("User: failed to allocate memory. Error: ");\
             return FALSE;
+    typedef struct tlist{
+        Transaction * currTrans;
+        struct tlist *nextTrans;
+    } TransList;
 #endif
