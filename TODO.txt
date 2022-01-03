@@ -3,7 +3,7 @@
     -aggancio a facilities: Ok
     -letture var d'ambiente: Ok
 2) Leggere Variabili d'ambiente: Ok
-3) Calcolo bilancio
+3) Calcolo bilancio: Ok
 4) Aggiornare file di intestazione
 5) Sistemazione e Test Nodo:
     -implementare parte aggiuntiva versione FULL

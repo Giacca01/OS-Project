@@ -371,19 +371,13 @@ double computeBalance(TransList *transSent)
 
 void removeTransaction(TransList *tList, Transaction *t)
 {
-    /*
-        Precondizione il vettore è ordinato per
-            -timestamp
-            -sender
-            -receiver
-    */
     TransList *prev = NULL;
     boolean done = FALSE;
 
     while (tList != NULL && !done)
     {
         /*
-            CORREGGERE: i tempi si possono confrontare direttamente
+            CORREGGERE: i tempi si possono confrontare direttamente???
         */
         if (tList->currTrans->timestamp.tv_nsec == t->timestamp.tv_nsec &&
             tList->currTrans->sender == t->sender &&
