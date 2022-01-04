@@ -62,8 +62,8 @@ pid_t *friends_node;
 /***** Definition of global variables that contain *****/
 /***** the values ​​of the configuration parameters  *****/
 /*******************************************************/
-int SO_USERS_NUM, /* Number of user processes NOn è "statico" ???*/
-    SO_NODES_NUM, /* Number of node processes ?? NOn è "statico" ???*/
+long SO_USERS_NUM, /* Number of user processes NOn è "statico" ???*/
+    SO_NODES_NUM,  /* Number of node processes ?? NOn è "statico" ???*/
     SO_REWARD,
     SO_MIN_TRANS_GEN_NSEC,
     SO_MAX_TRANS_GEN_NSEC,
@@ -73,17 +73,19 @@ int SO_USERS_NUM, /* Number of user processes NOn è "statico" ???*/
     SO_MAX_TRANS_PROC_NSEC,
     SO_BUDGET_INIT,
     SO_SIM_SEC,     /* Duration of the simulation*/
-    SO_FRIENDS_NUM; /* Number of friends*/
+    SO_FRIENDS_NUM, /* Number of friends*/
+    SO_HOPS;
 /*******************************************************/
 /*******************************************************/
 
 void sembufInit(struct sembuf *, int);
 void reinsertTransactions(Block);
 void endOfExecution(int);
-void assignEnvironmentVariables();
 int readConfigParameters();
 boolean createIPCFacilties();
 void initializeIPCFacilities();
+void dispatchToFriend();
+boolean assignEnvironmentVariables();
 void sendTransaction();
 
 int main()
@@ -122,325 +124,344 @@ int main()
     /*
         Testare codice d'errore
     */
-    readConfigParameters();
-
-    /* Allocate the array that will contain friends pid */
-    /* CORREGGERE: TESTARE ERRORI*/
-    friends_node = calloc(SO_NODES_NUM, sizeof(pid_t));
-    printf("Node %d: hooking up of IPC facilitites...\n", getpid());
-
-    if (createIPCFacilties() == TRUE)
+    if (assignEnvironmentVariables())
     {
-        /*
-            CORREGGERE: SEGNALAZIONE ERRORI
-        */
+        /* Allocate the array that will contain friends pid */
+        /* CORREGGERE: TESTARE ERRORI*/
+        friends_node = calloc(SO_NODES_NUM, sizeof(pid_t));
+        printf("Node %d: hooking up of IPC facilitites...\n", getpid());
 
-        initializeIPCFacilities();
-
-        /* Receives all friends pid from global message queue and stores them in the array */
-        while (contMex < SO_FRIENDS_NUM)
+        if (createIPCFacilties() == TRUE)
         {
-            rcv_type = getpid();
             /*
-                CORREGGERE: aggiungere segnalazione errori
+                CORREGGERE: SEGNALAZIONE ERRORI
             */
-            num_bytes = msgrcv(globalQueueId, &mybuf, sizeof(pid_t), rcv_type, 0);
-            friends_node[contMex] = mybuf.pid;
-            contMex++;
-        }
 
-        /*
-            PROVVISORIO, CORREGGERE
-        */
-        for (i = 0; i < SO_FRIENDS_NUM; i++)
-        {
-            printf("Nodo %d -> Amico: %d\n", getpid(), friends_node[i]);
-        }
+            initializeIPCFacilities();
 
-        /* Wait all processes are ready to start the simulation */
-        printf("Node %ld is waiting for simulation to start....\n", (long)getpid());
-        sops[0].sem_op = 0;
-        sops[0].sem_num = 0;
-        sops[0].sem_flg = 0;
-        semop(fairStartSem, &sops[0], 1);
+            /* Receives all friends pid from global message queue and stores them in the array */
+            while (contMex < SO_FRIENDS_NUM)
+            {
+                rcv_type = getpid();
+                /*
+                    CORREGGERE: aggiungere segnalazione errori
+                */
+                num_bytes = msgrcv(globalQueueId, &mybuf, sizeof(pid_t), rcv_type, 0);
+                friends_node[contMex] = mybuf.pid;
+                contMex++;
+            }
 
-        printf("Sono il nodo %d -> Eseguo!\n", getpid());
-        printf("Node done %d!\n", getpid());
+            /*
+                PROVVISORIO, CORREGGERE
+            */
+            for (i = 0; i < SO_FRIENDS_NUM; i++)
+            {
+                printf("Nodo %d -> Amico: %d\n", getpid(), friends_node[i]);
+            }
 
-        printf("Node: setting up signal mask...\n");
-        if (sigfillset(&mask) == -1)
-            unsafeErrorPrint("Node: failed to initialize signal mask. Error: ");
-        else
-        {
-            actEndOfSim.sa_handler = endOfExecution;
-            actEndOfSim.sa_mask = mask;
-            if (sigaction(SIGUSR1, &actEndOfSim, NULL) == -1)
-                unsafeErrorPrint("Node: failed to set up end of simulation handler. Error: ");
+            /* Wait all processes are ready to start the simulation */
+            printf("Node %ld is waiting for simulation to start....\n", (long)getpid());
+            sops[0].sem_op = 0;
+            sops[0].sem_num = 0;
+            sops[0].sem_flg = 0;
+            semop(fairStartSem, &sops[0], 1);
+
+            printf("Sono il nodo %d -> Eseguo!\n", getpid());
+            printf("Node done %d!\n", getpid());
+
+            printf("Node: setting up signal mask...\n");
+            if (sigfillset(&mask) == -1)
+                unsafeErrorPrint("Node: failed to initialize signal mask. Error: ");
             else
             {
-                printf("Node: performing setup operations...\n");
-                newBlockPos = (int *)malloc(sizeof(int));
-
-                if (newBlockPos == NULL)
-                {
-                    unsafeErrorPrint("Node: failed to allocate memory for temporary variable. ");
-                }
+                actEndOfSim.sa_handler = endOfExecution;
+                actEndOfSim.sa_mask = mask;
+                if (sigaction(SIGUSR1, &actEndOfSim, NULL) == -1)
+                    unsafeErrorPrint("Node: failed to set up end of simulation handler. Error: ");
                 else
                 {
-                    actSendTrans.sa_handler = sendTransaction;
-                    actSendTrans.sa_mask = mask;
-                    if (sigaction(SIGALRM, &actSendTrans, NULL) == -1)
-                        unsafeErrorPrint("Node: failed to set transaction dispatch handler. Error: ");
+                    printf("Node: performing setup operations...\n");
+                    newBlockPos = (int *)malloc(sizeof(int));
+
+                    if (newBlockPos == NULL)
+                    {
+                        unsafeErrorPrint("Node: failed to allocate memory for temporary variable. ");
+                    }
                     else
                     {
-                        /*
-                            There should be no previous alarms set
-                        */
-                        if (alarm(TRANS_FRIEND_INTERVAL) == 0)
+                        actSendTrans.sa_handler = dispatchToFriend;
+                        actSendTrans.sa_mask = mask;
+                        if (sigaction(SIGALRM, &actSendTrans, NULL) == -1)
+                            unsafeErrorPrint("Node: failed to set transaction dispatch handler. Error: ");
+                        else
                         {
-                            timeSinceEpoch = time(NULL);
-                            if (timeSinceEpoch == (time_t)-1)
-                                unsafeErrorPrint("Node: failed to initialize random generator's seed. Error");
-                            else
-                            {
-                                /* Vedere se metterlo nel ciclo di vita */
-                                srand(time(NULL) - getpid()); /*Inizializza il seme di generazione*/
-                                                              /*Essendoci più processi nodo in esecuzione, è probabile che
-                    alcuni nodi vengano eseguiti nello stesso secondo e che si abbia quindi 
-                    la stessa sequenza di numeri random. Per evitare ciò sottraiamo il PID*/
-                                sembufInit(reservation, -1);
-                                sembufInit(release, 1);
-                                /*
-                        Cosa succede in caso di errore?
-                        Terminiamo il ciclo?
-                        Oppure segnaliamo l'errore e procediamo
-                        con la prossima elaborazione?
-                    */
-                                printf("Node: starting lifecycle...\n");
-                                while (!waitForTerm)
-                                {
-                                    /*
-                            PRECONDIZIONE:
-                                minSim e maxSim sono state caricate leggendole
-                                dalle variabili d'ambiente
-                        */
-                                    /*generates a random number in [minSim, maxSim]*/
-                                    printf("Node: elaborating transactions' block...\n");
-                                    simTime = rand() % (maxSim + 1) + minSim;
-                                    /* Simulates the computation by waiting a certain amount of time */
-                                    if (sleep(simTime / 1000) == 0)
-                                    {
-                                        /* Generating a Block of SO_BLOCK_SIZE-1 Transitions from TP */
-                                        /* SO_BLOCK_SIZE is initialized reading the value from environment variables */
-                                        i = 0;
-                                        MsgTP new_trans;
-
-                                        /* Generating reward transaction for node an put it in extractedBlock */
-                                        Transaction rew_tran;
-                                        rew_tran.sender = NO_SENDER;
-                                        rew_tran.receiver = getpid();
-                                        rew_tran.reward = 0.0;
-                                        rew_tran.amountSend = 0.0;                          /* we now set it to 0, then we will count the rewards */
-                                        clock_gettime(CLOCK_REALTIME, &rew_tran.timestamp); /* get timestamp for transaction */
-
-                                        /* cycle for extract transaction from TP */
-                                        /*
-                                Estrae SO_BLOCK_SIZE-1 transazioni dalla transaction pool
+                            /*
+                                There should be no previous alarms set
                             */
-                                        while (i < SO_BLOCK_SIZE - 1)
+                            /*
+                            Correggere: vedere se si meglio metterlo nel while senza usare l'allarme
+                           */
+                            if (alarm(TRANS_FRIEND_INTERVAL) == 0)
+                            {
+                                timeSinceEpoch = time(NULL);
+                                if (timeSinceEpoch == (time_t)-1)
+                                    unsafeErrorPrint("Node: failed to initialize random generator's seed. Error");
+                                else
+                                {
+                                    /* Vedere se metterlo nel ciclo di vita */
+                                    srand(time(NULL) - getpid()); /*Inizializza il seme di generazione*/
+                                                                  /*Essendoci più processi nodo in esecuzione, è probabile che
+                        alcuni nodi vengano eseguiti nello stesso secondo e che si abbia quindi 
+                        la stessa sequenza di numeri random. Per evitare ciò sottraiamo il PID*/
+                                    sembufInit(reservation, -1);
+                                    sembufInit(release, 1);
+                                    /*
+                            Cosa succede in caso di errore?
+                            Terminiamo il ciclo?
+                            Oppure segnaliamo l'errore e procediamo
+                            con la prossima elaborazione?
+                        */
+                                    printf("Node: starting lifecycle...\n");
+                                    while (!waitForTerm)
+                                    {
+                                        /*
+                                            Check if a transaction was sent when TP was full
+                                            and dispatch it to another node
+                                        */
+                                        sendTransaction();
+                                        /*
+                                PRECONDIZIONE:
+                                    minSim e maxSim sono state caricate leggendole
+                                    dalle variabili d'ambiente
+                            */
+                                        /*generates a random number in [minSim, maxSim]*/
+                                        printf("Node: elaborating transactions' block...\n");
+                                        simTime = rand() % (maxSim + 1) + minSim;
+                                        /* Simulates the computation by waiting a certain amount of time */
+                                        if (sleep(simTime / 1000) == 0)
                                         {
-                                            /* now receiving the message (transaction from TP) */
-                                            num_bytes = msgrcv(tpId, &new_trans, sizeof(new_trans) - sizeof(long), getpid(), 0);
+                                            /* Generating a Block of SO_BLOCK_SIZE-1 Transitions from TP */
+                                            /* SO_BLOCK_SIZE is initialized reading the value from environment variables */
+                                            i = 0;
+                                            MsgTP new_trans;
 
-                                            if (num_bytes >= 0)
+                                            /* Generating reward transaction for node an put it in extractedBlock */
+                                            Transaction rew_tran;
+                                            rew_tran.sender = NO_SENDER;
+                                            rew_tran.receiver = getpid();
+                                            rew_tran.reward = 0.0;
+                                            rew_tran.amountSend = 0.0;                          /* we now set it to 0, then we will count the rewards */
+                                            clock_gettime(CLOCK_REALTIME, &rew_tran.timestamp); /* get timestamp for transaction */
+
+                                            /* cycle for extract transaction from TP */
+                                            /*
+                                    Estrae SO_BLOCK_SIZE-1 transazioni dalla transaction pool
+                                */
+                                            while (i < SO_BLOCK_SIZE - 1)
                                             {
-                                                /* read transaction from tpList */
-                                                extractedBlock.transList[i] = new_trans.transaction;
-                                                /* adding reward of transaction in amountSend of reward_transaction */
-                                                rew_tran.amountSend += new_trans.transaction.reward;
+                                                /* now receiving the message (transaction from TP) */
+                                                num_bytes = msgrcv(tpId, &new_trans, sizeof(new_trans) - sizeof(long), getpid(), 0);
 
-                                                candidateBlock.transList[i] = new_trans.transaction;
+                                                if (num_bytes >= 0)
+                                                {
+                                                    /* read transaction from tpList */
+                                                    extractedBlock.transList[i] = new_trans.transaction;
+                                                    /* adding reward of transaction in amountSend of reward_transaction */
+                                                    rew_tran.amountSend += new_trans.transaction.reward;
 
-                                                extractedBlock.bIndex = i++;
-                                                candidateBlock.bIndex = i++;
+                                                    candidateBlock.transList[i] = new_trans.transaction;
+
+                                                    extractedBlock.bIndex = i++;
+                                                    candidateBlock.bIndex = i++;
+                                                }
+                                                else
+                                                {
+                                                    /*
+                                            Potrebbe avere senso far ripartire l'estrazione da capo ?
+                                            No, non cambierebbe nulla, ricordare che le transazioni nel TP
+                                            non sono legate, quindi in un blocco possono esserci transazioni qualsiasi
+                                        */
+                                                    unsafeErrorPrint("Node: failed to retrieve transaction from Transaction Pool. Error: ");
+                                                }
+
+                                                /*
+                                    * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
+                                    * and waits for a message on queue; it will exit this cycle when it reads the requested 
+                                    * number of transactions (put in extractedBlock.transList)
+                                    */
                                             }
+
+                                            /* creating candidate block by coping transactions in extracted block */
+                                            /* VEDERE SE CAMBIARE - PER ME È PERDITA DI TEMPO (es. togliendo candidateBlock e usando direttamente extractedBlock */
+                                            /*
+                                    Per ridurre la perdita di tempo si può spostare questa operazione dentro il ciclo di estrazione
+                                */
+                                            /*
+                                i = 0;
+                                while(i < SO_BLOCK_SIZE-1)
+                                {
+                                    candidateBlock.transList[i] = extractedBlock.transList[i];
+                                    i++;
+                                }*/
+
+                                            /* putting reward transaction in extracted block */
+                                            candidateBlock.transList[i] = rew_tran;
+                                            /*candidateBlock.bIndex = i;*/
+
+                                            /*
+                                    Writes the block of transactions "elaborated"
+                                    on the register
+                                */
+                                            /*
+                                        PRECONDIZIONE:
+                                            extractedBlock.bIndex == SO_BLOCK_SIZE - 1
+                                            extractedBlock.transList == Transazioni da scrivere sul blocco 
+                                                                        estratte dalla transaction pool
+
+                                            candidateBlock.bIndex == SO_BLOCK_SIZE
+                                            candidateBlock.transList == Transazioni da scrivere sul blocco 
+                                                                        estratte dalla transaction pool + transazione di reward
+                                */
+                                            /*
+                                    Due possibilità:
+                                        -eseguire le wait sui semafori delle partizioni in maniera atomica, facendo
+                                        cioè si che il processo venga sbloccato solo quanto sarà possibile accedere in mutua
+                                        esclusione a tutte e tre le partizioni
+                                        -oppure, eseguire la wait sulla partizione i-esima, vedere se ci sia spazio per un nuovo
+                                        blocco e solo in caso negativo procedere con la wait sul semaforo della partizione i+1-esima
+
+                                        Il primo approccio consente di eseguire n operazioni con una sola system call, mentre il secondo
+                                        evita che il processo rimanga sospeso per accedere in mutua esclusione a partizioni sulle quali 
+                                        non scriverà
+                        
+                                        Io ho implementato il primo approccio
+                                */
+                                            /*
+                                    Entry section
+                                */
+                                            printf("Node: trying to write transactions on registr...\n");
+                                            if (semop(wrPartSem, reservation, REG_PARTITION_COUNT) == -1)
+                                                unsafeErrorPrint("Node: failed to reserve register partitions' semaphore. Error: ");
                                             else
                                             {
                                                 /*
-                                        Potrebbe avere senso far ripartire l'estrazione da capo ?
-                                        No, non cambierebbe nulla, ricordare che le transazioni nel TP
-                                        non sono legate, quindi in un blocco possono esserci transazioni qualsiasi
+                                        PRECONDIZIONE:
+                                            Il processo arriva qui soolo dopo aver guadagnato l'accesso
+                                            in mutua esclusione a tutte le partizioni
                                     */
-                                                unsafeErrorPrint("Node: failed to retrieve transaction from Transaction Pool. Error: ");
+
+                                                /*
+                                        Verifica esitenza spazio libero sul registro
+                                    */
+                                                for (i = 0; i < REG_PARTITION_COUNT && !available; i++)
+                                                {
+                                                    if (regPtrs[i]->nBlocks != REG_PARTITION_SIZE)
+                                                        available = TRUE;
+                                                }
+
+                                                /*
+                                        Postcondizione: i == indirizzo della partizione libera
+                                        se available == FALSE ==> registro pieno
+                                    */
+
+                                                if (available)
+                                                {
+                                                    /*
+                                            Inserimento blocco
+                                        */
+                                                    /*
+                                            Precondizione: nBlocks == Prima posizione libera nel blocco
+                                        */
+                                                    /*
+                                                Quando questa istruzione verà eseguita verrà fatta una copia
+                                                per valore di candidateBlock.
+                                                È inefficiente, ma non possiamo fare altrimenti
+                                                se vogliamo condividere la transazione tra processi registri
+                                        */
+                                                    /*
+                                            regPtrs[i] PUNTATORE ad un di tipo register allocato nel segmento
+                                            di memoria condivisa, che rappresenta l'i-esima partizione del registro
+                                        */
+                                                    newBlockPos = &(regPtrs[i]->nBlocks);
+                                                    regPtrs[i]->blockList[*newBlockPos] = candidateBlock;
+                                                    (*newBlockPos)++;
+                                                }
+                                                else
+                                                {
+                                                    /*
+                                            Registro pieno ==> invio segnale di fine simulazione
+                                        */
+                                                    printf("Node: no space left on register. Rollingback and signaling end of simulation...\n");
+                                                    reinsertTransactions(extractedBlock);
+                                                    if (kill(getppid(), SIGUSR1) == -1)
+                                                    {
+                                                        safeErrorPrint("Node: failed to signal Master for the end of simulation. Error: ");
+                                                    }
+
+                                                    waitForTerm = TRUE;
+                                                }
+
+                                                /*
+                                        Exit section
+                                    */
+                                                printf("Node: releasing register's partition...\n");
+                                                if (semop(wrPartSem, release, REG_PARTITION_COUNT) == -1)
+                                                    unsafeErrorPrint("Node: failed to release register partitions' semaphore. Error: ");
                                             }
-
-                                            /*
-			                     * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
-			                     * and waits for a message on queue; it will exit this cycle when it reads the requested 
-			                     * number of transactions (put in extractedBlock.transList)
-			                     */
                                         }
-
-                                        /* creating candidate block by coping transactions in extracted block */
-                                        /* VEDERE SE CAMBIARE - PER ME È PERDITA DI TEMPO (es. togliendo candidateBlock e usando direttamente extractedBlock */
-                                        /*
-                                Per ridurre la perdita di tempo si può spostare questa operazione dentro il ciclo di estrazione
-                            */
-                                        /*
-                            i = 0;
-			                while(i < SO_BLOCK_SIZE-1)
-			                {
-			                    candidateBlock.transList[i] = extractedBlock.transList[i];
-			                    i++;
-			                }*/
-
-                                        /* putting reward transaction in extracted block */
-                                        candidateBlock.transList[i] = rew_tran;
-                                        /*candidateBlock.bIndex = i;*/
-
-                                        /*
-                                Writes the block of transactions "elaborated"
-                                on the register
-                            */
-                                        /*
-                                    PRECONDIZIONE:
-                                        extractedBlock.bIndex == SO_BLOCK_SIZE - 1
-                                        extractedBlock.transList == Transazioni da scrivere sul blocco 
-                                                                    estratte dalla transaction pool
-
-                                        candidateBlock.bIndex == SO_BLOCK_SIZE
-                                        candidateBlock.transList == Transazioni da scrivere sul blocco 
-                                                                    estratte dalla transaction pool + transazione di reward
-                            */
-                                        /*
-                                Due possibilità:
-                                    -eseguire le wait sui semafori delle partizioni in maniera atomica, facendo
-                                    cioè si che il processo venga sbloccato solo quanto sarà possibile accedere in mutua
-                                    esclusione a tutte e tre le partizioni
-                                    -oppure, eseguire la wait sulla partizione i-esima, vedere se ci sia spazio per un nuovo
-                                    blocco e solo in caso negativo procedere con la wait sul semaforo della partizione i+1-esima
-
-                                    Il primo approccio consente di eseguire n operazioni con una sola system call, mentre il secondo
-                                    evita che il processo rimanga sospeso per accedere in mutua esclusione a partizioni sulle quali 
-                                    non scriverà
-                    
-                                    Io ho implementato il primo approccio
-                            */
-                                        /*
-                                Entry section
-                            */
-                                        printf("Node: trying to write transactions on registr...\n");
-                                        if (semop(wrPartSem, reservation, REG_PARTITION_COUNT) == -1)
-                                            unsafeErrorPrint("Node: failed to reserve register partitions' semaphore. Error: ");
                                         else
                                         {
                                             /*
-                                    PRECONDIZIONE:
-                                        Il processo arriva qui soolo dopo aver guadagnato l'accesso
-                                        in mutua esclusione a tutte le partizioni
+                                    A node can only be interrupted by the end of simulation signal
                                 */
-
-                                            /*
-                                    Verifica esitenza spazio libero sul registro
-                                */
-                                            for (i = 0; i < REG_PARTITION_COUNT && !available; i++)
-                                            {
-                                                if (regPtrs[i]->nBlocks != REG_PARTITION_SIZE)
-                                                    available = TRUE;
-                                            }
-
-                                            /*
-                                    Postcondizione: i == indirizzo della partizione libera
-                                    se available == FALSE ==> registro pieno
-                                */
-
-                                            if (available)
-                                            {
-                                                /*
-                                        Inserimento blocco
-                                    */
-                                                /*
-                                        Precondizione: nBlocks == Prima posizione libera nel blocco
-                                    */
-                                                /*
-                                            Quando questa istruzione verà eseguita verrà fatta una copia
-                                            per valore di candidateBlock.
-                                            È inefficiente, ma non possiamo fare altrimenti
-                                            se vogliamo condividere la transazione tra processi registri
-                                    */
-                                                /*
-                                        regPtrs[i] PUNTATORE ad un di tipo register allocato nel segmento
-                                        di memoria condivisa, che rappresenta l'i-esima partizione del registro
-                                    */
-                                                newBlockPos = &(regPtrs[i]->nBlocks);
-                                                regPtrs[i]->blockList[*newBlockPos] = candidateBlock;
-                                                (*newBlockPos)++;
-                                            }
-                                            else
-                                            {
-                                                /*
-                                        Registro pieno ==> invio segnale di fine simulazione
-                                    */
-                                                printf("Node: no space left on register. Rollingback and signaling end of simulation...\n");
-                                                reinsertTransactions(extractedBlock);
-                                                if (kill(getppid(), SIGUSR1) == -1)
-                                                {
-                                                    safeErrorPrint("Node: failed to signal Master for the end of simulation. Error: ");
-                                                }
-
-                                                waitForTerm = TRUE;
-                                            }
-
-                                            /*
-                                    Exit section
-                                */
-                                            printf("Node: releasing register's partition...\n");
-                                            if (semop(wrPartSem, release, REG_PARTITION_COUNT) == -1)
-                                                unsafeErrorPrint("Node: failed to release register partitions' semaphore. Error: ");
+                                            unsafeErrorPrint("Node: an unexpected event occured before the end of the computation.");
                                         }
                                     }
-                                    else
-                                    {
-                                        /*
-                                A node can only be interrupted by the end of simulation signal
-                            */
-                                        unsafeErrorPrint("Node: an unexpected event occured before the end of the computation.");
-                                    }
-                                }
 
-                                /*
-                        Node wait for the master to detect that the register is full.
-                        By doing this we take the process out of the ready queue, therefore
-                        increasing the chance of  the master being scheduled and detecting the
-                        end of simulation (it will happen, because the master checks it every time)
-                        (or at least, the timer will elapse and the simulation will utimately end)
-                    */
-                                /*
-                        In the case tha node has successfully signaled the master, the process
-                        waits to be signaled so that its end-of-execution handler will be executed.
-                    */
-                                printf("Node: waiting for end of simulation signal...\n");
-                                pause();
+                                    /*
+                            Node wait for the master to detect that the register is full.
+                            By doing this we take the process out of the ready queue, therefore
+                            increasing the chance of  the master being scheduled and detecting the
+                            end of simulation (it will happen, because the master checks it every time)
+                            (or at least, the timer will elapse and the simulation will utimately end)
+                        */
+                                    /*
+                            In the case tha node has successfully signaled the master, the process
+                            waits to be signaled so that its end-of-execution handler will be executed.
+                        */
+                                    printf("Node: waiting for end of simulation signal...\n");
+                                    pause();
+                                }
                             }
-                        } else {
-                            unsafeErrorPrint("Node: failed to set transaction's dispatch timer.");
+                            else
+                            {
+                                unsafeErrorPrint("Node: failed to set transaction's dispatch timer.");
+                            }
                         }
                     }
                 }
             }
-        }
 
-        printf("Node: releasing dynamically allocated memory...\n");
-        free(reservation);
-        free(release);
-        free(newBlockPos);
+            printf("Node: releasing dynamically allocated memory...\n");
+            free(reservation);
+            free(release);
+            free(newBlockPos);
+        }
+        else
+        {
+            /*
+                Fine simulazione??
+            */
+            /*freeGlobalVariables();*/
+        }
     }
     else
     {
         /*
-            Fine simulazione??
-        */
-        /*freeGlobalVariables();*/
+        Se un nodo è terminato ed un processo prova a mandargli una transazione bisogna
+        segnalare un errore
+       */
+        unsafeErrorPrint("Node: about to terminate execution...");
     }
 
     /* free(friends_node);*/
@@ -450,8 +471,10 @@ int main()
 /***** Function that assigns the values ​​of the environment *****/
 /***** variables to the global variables defined above     *****/
 /***************************************************************/
-void assignEnvironmentVariables()
+boolean assignEnvironmentVariables()
 {
+    /*
+        CORREGGERE: Vedere quale versione tenere
     SO_USERS_NUM = atoi(getenv("SO_USERS_NUM"));
     SO_NODES_NUM = atoi(getenv("SO_NODES_NUM"));
     SO_REWARD = atoi(getenv("SO_REWARD"));
@@ -463,7 +486,52 @@ void assignEnvironmentVariables()
     SO_MAX_TRANS_PROC_NSEC = atoi(getenv("SO_MAX_TRANS_PROC_NSEC"));
     SO_BUDGET_INIT = atoi(getenv("SO_BUDGET_INIT"));
     SO_SIM_SEC = atoi(getenv("SO_SIM_SEC"));
-    SO_FRIENDS_NUM = atoi(getenv("SO_FRIENDS_NUM"));
+    SO_FRIENDS_NUM = atoi(getenv("SO_FRIENDS_NUM"));*/
+    /*
+        strtol ci consente di verificare se si sia verificato
+        un error (atol invece non setta errno e non c'è modo
+        di distinguere tra lo zero risultato legittimo e l'errore)
+    */
+    SO_USERS_NUM = strtol(getenv("SO_USERS_NUM"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_NODES_NUM = strtol(getenv("SO_NODES_NUM"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_REWARD = strtol(getenv("SO_REWARD"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_MIN_TRANS_GEN_NSEC = strtol(getenv("SO_MIN_TRANS_GEN_NSEC"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_MAX_TRANS_GEN_NSEC = strtol(getenv("SO_MAX_TRANS_GEN_NSEC"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_RETRY = strtol(getenv("SO_RETRY"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_TP_SIZE = strtol(getenv("SO_TP_SIZE"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_MIN_TRANS_PROC_NSEC = strtol(getenv("SO_MIN_TRANS_PROC_NSEC"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_MAX_TRANS_PROC_NSEC = strtol(getenv("SO_MAX_TRANS_PROC_NSEC"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_BUDGET_INIT = strtol(getenv("SO_BUDGET_INIT"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_SIM_SEC = strtol(getenv("SO_SIM_SEC"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_FRIENDS_NUM = strtol(getenv("SO_FRIENDS_NUM"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_HOPS = strtol(getenv("SO_HOPS"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    return TRUE;
 }
 /***************************************************************/
 /***************************************************************/
@@ -497,7 +565,7 @@ void reinsertTransactions(Block failedTrs)
         if (msgsnd(tpId, &(failedTrs.transList[failedTrs.bIndex]), sizeof(Transaction), 0) == -1)
         {
             /*
-                Dovremmo segnalarlo al sender???
+                CORREGGERE: ovremmo segnalarlo al sender???
             */
             sprintf(aus, "Node: failed to reinsert transaction number %d.", failedTrs.bIndex);
             unsafeErrorPrint(aus);
@@ -531,22 +599,26 @@ void endOfExecution(int sig)
     {
         if (shmdt(*regPtrs) == -1)
         {
+            if (errno != EINVAL) {
             /*
                 Implementare un meccanismo di retry??
                 Contando che non è un errore così frequente si potrebbe anche ignorare...
             */
             safeErrorPrint("Node: failed to detach from register's partition. Error: ");
+            }
         }
         regPtrs++;
     }
-    free(regPtrs);
+    if (regPtrs != NULL)
+        free(regPtrs);
 
     write(STDOUT_FILENO,
           "Node: deatching from users list...\n",
           strlen("Node: deatching from users list...\n"));
     if (shmdt(usersList) == -1)
     {
-        safeErrorPrint("Node: failed to detach from users list. Error: ");
+        if (errno != EAGAIN)
+            safeErrorPrint("Node: failed to detach from users list. Error: ");
     }
 
     write(STDOUT_FILENO,
@@ -554,10 +626,12 @@ void endOfExecution(int sig)
           strlen("Node: deatching from nodes list...\n"));
     if (shmdt(nodesList) == -1)
     {
-        safeErrorPrint("Node: failed to detach from nodes list. Error: ");
+        if (errno != EAGAIN)
+            safeErrorPrint("Node: failed to detach from nodes list. Error: ");
     }
 
-    free(noReadersPartitions);
+    if (noReadersPartitions != NULL)
+        free(noReadersPartitions);
 
     write(STDOUT_FILENO,
           "Node: deatching from partitions' number of readers shared variable...\n",
@@ -567,89 +641,27 @@ void endOfExecution(int sig)
     {
         if (shmdt(*noReadersPartitionsPtrs) == -1)
         {
-            safeErrorPrint("Node: failed to detach from partitions' number of readers shared variable. Error: ");
+            if (errno != EAGAIN)
+                safeErrorPrint("Node: failed to detach from partitions' number of readers shared variable. Error: ");
         }
 
         noReadersPartitionsPtrs++;
     }
-    free(ausPtr);
+    if (ausPtr != NULL)
+        free(ausPtr);
 
     write(STDOUT_FILENO,
           "Node: deatching from users list's number of readers shared variable...\n",
           strlen("Node: deatching from users list's number of readers shared variable...\n"));
     if (shmdt(noUserSegReadersPtr) == -1)
     {
-        safeErrorPrint("Node: failed to detach from users list's number of readers shared variable. Error: ");
+        if (errno != EAGAIN)
+            safeErrorPrint("Node: failed to detach from users list's number of readers shared variable. Error: ");
     }
 
+    if (friends_node != NULL)
+        free(friends_node);
     printf("Node: cleanup operations completed. Process is about to end its execution...\n");
-
-    free(friends_node);
-}
-
-int readConfigParameters()
-{
-    char *filename = "params.txt";
-    FILE *fp = fopen(filename, "r");
-    /* Reading line by line, max 128 bytes*/
-    /*
-        SPOSTATO IN INFO.h
-    */
-    /*const unsigned MAX_LENGTH = 128;*/
-    /* Array that will contain the lines read from the file
-    // each "row" of the "matrix" will contain a different file line*/
-    char line[CONF_MAX_LINE_NO][CONF_MAX_LINE_SIZE];
-    /* Counter of the number of lines in the file*/
-    int k = 0;
-    char *aus = NULL;
-    int exitCode = 0;
-    int i = 0;
-
-    printf("Node: reading configuration parameters...\n");
-
-    aus = (char *)calloc(35, sizeof(char));
-    if (aus == NULL)
-        unsafeErrorPrint("Node: failed to allocate memory. Error: ");
-    else
-    {
-        /* Handles any error in opening the file*/
-        if (fp == NULL)
-        {
-            sprintf(aus, "Error: could not open file %s", filename);
-            unsafeErrorPrint(aus);
-            exitCode = EXIT_FAILURE;
-        }
-        else
-        {
-            /* Inserts the lines read from the file into the array*/
-            /* It also inserts the parameters read into environment variables*/
-            /*
-            CORREGGERE: segnalare errori fgets
-        */
-            while (fgets(line[k], CONF_MAX_LINE_SIZE, fp) != NULL)
-            {
-                putenv(line[i]);
-                k++;
-            }
-
-            if (line[k] == NULL)
-            {
-                unsafeErrorPrint("Node: failed to read cofiguration parameters. Error: ");
-                exitCode = EXIT_FAILURE;
-            }
-            else
-            {
-                /* Assigns the values ​​of the environment
-        // variables to the global variables defined above*/
-                assignEnvironmentVariables();
-            }
-
-            /* Close the file*/
-            fclose(fp);
-        }
-    }
-
-    return exitCode;
 }
 
 /****   Function that creates the ipc structures used in the project    *****/
@@ -786,7 +798,7 @@ void initializeIPCFacilities()
     /********************************************************/
     /********************************************************/
     /*
-        CORREGGERE: bisogna collegarsi alla tp del processo
+        CORREGGERE: segnalazione errori
     */
     key = ftok(MSGFILEPATH, getpid());
     tpId = msgget(key, 0600);
@@ -801,7 +813,7 @@ void initializeIPCFacilities()
 /****************************************************************************/
 /****************************************************************************/
 
-void sendTransaction()
+void dispatchToFriend()
 {
     /*
         1. Prelievo transazione: OK
@@ -814,6 +826,7 @@ void sendTransaction()
     int friendTp = -1;
     sigset_t mask;
     struct sigaction actSendTrans;
+    Block temp;
 
     write(STDOUT_FILENO,
           "Node: dispatching transaction to friend...\n",
@@ -838,6 +851,9 @@ void sendTransaction()
             /*
                 Reinserire transazione
             */
+            temp.bIndex = 0;
+            temp.transList[0] = aus.transaction;
+            reinsertTransactions(temp);
         }
         else
         {
@@ -845,19 +861,19 @@ void sendTransaction()
             if (friendTp == -1)
             {
                 safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
-                /*
-                Reinserire transazione
-            */
+                temp.bIndex = 0;
+                temp.transList[0] = aus.transaction;
+                reinsertTransactions(temp);
             }
             else
             {
                 aus.mType = *(friends_node + i);
                 if (msgsnd(friendTp, &aus, sizeof(Transaction), 0600) == -1)
                 {
-                    safeErrorPrint("Node: failed to dispatch transaction to frien. Error: ");
-                    /*
-                Reinserire transazione
-            */
+                    safeErrorPrint("Node: failed to dispatch transaction to friend. Error: ");
+                    temp.bIndex = 0;
+                    temp.transList[0] = aus.transaction;
+                    reinsertTransactions(temp);
                 }
                 else
                 {
@@ -872,23 +888,167 @@ void sendTransaction()
     /*
         Vedere se togliere il segnale di fine simulazione
     */
-    write(STDOUT_FILENO, 
-        "Node: resetting transaction's dispatch timer and handler...\n", 
-        strlen("Node: resetting timer and handler...\n")
-    );
-    if (sigfillset(&mask) == -1){
+    write(STDOUT_FILENO,
+          "Node: resetting transaction's dispatch timer and handler...\n",
+          strlen("Node: resetting timer and handler...\n"));
+    if (sigfillset(&mask) == -1)
+    {
         safeErrorPrint("Node: failed to set up signal mask. Error: ");
-    } else {
+    }
+    else
+    {
         actSendTrans.sa_mask = mask;
-        actSendTrans.sa_handler = sendTransaction;
-        if (sigaction(SIGALRM, &actSendTrans, NULL) == -1){
+        actSendTrans.sa_handler = dispatchToFriend;
+        if (sigaction(SIGALRM, &actSendTrans, NULL) == -1)
+        {
             safeErrorPrint("Node: failed to set simulation's dispatch handler. Error: ");
-        } else {
+        }
+        else
+        {
             if (alarm(TRANS_FRIEND_INTERVAL) != 0)
             {
                 safeErrorPrint("Node: failed to set transaction's dispatch timer.");
             }
         }
     }
-   
+}
+
+void sendTransaction()
+{
+    MsgGlobalQueue trans;
+    int i = 0;
+    key_t key = -1;
+    int friendTp = -1;
+    MsgTP aus;
+
+    /*
+        Fare ciclo per tutte le transazioni ???
+        Potrebbe avere senso, in fondo non dovrebbero essere troppe.
+        Il rischio è quello di fare un numero di system call molto elevate
+        in un'invocazione e molto poco nella altre.
+        Così invece le system call vengono meglio distribuite
+    */
+    if (msgrcv(globalQueueId, &trans, sizeof(MsgGlobalQueue), getpid(), IPC_NOWAIT) == -1)
+    {
+        if (errno != ENOMSG)
+        {
+            unsafeErrorPrint("Node: failed to check existence of transactions on global queue. Error: ");
+        }
+    } else {
+        /*
+            Ora trans contiene la transazione da mandare ad un amico/master
+        */
+        if (trans.msgContent == TRANSTPFULL){
+            if (trans.hoops == 0)
+            {
+                /* Invio al master */
+                if (sendOnGlobalQueue(&trans, getppid(), NEWNODE, 0))
+                {
+                    /*
+                Correggere: dovremmo avvisare il sender ??
+               */
+                    unsafeErrorPrint("Node: failed to dispatch transaction to master. Error: ");
+                }
+                else
+                {
+                    write(STDOUT_FILENO,
+                          "Node: requested creation of a new node to serve a transaction...\n",
+                          strlen("Node: requested creation of a new node to serve a transaction...\n"));
+                }
+            }
+            else
+            {
+                i = rand() % (SO_FRIENDS_NUM + 1);
+                key = ftok(MSGFILEPATH, *(friends_node + i));
+                if (key == -1)
+                {
+                    safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
+                    if (sendOnGlobalQueue(&trans, *(friends_node + i), TRANSTPFULL, -1))
+                        write(STDOUT_FILENO,
+                              "Node: transaction successfully dispatched to friend via global queue.\n",
+                              strlen("Node: transaction successfully dispatched to friend via global queue.\n"));
+                    else
+                    {
+                        /*
+                                Correggere: dovremmo avvisare il sender ??
+                            */
+                        unsafeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
+                    }
+                }
+                else
+                {
+                    friendTp = msgget(key, 0600);
+                    if (friendTp == -1)
+                    {
+                        safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
+                        if (sendOnGlobalQueue(&trans, *(friends_node + i), TRANSTPFULL, -1))
+                            write(STDOUT_FILENO,
+                                  "Node: transaction successfully dispatched to friend via global queue.\n",
+                                  strlen("Node: transaction successfully dispatched to friend via global queue.\n"));
+                        else
+                        {
+                            /*
+                                Correggere: dovremmo avvisare il sender ??
+                            */
+                            unsafeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
+                        }
+                    }
+                    else
+                    {
+                        aus.transaction = trans.transaction;
+                        aus.mType = *(friends_node + i);
+                        if (msgsnd(friendTp, &aus, sizeof(Transaction), 0600 | IPC_NOWAIT) == -1)
+                        {
+                            /*
+                        Reinserirla nella coda globale con un'operazione di rollback sarebbe inutile:
+                        tanto vale mandarla all'amico
+                    */
+                            /*
+                            Coda dell'amico piena ==> inviare su TP globale
+                        */
+                            if (sendOnGlobalQueue(&trans, *(friends_node + i), TRANSTPFULL, -1))
+                                write(STDOUT_FILENO,
+                                      "Node: transaction successfully dispatched to friend via global queue.\n",
+                                      strlen("Node: transaction successfully dispatched to friend via global queue.\n"));
+                            else
+                            {
+                                /*
+                                Correggere: dovremmo avvisare il sender ??
+                            */
+                                unsafeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
+                            }
+                        }
+                        else
+                        {
+                            write(STDOUT_FILENO,
+                                  "Node: transaction successfully dispatched to friend.\n",
+                                  strlen("Node: transaction successfully dispatched to friend.\n"));
+                        }
+                    }
+                }
+            }
+        } else if (trans.msgContent == NEWFRIEND){
+            /*
+                Mettere qui aggiunta amico su richiesta master
+            */
+        }
+        
+    }
+
+    
+}
+
+boolean sendOnGlobalQueue(MsgGlobalQueue * trans, pid_t pid, GlobalMsgContent cnt, long hp)
+{
+    boolean ret = TRUE;
+
+    trans->mType = pid;
+    trans->msgContent = cnt;
+    trans->hoops += hp;
+    if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue), 0) == -1)
+    {
+        ret = FALSE;
+    }
+
+    return ret;
 }

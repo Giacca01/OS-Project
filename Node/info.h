@@ -146,13 +146,17 @@ typedef struct /* Modificato 10/12/2021*/
     the receiver was a terminated user)   
 
     FRIENDINIT: massage sent to user from master to initialize its friends list 
+
+    TRANSTPFULL: message sent to user (or node) to node to inform it that a transaction
+    must be served either by requesting the creation of new node or by dispatching it to a friend
 */
 typedef enum
 {
     NEWNODE = 0,
     NEWFRIEND,
     FAILEDTRANS,
-    FRIENDINIT
+    FRIENDINIT,
+    TRANSTPFULL
 } GlobalMsgContent;
 
 /* attenzione!!!! Per friends va fatta una memcopy
@@ -175,6 +179,7 @@ typedef struct
      */
     ProcListElem friend; /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
     Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    long hoops;              /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
 } MsgGlobalQueue;
 
 typedef enum
