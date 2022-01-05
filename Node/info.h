@@ -51,21 +51,42 @@ i figli lo preleveranno dalla lista dei nodi*/
     }
 
 #define FTOK_TEST_ERROR(key) \
-    if (key == -1)           \
-        unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: ");
+    if (key == -1){          \
+        unsafeErrorPrint("Node: ftok failed during semaphores creation. Error: ");\
+        return FALSE; \
+    }
 
 #define SEM_TEST_ERROR(id) \
-    if (id == -1)          \
-        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: ");
+    if (id == -1) {         \
+        unsafeErrorPrint("Node: semget failed during semaphore creation. Error: ");\
+        return FALSE;\
+    }
 
 #define SHM_TEST_ERROR(id) \
-    if (id == -1)          \
-        unsafeErrorPrint("Master: shmget failed during shared memory segment creation. Error: ");
+    if (id == -1){          \
+        unsafeErrorPrint("Nde: shmget failed during shared memory segment creation. Error: ");\
+        return FALSE;\
+    }
 
 #define MSG_TEST_ERROR(id)                                                                 \
-    if (id == -1)                                                                          \
-        unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: "); \
-        
+    if (id == -1){                                                                          \
+        unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: ");\
+        return FALSE;\
+    }
+
+#define TEST_MALLOC_ERROR(ptr)                                        \
+    if (ptr == NULL) {                                               \
+        unsafeErrorPrint("User: failed to allocate memory. Error: "); \
+        return FALSE;                                                   \
+    }
+
+#define TEST_SHMAT_ERROR(ptr)                                        \
+    if (ptr == NULL)                                                                   \
+    {                                                                                 \
+        unsafeErrorPrint("User: failed to attach to shared memory segment. Error: "); \
+        return FALSE;                                                 \
+    }
+
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
 #define REG_PARTITION_SIZE (SO_REGISTRY_SIZE / 3) 
 #define REWARD_TRANSACTION -1                     
