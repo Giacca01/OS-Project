@@ -2,7 +2,6 @@
 5) Sistemazione e Test Nodo:
     -implementare parte aggiuntiva versione FULL
         -controllo periodico transazioni su coda globale: Ok
-    -sistemare costante dimensione file
     -aggiungere var d'ambiente SO_HOPS: Ok
     -togliere lettura file: si fa solo nel master; nei figli
     si leggono solo le var d'ambiente: Ok
@@ -13,23 +12,32 @@
     ed inviare una transazione ad ogni iterazione del ciclo di vita del nodo
     (così però non si fanno un po' troppi invii? E soprattutto, non si perde
     la possibilità di regolare la velocità??)
-6) Collegarsi alla lista dei nodi in sola lettura(user ok, modificare anche nodi)
+6) Collegarsi alla lista dei nodi in sola lettura:OK
 7) Fissare con precisione il numero di partizioni (per me va bene vincolarlo a 3)
 8) /*
         Se un nodo è terminato ed un processo prova a mandargli una transazione bisogna
         segnalare un errore
        */
-9) Spostare TEST_ERROR_PARAM in info.h
-10) Definire una procedura che deallochi le facilities in caso di errore:
+9) Spostare TEST_ERROR_PARAM in info.h e correggerla
+10) Definire una procedura che deallochi le facilities in caso di errore: OK
     -modificare la procedura di deallocazione corrente in modo che sappia
     gestire senza errori il caso in cui un ogetto IPC non esiste: Ok (solo per nodo)
     -agganciare la procedure con atexit in modo che venga sempre eseguita alla terminazione
-    (o richiamarla in caso di errore)
+    (o richiamarla in caso di errore: questa è la soluzione scelta, l'altra è inutile): OK
     -agganciarla anche in caso di terminazione anomala
 11) COntrollare i collegamenti in sola lettura ai segmenti
 12) COmpilare tutto (check parentesi calcolo bilancio)
 13) Implementare parte full master
-14) Inserire, nel nodo, l'aggiunta dell'amico su richiesta del master
+14) Inserire, nel nodo, l'aggiunta dell'amico su richiesta del master: Ok
+15) Aggiornare il progetto alla luce del fatto che i nodi possano terminare
+16) Rilevare inivio ad utenti terminati
+    -bisogna farlo sia nel nodo che nell'utente???
+17) Segnalazione fallimento transazione a sender
+18) Per il master e i segmenti di shared memory abbiamo usato una soluzione read first, va bene?
+19) Aggiungere sincronizzazione in calcolo bilancio
+20) sistemare costante dimensione file
+21) Rilevazione invio a nodi terminati
+22) Eliminare facilities inutili da node
 /*
     Versione ottimizzata lettura da file
     int readConfigParameters()

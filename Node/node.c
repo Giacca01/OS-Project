@@ -852,6 +852,9 @@ void dispatchToFriend()
     if (msgrcv(tpId, &aus, sizeof(MsgTP), getpid(), 0) == -1)
     {
         safeErrorPrint("Node: failed to extract a transaction to send it to a friend. Error: ");
+        /*
+            CORREGGERE: In caso di errore procediamo limitandoci a segnalarlo??
+        */
     }
     else
     {
@@ -938,6 +941,8 @@ void sendTransaction()
     key_t key = -1;
     int friendTp = -1;
     MsgTP aus;
+    pid_t * listPtr = NULL;
+    pid_t * prevPtr = NULL;
 
     /*
         Fare ciclo per tutte le transazioni ???
@@ -1049,6 +1054,29 @@ void sendTransaction()
             /*
                 Mettere qui aggiunta amico su richiesta master
             */
+           if (listPtr == NULL){
+               /*
+                È improbabile che la lista degli amici sia vuota
+                ma il testo non lo esclude, quindi meglio prevenire
+               */
+              listPtr = trans.friend.procId;
+           } else {
+               listPtr = friends_node;
+               prevPtr = NULL;
+               while (listPtr != NULL)
+               {
+                   prevPtr = listPtr;
+                   listPtr++;
+               }
+               /*
+                POSTCONDIZIONE: prevPtr contiene l'ultimo nodo della lista
+               */
+              prevPtr = trans.friend.procId;
+              /*
+                CORREGGERE: dovremmo testare lo stato??
+              */
+           }
+           
         }
         
     }
