@@ -320,39 +320,102 @@ boolean initializeFacilities()
 
 double computeBalance(TransList *transSent)
 {
-    double balance = SO_BUDGET_INIT;
+    double balance = 0;
     int i;
     Register *ptr;
     int j;
     int k;
     pid_t procPid = getpid();
+    struct sembuf op;
 
+    /*
+        Soluzione equa al problema dei lettori scrittori
+        liberamente ispirata a quella del Professor Gunetti
+        Abbiamo fatto questa scelta perchè non è possibile prevedere
+        se vi saranno più cicli di lettura o di scrittura e per evitare 
+        la starvation degli scrittori o dei lettori.
+    */
     for (i = 0; i < REG_PARTITION_COUNT; i++)
     {
-        ptr = regPtrs[i];
-        while (ptr != NULL)
-        {
-            for (j = 0; j < ptr->nBlocks; j++)
-            {
-                for (k = 0; k < SO_BLOCK_SIZE; k++)
-                {
-                    if (ptr->blockList[j].transList[k].receiver == procPid)
-                    {
-                        balance += ptr->blockList[j].transList[k].amountSend;
-                    }
-                    else if (ptr->blockList[j].transList[k].sender == procPid)
-                    {
-                        /*
-                    Togliamo le transazioni già presenti nel master
-                    dalla lista di quelle inviate
-                
-                */
-                        balance -= ptr->blockList[j].transList[k].amountSend + ptr->blockList[j].transList[k].reward;
-                        removeTransaction(transSent, &(ptr->blockList[j].transList[k]));
+        op.sem_num = i;
+        op.sem_op = -1;
+        op.sem_flg = 0;
+        
+        /*
+            In caso di errore l'idea è quella di restituire 0
+            in modo che l'utente non invii alcuna transazione
+        */
+        if (semop(rdPartSem, &op, 1) == -1)
+            safeErrorPrint("Node: failed to reserve register partition reading semaphore. Error: ");
+        else {
+            if (semop(mutexPartSem, &op, 1) == -1)
+                safeErrorPrint("Node: failed to reserve register partition mutex semaphore. Error: ");
+            else {
+                *(noReadersPartitionsPtrs[i])++;
+            if (*(noReadersPartitionsPtrs[i]) == 1)
+
+                if (semop(wrPartSem, &op, 1) == -1)
+                    safeErrorPrint("Node: failed to reserve register partition writing semaphore. Error:");
+                else {
+                    op.sem_num = i;
+                    op.sem_op = 1;
+                    op.sem_flg = 0;
+
+                    if (semop(mutexPartSem, &op, 1) == -1)
+                        safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
+                    else {
+                        if (semop(rdPartSem, &op, 1) == -1)
+                            safeErrorPrint("Node: failed to release register partition reading semaphore. Error: ");
+                        else {
+                            ptr = regPtrs[i];
+                            balance = SO_BUDGET_INIT;
+                            while (ptr != NULL)
+                            {
+                                for (j = 0; j < ptr->nBlocks; j++)
+                                {
+                                    for (k = 0; k < SO_BLOCK_SIZE; k++)
+                                    {
+                                        if (ptr->blockList[j].transList[k].receiver == procPid)
+                                        {
+                                            balance += ptr->blockList[j].transList[k].amountSend;
+                                        }
+                                        else if (ptr->blockList[j].transList[k].sender == procPid)
+                                        {
+                                            /*
+                                        Togliamo le transazioni già presenti nel master
+                                        dalla lista di quelle inviate
+                                    
+                                    */
+                                            balance -= (ptr->blockList[j].transList[k].amountSend) + 
+                                                        (ptr->blockList[j].transList[k].reward);
+                                            removeTransaction(transSent, &(ptr->blockList[j].transList[k]));
+                                        }
+                                    }
+                                }
+                                ptr++;
+                            }
+
+                            if (semop(mutexPartSem, &op, 1) == -1){
+                                balance = 0;
+                                safeErrorPrint("Node: failed to reserve register partition mutex semaphore. Error: ");
+                            }else {
+                                *(noReadersPartitionsPtrs[i])--;
+                                if (*(noReadersPartitionsPtrs[i]) == 0){
+                                    if (semop(wrPartSem, &op, 1) == -1){
+                                        balance = 0;
+                                        safeErrorPrint("Node: failed to release register partition writing semaphore. Error: ");
+                                    }
+                                }
+
+                                if (semop(mutexPartSem, &op, 1) == -1){
+                                    balance = 0;
+                                    safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
+                                }
+                            }
+                        }
                     }
                 }
             }
-            ptr++;
         }
 
         /*
@@ -361,7 +424,8 @@ double computeBalance(TransList *transSent)
         */
         while (transSent != NULL)
         {
-            balance -= transSent->currTrans->amountSend + transSent->currTrans->reward;
+            balance -= (transSent->currTrans->amountSend) + 
+                        (transSent->currTrans->reward);
             transSent++;
         }
     }

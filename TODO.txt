@@ -5,3 +5,12 @@
 2) Leggere Variabili d'ambiente: Ok
 3) Calcolo bilancio: Ok
 4) Test e revisione
+5) Controllare sincronizzazione register:
+    -utente per calcolo bilancio: Ok
+    -nodo per registrare blocco:
+    -master per stampa?? In teoria no, perchè accedi al registro
+    quando tutti sono terminati
+5) COntrollare sincronizzazione lista utenti e nodi
+    -utente per scelta utente destinatario
+    -utente per scelta nodo a cui chiedere processamento
+    -master per registare terminazione nodi ed utenti
