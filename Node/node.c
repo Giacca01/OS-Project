@@ -229,12 +229,81 @@ int main()
                                                     if (sembufInit(reservation, -1) && sembufInit(release, 1)){
                                                         printf("Node: starting lifecycle...\n");
                                                         while (!waitForTerm)
-                                                        {
+                                                        {   
                                                             /*
-                                                        Check if a transaction was sent when TP was full
-                                                        and dispatch it to another node
-                                                    */
+                                                                Check if a transaction was sent when TP was full
+                                                                and dispatch it to another node
+                                                            */
                                                             sendTransaction();
+
+                                                            /* Generating a Block of SO_BLOCK_SIZE-1 Transitions from TP */
+                                                            /* SO_BLOCK_SIZE is initialized reading the value from environment variables */
+                                                            i = 0;
+
+                                                            /* Generating reward transaction for node an put it in extractedBlock */
+                                                            rew_tran.sender = NO_SENDER;
+                                                            rew_tran.receiver = getpid();
+                                                            rew_tran.reward = 0.0;
+                                                            rew_tran.amountSend = 0.0;                          /* we now set it to 0, then we will count the rewards */
+                                                            clock_gettime(CLOCK_REALTIME, &rew_tran.timestamp); /* get timestamp for transaction */
+
+                                                            /* cycle for extract transaction from TP */
+                                                            /*
+                                                                Estrae SO_BLOCK_SIZE-1 transazioni dalla transaction pool
+                                                            */
+                                                            printf("Node: starting transactions' block creation...\n");
+                                                            while (i < SO_BLOCK_SIZE-1)
+                                                            {
+                                                                /* now receiving the message (transaction from TP) */
+                                                                num_bytes = msgrcv(tpId, &new_trans, sizeof(new_trans)-sizeof(long), getpid(), 0);
+
+                                                                if (num_bytes >= 0)
+                                                                {
+                                                                    /* read transaction from tpList */
+                                                                    extractedBlock.transList[i] = new_trans.transaction;
+                                                                    /* adding reward of transaction in amountSend of reward_transaction */
+                                                                    rew_tran.amountSend += new_trans.transaction.reward;
+
+                                                                    candidateBlock.transList[i] = new_trans.transaction;
+
+                                                                    extractedBlock.bIndex = i;
+                                                                    candidateBlock.bIndex = i++;
+                                                                }
+                                                                else
+                                                                {
+                                                                    /*
+                                                                        Potrebbe avere senso far ripartire l'estrazione da capo ?
+                                                                        No, non cambierebbe nulla, ricordare che le transazioni nel TP
+                                                                        non sono legate, quindi in un blocco possono esserci transazioni qualsiasi
+                                                                    */
+                                                                    unsafeErrorPrint("Node: failed to retrieve transaction from Transaction Pool. Error: ");
+                                                                }
+
+                                                                /*
+                                                                * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
+                                                                * and waits for a message on queue; it will exit this cycle when it reads the requested 
+                                                                * number of transactions (put in extractedBlock.transList)
+                                                                */
+                                                            }
+
+                                                            /* creating candidate block by coping transactions in extracted block */
+                                                            /* VEDERE SE CAMBIARE - PER ME È PERDITA DI TEMPO (es. togliendo candidateBlock e usando direttamente extractedBlock */
+                                                            /*
+                                                                Per ridurre la perdita di tempo si può spostare questa operazione dentro il ciclo di estrazione
+                                                            */
+                                                            /*
+                                                            i = 0;
+                                                            while(i < SO_BLOCK_SIZE-1)
+                                                            {
+                                                                candidateBlock.transList[i] = extractedBlock.transList[i];
+                                                                i++;
+                                                            }*/
+
+                                                            /* putting reward transaction in extracted block */
+                                                            candidateBlock.transList[i] = rew_tran;
+                                                            candidateBlock.bIndex = i;
+                                                            printf("Node: transactions' block creation completed.\n");
+                                                            
                                                             /*
                                             PRECONDIZIONE:
                                                 minSim e maxSim sono state caricate leggendole
@@ -246,74 +315,6 @@ int main()
                                                             /* Simulates the computation by waiting a certain amount of time */
                                                             if (sleep(simTime / 1000) == 0)
                                                             {
-                                                                /* Generating a Block of SO_BLOCK_SIZE-1 Transitions from TP */
-                                                                /* SO_BLOCK_SIZE is initialized reading the value from environment variables */
-                                                                i = 0;
-                                                                MsgTP new_trans;
-
-                                                                /* Generating reward transaction for node an put it in extractedBlock */
-                                                                Transaction rew_tran;
-                                                                rew_tran.sender = NO_SENDER;
-                                                                rew_tran.receiver = getpid();
-                                                                rew_tran.reward = 0.0;
-                                                                rew_tran.amountSend = 0.0;                          /* we now set it to 0, then we will count the rewards */
-                                                                clock_gettime(CLOCK_REALTIME, &rew_tran.timestamp); /* get timestamp for transaction */
-
-                                                                /* cycle for extract transaction from TP */
-                                                                /*
-                                                Estrae SO_BLOCK_SIZE-1 transazioni dalla transaction pool
-                                            */
-                                                                while (i < SO_BLOCK_SIZE - 1)
-                                                                {
-                                                                    /* now receiving the message (transaction from TP) */
-                                                                    num_bytes = msgrcv(tpId, &new_trans, sizeof(new_trans) - sizeof(long), getpid(), 0);
-
-                                                                    if (num_bytes >= 0)
-                                                                    {
-                                                                        /* read transaction from tpList */
-                                                                        extractedBlock.transList[i] = new_trans.transaction;
-                                                                        /* adding reward of transaction in amountSend of reward_transaction */
-                                                                        rew_tran.amountSend += new_trans.transaction.reward;
-
-                                                                        candidateBlock.transList[i] = new_trans.transaction;
-
-                                                                        extractedBlock.bIndex = i++;
-                                                                        candidateBlock.bIndex = i++;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        /*
-                                                        Potrebbe avere senso far ripartire l'estrazione da capo ?
-                                                        No, non cambierebbe nulla, ricordare che le transazioni nel TP
-                                                        non sono legate, quindi in un blocco possono esserci transazioni qualsiasi
-                                                    */
-                                                                        unsafeErrorPrint("Node: failed to retrieve transaction from Transaction Pool. Error: ");
-                                                                    }
-
-                                                                    /*
-                                                * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
-                                                * and waits for a message on queue; it will exit this cycle when it reads the requested 
-                                                * number of transactions (put in extractedBlock.transList)
-                                                */
-                                                                }
-
-                                                                /* creating candidate block by coping transactions in extracted block */
-                                                                /* VEDERE SE CAMBIARE - PER ME È PERDITA DI TEMPO (es. togliendo candidateBlock e usando direttamente extractedBlock */
-                                                                /*
-                                                Per ridurre la perdita di tempo si può spostare questa operazione dentro il ciclo di estrazione
-                                            */
-                                                                /*
-                                            i = 0;
-                                            while(i < SO_BLOCK_SIZE-1)
-                                            {
-                                                candidateBlock.transList[i] = extractedBlock.transList[i];
-                                                i++;
-                                            }*/
-
-                                                                /* putting reward transaction in extracted block */
-                                                                candidateBlock.transList[i] = rew_tran;
-                                                                /*candidateBlock.bIndex = i;*/
-
                                                                 /*
                                                 Writes the block of transactions "elaborated"
                                                 on the register
