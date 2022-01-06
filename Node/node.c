@@ -17,6 +17,9 @@
 Register **regPtrs = NULL;
 int *regPartsIds = NULL;
 
+/*
+    User e Nodes list sono inutili
+*/
 int usersListId = -1;
 ProcListElem *usersList = NULL;
 
@@ -343,74 +346,83 @@ int main()
                                                                 /*
                                                 Entry section
                                             */
-                                                                printf("Node: trying to write transactions on registr...\n");
-                                                                if (semop(wrPartSem, reservation, REG_PARTITION_COUNT) == -1)
-                                                                    unsafeErrorPrint("Node: failed to reserve register partitions' semaphore. Error: ");
-                                                                else
-                                                                {
-                                                                    /*
-                                                    PRECONDIZIONE:
-                                                        Il processo arriva qui soolo dopo aver guadagnato l'accesso
-                                                        in mutua esclusione a tutte le partizioni
-                                                */
-
-                                                                    /*
-                                                    Verifica esitenza spazio libero sul registro
-                                                */
-                                                                    for (i = 0; i < REG_PARTITION_COUNT && !available; i++)
-                                                                    {
-                                                                        if (regPtrs[i]->nBlocks != REG_PARTITION_SIZE)
-                                                                            available = TRUE;
-                                                                    }
-
-                                                                    /*
-                                                    Postcondizione: i == indirizzo della partizione libera
-                                                    se available == FALSE ==> registro pieno
-                                                */
-
-                                                                    if (available)
-                                                                    {
-                                                                        /*
-                                                        Inserimento blocco
-                                                    */
-                                                                        /*
-                                                        Precondizione: nBlocks == Prima posizione libera nel blocco
-                                                    */
-                                                                        /*
-                                                            Quando questa istruzione verà eseguita verrà fatta una copia
-                                                            per valore di candidateBlock.
-                                                            È inefficiente, ma non possiamo fare altrimenti
-                                                            se vogliamo condividere la transazione tra processi registri
-                                                    */
-                                                                        /*
-                                                        regPtrs[i] PUNTATORE ad un di tipo register allocato nel segmento
-                                                        di memoria condivisa, che rappresenta l'i-esima partizione del registro
-                                                    */
-                                                                        newBlockPos = &(regPtrs[i]->nBlocks);
-                                                                        regPtrs[i]->blockList[*newBlockPos] = candidateBlock;
-                                                                        (*newBlockPos)++;
-                                                                    }
+                                                                
+                                                                printf("Node: trying to write transactions on register...\n");
+                                                                if (semop(rdPartSem, reservation, REG_PARTITION_COUNT) == -1)
+                                                                    unsafeErrorPrint("Node: failed to reserve register partitions' reading semaphore. Error: ");
+                                                                else{
+                                                                    if (semop(wrPartSem, reservation, REG_PARTITION_COUNT) == -1)
+                                                                        unsafeErrorPrint("Node: failed to reserve register partitions' writing semaphore. Error: ");
                                                                     else
                                                                     {
                                                                         /*
-                                                        Registro pieno ==> invio segnale di fine simulazione
+                                                        PRECONDIZIONE:
+                                                            Il processo arriva qui soolo dopo aver guadagnato l'accesso
+                                                            in mutua esclusione a tutte le partizioni
                                                     */
-                                                                        printf("Node: no space left on register. Rollingback and signaling end of simulation...\n");
-                                                                        reinsertTransactions(extractedBlock);
-                                                                        if (kill(getppid(), SIGUSR1) == -1)
+
+                                                                        /*
+                                                        Verifica esitenza spazio libero sul registro
+                                                    */
+                                                                        for (i = 0; i < REG_PARTITION_COUNT && !available; i++)
                                                                         {
-                                                                            safeErrorPrint("Node: failed to signal Master for the end of simulation. Error: ");
+                                                                            if (regPtrs[i]->nBlocks != REG_PARTITION_SIZE)
+                                                                                available = TRUE;
                                                                         }
 
-                                                                        waitForTerm = TRUE;
-                                                                    }
+                                                                        /*
+                                                        Postcondizione: i == indirizzo della partizione libera
+                                                        se available == FALSE ==> registro pieno
+                                                    */
 
-                                                                    /*
-                                                    Exit section
-                                                */
-                                                                    printf("Node: releasing register's partition...\n");
-                                                                    if (semop(wrPartSem, release, REG_PARTITION_COUNT) == -1)
-                                                                        unsafeErrorPrint("Node: failed to release register partitions' semaphore. Error: ");
+                                                                        if (available)
+                                                                        {
+                                                                            /*
+                                                            Inserimento blocco
+                                                        */
+                                                                            /*
+                                                            Precondizione: nBlocks == Prima posizione libera nel blocco
+                                                        */
+                                                                            /*
+                                                                Quando questa istruzione verà eseguita verrà fatta una copia
+                                                                per valore di candidateBlock.
+                                                                È inefficiente, ma non possiamo fare altrimenti
+                                                                se vogliamo condividere la transazione tra processi registri
+                                                        */
+                                                                            /*
+                                                            regPtrs[i] PUNTATORE ad un di tipo register allocato nel segmento
+                                                            di memoria condivisa, che rappresenta l'i-esima partizione del registro
+                                                        */
+                                                                            newBlockPos = &(regPtrs[i]->nBlocks);
+                                                                            regPtrs[i]->blockList[*newBlockPos] = candidateBlock;
+                                                                            (*newBlockPos)++;
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            /*
+                                                            Registro pieno ==> invio segnale di fine simulazione
+                                                        */
+                                                                            printf("Node: no space left on register. Rollingback and signaling end of simulation...\n");
+                                                                            reinsertTransactions(extractedBlock);
+                                                                            if (kill(getppid(), SIGUSR1) == -1)
+                                                                            {
+                                                                                safeErrorPrint("Node: failed to signal Master for the end of simulation. Error: ");
+                                                                            }
+
+                                                                            waitForTerm = TRUE;
+                                                                        }
+
+                                                                        /*
+                                                        Exit section
+                                                    */
+                                                                        printf("Node: releasing register's partition...\n");
+                                                                        if (semop(wrPartSem, release, REG_PARTITION_COUNT) == -1)
+                                                                            unsafeErrorPrint("Node: failed to release register partitions' writing semaphore. Error: ");
+                                                                        else {
+                                                                            if (semop(rdPartSem, release, REG_PARTITION_COUNT) == -1)
+                                                                                unsafeErrorPrint("Node: failed to release register partitions' reading semaphore. Error: ");
+                                                                        }
+                                                                    }
                                                                 }
                                                             }
                                                             else

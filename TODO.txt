@@ -38,6 +38,7 @@
 20) sistemare costante dimensione file
 21) Rilevazione invio a nodi terminati
 22) Eliminare facilities inutili da node
+23) Controllare valori semafori
 /*
     Versione ottimizzata lettura da file
     int readConfigParameters()
