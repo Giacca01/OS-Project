@@ -81,6 +81,8 @@ struct timespec now;
 
 void transactionGeneration(int);
 void endOfExecution(int);
+TransList * addTransaction(TransList * transSent, Transaction *t);
+void freeTransList(TransList * transSent);
 int extractReceiver(pid_t);
 int extractNode();
 
@@ -124,9 +126,7 @@ void endOfExecution(int sig)
     int exitCode = EXIT_FAILURE;
     int i = 0;
 
-    dprintf(STDOUT_FILENO, 
-            "User: detaching from register's partitions...\n", 
-            strlen("User: detaching from register's partitions...\n"));
+    dprintf(STDOUT_FILENO, "User: detaching from register's partitions...\n");
     
     for(i = 0; i < REG_PARTITION_COUNT; i++)
     {
@@ -139,25 +139,19 @@ void endOfExecution(int sig)
     free(regPtrs);
     free(regPartsIds);
 
-    dprintf(STDOUT_FILENO,
-            "User: detaching from users list...\n",
-            strlen("User: detaching from users list...\n"));
+    dprintf(STDOUT_FILENO, "User: detaching from users list...\n");
     if(shmdt(usersList) == -1)
     {
         safeErrorPrint("User: failed to detach from users list. Error: ");
     }
 
-    dprintf(STDOUT_FILENO,
-            "User: detaching from nodes list...\n",
-            strlen("User: detaching from nodes list...\n"));
+    dprintf(STDOUT_FILENO, "User: detaching from nodes list...\n");
     if(shmdt(nodesList) == -1)
     {
         safeErrorPrint("User: failed to detach from nodes list. Error: ");
     }
 
-    dprintf(STDOUT_FILENO,
-            "User: detaching from partitions' number of readers shared variable...\n",
-            strlen("User: detaching from partitions' number of readers shared variable...\n"));
+    dprintf(STDOUT_FILENO, "User: detaching from partitions' number of readers shared variable...\n");
     for(i = 0; i < REG_PARTITION_COUNT; i++)
     {
         if(shmdt(noReadersPartitionsPtrs[i]) == -1)
@@ -168,17 +162,16 @@ void endOfExecution(int sig)
     free(noReadersPartitions);
     free(noReadersPartitionsPtrs);
 
-    dprintf(STDOUT_FILENO,
-            "User: detaching from users list's number of readers shared variable...\n",
-            strlen("User: detaching from users list's number of readers shared variable...\n"));
+    dprintf(STDOUT_FILENO, "User: detaching from users list's number of readers shared variable...\n");
     if(shmdt(noUserSegReadersPtr) == -1)
     {
         safeErrorPrint("User: failed to detach from users list's number of readers shared variable. Error: ");
     }
 
-    dprintf(STDOUT_FILENO, 
-            "User: cleanup operations completed. Process is about to end its execution...\n",
-            strlen("User: cleanup operations completed. Process is about to end its execution...\n"));
+    dprintf(STDOUT_FILENO, "User: cleanup operations completed. Process is about to end its execution...\n");
+    
+    /* freeing the list of sent transactions */
+    freeTransList(transactionsSent);
     
     exit(exitCode); /* vedere se metterlo qui o spostarlo */
 }
@@ -192,7 +185,9 @@ void transactionGeneration(int sig)
     key_t key;
     pid_t receiver_node;
     struct timespec request, remaining;
+    MsgGlobalQueue msgOnGQueue;
 
+    /* controllare ?? */
     bilancio = computeBudget(transactionsSent); /* calcolo del bilancio */
     srand(getpid());
 
@@ -246,24 +241,36 @@ void transactionGeneration(int sig)
                     else
                     {
                         /* sending the transaction to node */
-                        dprintf(STDOUT_FILENO,
-                                "User: sending the created transaction to the node...\n",
-                                strlen("User: sending the created transaction to the node...\n"));
-                        if(msgsnd(queueId, &msg_to_node, sizeof(Transaction), 0) == -1)
-                            safeErrorPrint("User: failed to send transaction generated on event to node. Error: ");
+                        dprintf(STDOUT_FILENO, "User: sending the created transaction to the node...\n");
+                        if(msgsnd(queueId, &msg_to_node, sizeof(Transaction), IPC_NOWAIT) == -1)
+                        {
+                            if(errno == EAGAIN)
+                            {
+                                /* TP of Selected Node was full, we need to send the message on the global queue */
+                                dprintf(STDOUT_FILENO, "User: transaction pool of selected node was full. Sending transaction on global queue...\n");
+                                
+                                msgOnGQueue.mType = receiver_node;
+                                msgOnGQueue.msgContent = TRANSTPFULL;
+                                msgOnGQueue.transaction = new_trans;
+                                msgOnGQueue.hops = 0;
+                                if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
+                                    safeErrorPrint("User: failed to send transaction on global queue. Error: ");
+                            }
+                            else
+                                safeErrorPrint("User: failed to send transaction generated on event to node. Error: ");
+                        }
                         else
                         {
-                            dprintf(STDOUT_FILENO,
-                                    "User: transaction generated on event correctly sent to node.\n",
-                                    strlen("User: transaction generated on event correctly sent to node.\n"));
+                            dprintf(STDOUT_FILENO, "User: transaction generated on event correctly sent to node.\n");
+
+                            /* Inserting new transaction on list of transaction sent */
+                            transactionsSent = addTransaction(transactionsSent, &new_trans);
                             
                             /* Wait a random time in between SO_MIN_TRANS_GEN_NSEC and SO_MAX_TRANS_GEN_NSEC */
                             request.tv_sec = 0;
                             request.tv_nsec = (rand() % SO_MAX_TRANS_GEN_NSEC) + SO_MIN_TRANS_GEN_NSEC;
                             
-                            dprintf(STDOUT_FILENO,
-                                "User: processing the transaction...\n",
-                                strlen("User: processing the transaction...\n"));
+                            dprintf(STDOUT_FILENO, "User: processing the transaction...\n");
                             
                             if (nanosleep(&request, &remaining) == -1)
                                 safeErrorPrint("User: failed to simulate wait for processing the transaction. Error: ");
@@ -275,9 +282,7 @@ void transactionGeneration(int sig)
     }
     else
     {
-        dprintf(STDOUT_FILENO,
-                "User: not enough money to make a transaction...\n",
-                strlen("User: not enough money to make a transaction...\n"));
+        dprintf(STDOUT_FILENO, "User: not enough money to make a transaction...\n");
         
         num_failure++; /* incremento il numero consecutivo di volte che non riesco a mandare una transazione */
         if(num_failure == SO_RETRY)
@@ -286,6 +291,31 @@ void transactionGeneration(int sig)
             kill(getpid(), SIGUSR1);
         }
     }
+}
+
+TransList * addTransaction(TransList * transSent, Transaction *t)
+{
+    if(t == NULL) {
+        dprintf(STDERR_FILENO, "User: transaction passed to function is a NULL pointer.\n");
+        return NULL;
+    }
+
+    /* insertion of new transaction to list */
+    TransList * new_el = (TransList*) malloc(sizeof(TransList));
+    new_el->currTrans = *t;
+    new_el->nextTrans = transSent;
+    transSent = new_el;
+    
+    return transSent;
+}
+
+void freeTransList(TransList * transSent)
+{
+    if(transSent == NULL)
+        return;
+
+    freeTransList(transSent->nextTrans);
+    free(transSent);
 }
 
 int extractReceiver(pid_t pid)

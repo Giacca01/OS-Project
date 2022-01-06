@@ -51,21 +51,42 @@ i figli lo preleveranno dalla lista dei nodi*/
     }
 
 #define FTOK_TEST_ERROR(key) \
-    if (key == -1)           \
-        unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: ");
+    if (key == -1){          \
+        unsafeErrorPrint("Node: ftok failed during semaphores creation. Error: ");\
+        return FALSE; \
+    }
 
 #define SEM_TEST_ERROR(id) \
-    if (id == -1)          \
-        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: ");
+    if (id == -1) {         \
+        unsafeErrorPrint("Node: semget failed during semaphore creation. Error: ");\
+        return FALSE;\
+    }
 
 #define SHM_TEST_ERROR(id) \
-    if (id == -1)          \
-        unsafeErrorPrint("Master: shmget failed during shared memory segment creation. Error: ");
+    if (id == -1){          \
+        unsafeErrorPrint("Nde: shmget failed during shared memory segment creation. Error: ");\
+        return FALSE;\
+    }
 
 #define MSG_TEST_ERROR(id)                                                                 \
-    if (id == -1)                                                                          \
-        unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: "); \
-        
+    if (id == -1){                                                                          \
+        unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: ");\
+        return FALSE;\
+    }
+
+#define TEST_MALLOC_ERROR(ptr)                                        \
+    if (ptr == NULL) {                                               \
+        unsafeErrorPrint("User: failed to allocate memory. Error: "); \
+        return FALSE;                                                   \
+    }
+
+#define TEST_SHMAT_ERROR(ptr)                                        \
+    if (ptr == NULL)                                                                   \
+    {                                                                                 \
+        unsafeErrorPrint("User: failed to attach to shared memory segment. Error: "); \
+        return FALSE;                                                 \
+    }
+
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
 #define REG_PARTITION_SIZE (SO_REGISTRY_SIZE / 3) 
 #define REWARD_TRANSACTION -1                     
@@ -142,15 +163,20 @@ typedef struct /* Modificato 10/12/2021*/
                 to add a new process to its friends
     FAILEDTRANS: message sent to user from node to inform it that
     the attached transaction has failed (this is used in case
-    the receiver was a terminated user)   
-    FRIENDINIT: massage sent to user from master to initialize its friends list 
+    the receiver was a terminated user)
+
+    FRIENDINIT: massage sent to user from master to initialize its friends list
+    
+    TRANSTPFULL: message sent to user (or node) to node to inform it that a transaction
+    must be served either by requesting the creation of new node or by dispatching it to a friend
 */
 typedef enum
 {
     NEWNODE = 0,
     NEWFRIEND,
     FAILEDTRANS,
-    FRIENDINIT
+    FRIENDINIT,
+    TRANSTPFULL
 } GlobalMsgContent;
 
 /* attenzione!!!! Per friends va fatta una memcopy
@@ -171,8 +197,9 @@ typedef struct
      * sulla coda globale e starà quindi al nodo destinatario leggere i messaggi dalla coda e creare la 
      * sua lista di nodi amici.
      */
-    ProcListElem friend; /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
-    Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    ProcListElem friend;        /* garbage if msgContent == NEWNODE || msgContent == FAILEDTRANS || msgContent == TRANSTPFULL  */
+    Transaction transaction;    /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    long hops;                  /* garbage if msgContent == NEWNODE || msgContent == NEWFRIEND || msgContent == FRIENDINIT || msgContent == FAILEDTRANS */
 } MsgGlobalQueue;
 
 typedef enum

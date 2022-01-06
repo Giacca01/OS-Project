@@ -17,7 +17,7 @@
             unsafeErrorPrint("User: failed to allocate memory. Error: ");\
             return FALSE;
     typedef struct tlist{
-        Transaction * currTrans;
+        Transaction currTrans; /* Stefano: ho rimosso il puntatore perché dava problemi nell'inserimento */
         struct tlist *nextTrans;
     } TransList;
 #endif
