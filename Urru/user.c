@@ -57,6 +57,9 @@ int main(int argc, char **argv, char *envp[])
             safeErrorPrint("User: failed to extract user and node receiver. Error: ");
         else
         {
+            /*
+                CORREGGERE: Serve sincronizzazione
+            */
             receiver_user = usersList[receiver_node_index].procId;
             receiver_node = nodesList[receiver_node_index].procId;
             srand(getpid());

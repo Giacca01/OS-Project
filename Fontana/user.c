@@ -126,6 +126,14 @@ void endOfExecution(int sig)
     int exitCode = EXIT_FAILURE;
     int i = 0;
 
+    /*
+        CORREGGERE CON NUOVO MECCANISMO DI RILEVAZIONE ERRORI
+    */
+
+    /*
+        La dprintf è utilissima.
+        Fontana è un genio!!
+    */
     dprintf(STDOUT_FILENO, "User: detaching from register's partitions...\n");
     
     for(i = 0; i < REG_PARTITION_COUNT; i++)
@@ -212,6 +220,9 @@ void transactionGeneration(int sig)
             if(new_trans.reward < 1)
                 new_trans.reward = 1;
 
+            /*
+                CORREGGERE: manca sincronizzazione
+            */
             new_trans.receiver = usersList[receiver_user_index].procId;
             clock_gettime(CLOCK_REALTIME, &new_trans.timestamp); /* get timestamp for transaction */
 
@@ -221,6 +232,9 @@ void transactionGeneration(int sig)
                 safeErrorPrint("User: failed to extract node which receiver of the transaction. Error: ");
             else
             {
+                /*
+                CORREGGERE: manca sincronizzazione
+            */
                 /* saving node's pid */
                 receiver_node = nodesList[receiver_node_index].procId;
                 
@@ -263,6 +277,9 @@ void transactionGeneration(int sig)
                         {
                             dprintf(STDOUT_FILENO, "User: transaction generated on event correctly sent to node.\n");
 
+                            /*
+                                CORREGGERE: non bisognerebbe farlo anche in caso di invio su coda globale??
+                            */
                             /* Inserting new transaction on list of transaction sent */
                             transactionsSent = addTransaction(transactionsSent, &new_trans);
                             
@@ -320,6 +337,12 @@ void freeTransList(TransList * transSent)
 
 int extractReceiver(pid_t pid)
 {
+    /*
+        Correggere: manca sincronizzazione
+    */
+   /*
+    Cosa fa questa funzione???
+   */
     int n = -1;
     do
     {

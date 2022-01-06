@@ -7,10 +7,14 @@
 4) Test e revisione
 5) Controllare sincronizzazione register:
     -utente per calcolo bilancio: Ok
-    -nodo per registrare blocco:
+    -nodo per registrare blocco: Ok
     -master per stampa?? In teoria no, perchè accedi al registro
     quando tutti sono terminati
 5) COntrollare sincronizzazione lista utenti e nodi
     -utente per scelta utente destinatario
     -utente per scelta nodo a cui chiedere processamento
     -master per registare terminazione nodi ed utenti
+6) Sostituire sleep con nanosleep
+7) sostituire write con dprintf
+8) Testare meccanismo deallocazioni in caso di errore su master
+9) Terminazione in caso di errore fork nel master
