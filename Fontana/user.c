@@ -51,6 +51,9 @@ int *noUserSegReadersPtr = NULL;
 */
 int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
                       // to read and write nodes list*/
+int noNodeSegReaders = -1;            /* id of the shared memory segment that contains the variable used to syncronize
+                           // readers and writers access to nodes list*/
+int *noNodeSegReadersPtr = NULL;
 /*** End Global variables for IPC ***/
 
 /***** Definition of global variables that contain *****/
@@ -83,8 +86,8 @@ void transactionGeneration(int);
 void endOfExecution(int);
 TransList * addTransaction(TransList * transSent, Transaction *t);
 void freeTransList(TransList * transSent);
-int extractReceiver(pid_t);
-int extractNode();
+pid_t extractReceiver(pid_t);
+pid_t extractNode();
 
 int main(int argc, char * argv[])
 {
@@ -176,6 +179,12 @@ void endOfExecution(int sig)
         safeErrorPrint("User: failed to detach from users list's number of readers shared variable. Error: ");
     }
 
+    dprintf(STDOUT_FILENO, "User: detaching from nodes list's number of readers shared variable...\n");
+    if(shmdt(noNodeSegReadersPtr) == -1)
+    {
+        safeErrorPrint("User: failed to detach from nodes list's number of readers shared variable. Error: ");
+    }
+
     dprintf(STDOUT_FILENO, "User: cleanup operations completed. Process is about to end its execution...\n");
     
     /* freeing the list of sent transactions */
@@ -186,14 +195,17 @@ void endOfExecution(int sig)
 
 void transactionGeneration(int sig)
 {
-    int bilancio, receiver_user_index, receiver_node_index, queueId;
+    int bilancio, receiver_node_index, queueId;
     long destUserPid;
     Transaction new_trans;
     MsgTP msg_to_node;
     key_t key;
-    pid_t receiver_node;
+    pid_t receiver_node, receiver_user;
     struct timespec request, remaining;
     MsgGlobalQueue msgOnGQueue;
+    struct sembuf sops;
+    
+    sops.sem_flg = 0;
 
     /* controllare ?? */
     bilancio = computeBudget(transactionsSent); /* calcolo del bilancio */
@@ -205,39 +217,29 @@ void transactionGeneration(int sig)
         /* deve essere globale */
         num_failure = 0; /* sono riuscito a mandare la transazione, azzero il counter dei fallimento consecutivi */
 
-        /* Extracts the receiving user and the node and
-        calculates the amount and reward randomly */
-        receiver_user_index = extractReceiver(getpid());
-        if(receiver_user_index == -1)
+        /* Extracts the receiving user randomly */
+        receiver_user = extractReceiver(getpid());
+        if(receiver_user == -1)
             safeErrorPrint("User: failed to extract user receiver. Error: ");
         else 
         {
             /* Generating transaction */
             new_trans.sender = getpid();
+            new_trans.receiver = receiver_user;
             new_trans.amountSend = (rand()%bilancio)+2; /* calcolo del budget fra 2 e il budget (così lo fa solo intero) */
             new_trans.reward = new_trans.amountSend*SO_REWARD; /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 0 e 1 */
             /*new_trans.reward = (new_trans.amountSend/100)*SO_REWARD; /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 1 e 100 */
             if(new_trans.reward < 1)
                 new_trans.reward = 1;
 
-            /*
-                CORREGGERE: manca sincronizzazione
-            */
-            new_trans.receiver = usersList[receiver_user_index].procId;
             clock_gettime(CLOCK_REALTIME, &new_trans.timestamp); /* get timestamp for transaction */
 
-            /* now I need to choose a node to send the transaction */
-            receiver_node_index = extractNode();
-            if(receiver_node_index == -1)
-                safeErrorPrint("User: failed to extract node which receiver of the transaction. Error: ");
+            /* extracting node which to send the transaction */
+            receiver_node = extractNode();
+            if(receiver_node == -1)
+                safeErrorPrint("User: failed to extract node which to send transaction on TP. Error: ");
             else
             {
-                /*
-                CORREGGERE: manca sincronizzazione
-            */
-                /* saving node's pid */
-                receiver_node = nodesList[receiver_node_index].procId;
-                
                 /* preparing message to send on node's queue */
                 msg_to_node.mType = receiver_node;
                 msg_to_node.transaction = new_trans;
@@ -254,6 +256,9 @@ void transactionGeneration(int sig)
                         safeErrorPrint("User: failed to connect to node's transaction pool. Error: ");
                     else
                     {
+                        /* Inserting new transaction on list of transaction sent */
+                        transactionsSent = addTransaction(transactionsSent, &new_trans);
+                        
                         /* sending the transaction to node */
                         dprintf(STDOUT_FILENO, "User: sending the created transaction to the node...\n");
                         if(msgsnd(queueId, &msg_to_node, sizeof(Transaction), IPC_NOWAIT) == -1)
@@ -276,12 +281,6 @@ void transactionGeneration(int sig)
                         else
                         {
                             dprintf(STDOUT_FILENO, "User: transaction generated on event correctly sent to node.\n");
-
-                            /*
-                                CORREGGERE: non bisognerebbe farlo anche in caso di invio su coda globale??
-                            */
-                            /* Inserting new transaction on list of transaction sent */
-                            transactionsSent = addTransaction(transactionsSent, &new_trans);
                             
                             /* Wait a random time in between SO_MIN_TRANS_GEN_NSEC and SO_MAX_TRANS_GEN_NSEC */
                             request.tv_sec = 0;
@@ -338,29 +337,179 @@ void freeTransList(TransList * transSent)
     free(transSent);
 }
 
-int extractReceiver(pid_t pid)
+/**
+ * Function that extracts randomly a receiver for the transaction which is not the same user 
+ * that generated the transaction, whose pid is the argument passed to the function.
+ * Returns the pid of the selected user in the usersList shared array, -1 if the function generates an error.
+ */
+pid_t extractReceiver(pid_t pid)
 {
-    /*
-        Correggere: manca sincronizzazione
-    */
-   /*
-    Cosa fa questa funzione???
-   */
     int n = -1;
-    do
+    struct sembuf sops;
+    pid_t pid_to_return = -1;
+    sops.sem_flg = 0;
+
+    sops.sem_num = 0;
+    sops.sem_op = -1;
+    if (semop(userListSem, &sops, 1) != -1)
     {
-        /*
-            Serve per il seme di generazione
-        */
-        clock_gettime(CLOCK_REALTIME, &now);
-        n = now.tv_nsec % SO_USERS_NUM;
-    } while (pid == usersList[n].procId);
-    return n;
+        (*noUserSegReadersPtr)++;
+        if ((*noUserSegReadersPtr) == 1)
+        {
+            sops.sem_num = 2;
+            sops.sem_op = -1;
+            if (semop(userListSem, &sops, 1) == -1)
+            {
+                safeErrorPrint("User: failed to reserve write usersList semaphore. Error: ");
+                /* do we need to end execution ? */
+            }
+        }
+
+        sops.sem_num = 0;
+        sops.sem_op = 1;
+        if (semop(userListSem, &sops, 1) != -1)
+        {
+            do
+            {
+                /*
+                    Serve per il seme di generazione
+                */
+                clock_gettime(CLOCK_REALTIME, &now);
+                n = now.tv_nsec % SO_USERS_NUM;
+            } while (pid == usersList[n].procId);
+
+            pid_to_return = usersList[n].procId; /* save user pid so as to return it */
+
+            sops.sem_num = 0;
+            sops.sem_op = -1;
+            if (semop(userListSem, &sops, 1) != -1)
+            {
+                (*noUserSegReadersPtr)--;
+                if ((*noUserSegReadersPtr) == 0)
+                {
+                    sops.sem_num = 2;
+                    sops.sem_op = 1;
+                    if (semop(userListSem, &sops, 1) == -1)
+                    {
+                        safeErrorPrint("User: failed to release write usersList semaphore. Error: ");
+                        /* do we need to end execution ? */
+                    }
+                }
+
+                sops.sem_num = 0;
+                sops.sem_op = 1;
+                if (semop(userListSem, &sops, 1) != -1)
+                {
+                    return pid_to_return;
+                }
+                else
+                {
+                    safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ");
+                    /* do we need to end execution ? */
+                }
+            }
+            else
+            {
+                safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ");
+                /* do we need to end execution ? */
+            }
+        }
+        else
+        {
+            safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ");
+            /* do we need to end execution ? */
+        }
+    }
+    else
+    {
+        safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ");
+        /* do we need to end execution ? */
+    }
+
+    return (pid_t)-1;
 }
 
-int extractNode()
+/**
+ * Function that extracts randomly a node which to send the generated transaction.
+ * Returns the pid of the selected user in the usersList shared array, -1 if the function generates an error.
+ */
+pid_t extractNode()
 {
     int n = -1;
+    struct sembuf sops;
+    pid_t pid_to_return = -1;
+    sops.sem_flg = 0;
+
     clock_gettime(CLOCK_REALTIME, &now);
-    return n = now.tv_nsec % SO_NODES_NUM;
+    n = now.tv_nsec % SO_NODES_NUM;
+
+    sops.sem_num = 0; 
+    sops.sem_op = -1;
+    if(semop(nodeListSem, &sops, 1) != -1)
+    {
+        (*noNodeSegReadersPtr)++;
+        if((*noNodeSegReadersPtr) == 1)
+        {
+            sops.sem_num = 2;
+            sops.sem_op = -1;
+            if(semop(nodeListSem, &sops, 1) == -1)
+            {
+                safeErrorPrint("User: failed to reserve write nodesList semaphore. Error: ");
+                /* do we need to end execution ? */
+            }
+        }
+
+        sops.sem_num = 0;
+        sops.sem_op = 1;
+        if(semop(nodeListSem, &sops, 1) != -1)
+        {
+            pid_to_return = nodesList[n].procId;
+
+            sops.sem_num = 0;
+            sops.sem_op = -1;
+            if(semop(nodeListSem, &sops, 1) != -1)
+            {
+                (*noNodeSegReadersPtr)--;
+                if((*noNodeSegReadersPtr) == 0)
+                {
+                    sops.sem_num = 2;
+                    sops.sem_op = 1;
+                    if(semop(nodeListSem, &sops, 1) == -1)
+                    {
+                        safeErrorPrint("User: failed to release write nodesList semaphore. Error: ");
+                        /* do we need to end execution ? */
+                    }
+                }
+
+                sops.sem_num = 0;
+                sops.sem_op = 1;
+                if(semop(nodeListSem, &sops, 1) != -1)
+                {
+                    return pid_to_return;
+                }
+                else
+                {
+                    safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ");
+                    /* do we need to end execution ? */
+                }
+            }
+            else
+            {
+                safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ");
+                /* do we need to end execution ? */
+            }
+        }
+        else
+        {
+            safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ");
+            /* do we need to end execution ? */
+        }
+    }
+    else
+    {
+        safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ");
+        /* do we need to end execution ? */
+    }
+
+    return (pid_t)-1;
 }
