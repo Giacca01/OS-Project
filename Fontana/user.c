@@ -305,6 +305,9 @@ void transactionGeneration(int sig)
         if(num_failure == SO_RETRY)
         {
             /* non sono riuscito a mandare la transazione per SO_RETRY volte, devo terminare */
+            /*
+                CORREGGERE: inviare segnale al master
+            */
             kill(getpid(), SIGUSR1);
         }
     }
@@ -346,6 +349,9 @@ int extractReceiver(pid_t pid)
     int n = -1;
     do
     {
+        /*
+            Serve per il seme di generazione
+        */
         clock_gettime(CLOCK_REALTIME, &now);
         n = now.tv_nsec % SO_USERS_NUM;
     } while (pid == usersList[n].procId);
