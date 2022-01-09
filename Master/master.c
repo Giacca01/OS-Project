@@ -35,8 +35,9 @@ union semun
 /**********  Function prototypes  *****************/
 void endOfSimulation(int);
 void printBudget();
-void deallocateFacilities(int *);
+boolean deallocateFacilities(int *);
 void freeGlobalVariables();
+void checkNodeCreationRequests();
 /**************************************************/
 
 /*****        Global structures        *****/
@@ -89,7 +90,14 @@ int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, r
     ATTENZIONE AL TIPO DI DATO!!!
 */
 int noTerminated = 0; /* NUmber of processes that terminated before end of simulation*/
-int noEffective = 0; /* Holds the effective number of child processes: must be implemented when a new node is created */
+/*
+    CORREGGERE: sostituire con due variabili
+    una che conta il numero di nodi effettivi
+    ed uno che conta il numero di utenti effettivi
+*/
+int noEffectiveNodes = 0; /* Holds the effective number of nodes */
+int noEffectiveUsers = 0; /* Holds the effective number of users */
+int noAllTimesNodes = 0; /* Historical number of nodes: it counts also the terminated ones */
 /******************************************/
 
 /***** Definition of global variables that contain *****/
@@ -110,11 +118,7 @@ int SO_USERS_NUM, /* Number of user processes NOn è "statico" ???*/
 /*******************************************************/
 /*******************************************************/
 
-/*** Functions declaration ***/
-void endOfSimulation(int);
-void printBudget();
-void deallocateFacilities(int *);
-/*****************************/
+extern ** environ;
 
 /***** Function that assigns the values ​​of the environment *****/
 /***** variables to the global variables defined above     *****/
@@ -427,6 +431,11 @@ void do_stuff(int t)
 
 void estrai(int k)
 {
+    /*
+        Carica in extractedFriendsIndex la posizione
+        in nodesList degli amici
+        (così facendo estrae gli amici)
+    */
     int x, p;
     int count;
     int i = 0;
@@ -536,7 +545,6 @@ int main(int argc, char *argv[])
                     else
                         printf("Master: configuration parameters read successfully!!!\n");
 
-                    noEffective = SO_NODES_NUM + SO_USERS_NUM;
                     noTerminated = 0;
                     /*****  Creates and initialize the IPC Facilities   *****/
                     /********************************************************/
@@ -596,6 +604,7 @@ int main(int argc, char *argv[])
                                 break;
 
                             default:
+                                noEffectiveUsers++;
                                 sops[0].sem_num = 0;
                                 sops[0].sem_op = -1;
                                 sops[0].sem_flg = IPC_NOWAIT;
@@ -673,6 +682,7 @@ int main(int argc, char *argv[])
                                 break;
 
                             default:
+                                noEffectiveNodes++;
                                 sops[0].sem_num = 0;
                                 sops[0].sem_op = -1;
                                 sops[0].sem_flg = IPC_NOWAIT;
@@ -693,6 +703,11 @@ int main(int argc, char *argv[])
                                 break;
                             }
                         }
+                        /*
+                            Non c'è rischio che i nodi o gli utenti eseguano questa istruzione
+                            perchè il loro case contiene l'execve
+                        */
+                        noAllTimesNodes++;
                         /********************************************/
                         /********************************************/
 
@@ -700,10 +715,16 @@ int main(int argc, char *argv[])
                         // to be ready to continue the execution*/
                         for (i = 0; i < SO_NODES_NUM; i++)
                         {
+                            /*
+                                Correggere: manca sincronizzazione
+                            */
                             estrai(i);
                             mybuf.mtype = nodesList[i].procId;
                             for (j = 0; j < SO_FRIENDS_NUM; j++)
                             {
+                                /*
+                                    Perchè non usa MsgGlobalQueue e FRIENDINIT
+                                */
                                 mybuf.pid = nodesList[extractedFriendsIndex[j]].procId;
                                 msgsnd(globalQueueId, &mybuf, sizeof(pid_t), 0);
                                 /* printf("Message %d[%d] delivered...\n", snd_kids[i], j); */
@@ -722,6 +743,7 @@ int main(int argc, char *argv[])
                         /*sleep(10);*/ /*CORREGGERE*/
                         while (1 && child_pid)
                         {
+                            checkNodeCreationRequests();
                             /* check if register is full: in that case it must
                          signal itself ? No
                         this should be inserted in the master lifecycle*/
@@ -816,24 +838,28 @@ void endOfSimulation(int sig)
               strlen("Master: trying to terminate simulation...\n"));
         /* error check*/
         fflush(stdout);
-        if (noTerminated < noEffective) {
+        if (noTerminated < noEffectiveNodes + noEffectiveUsers)
+        {
             /*
                 There are still active children that need
                 to be notified the end of simulation
             */
-            for (i = 0; i < NO_ATTEMPS && !done; i++){
-                if (kill(0, SIGUSR1) == -1){
+            for (i = 0; i < NO_ATTEMPS && !done; i++)
+            {
+                if (kill(0, SIGUSR1) == -1)
+                {
                     safeErrorPrint("Master: failed to signal children for end of simulation. Error: ");
-                } else {
-                    write(STDOUT_FILENO, 
-                        "Master: end of simulation notified successfully to children.\n", 
-                        strlen("Master: end of simulation notified successfully to children.\n")
-                    );
+                }
+                else
+                {
+                    write(STDOUT_FILENO,
+                          "Master: end of simulation notified successfully to children.\n",
+                          strlen("Master: end of simulation notified successfully to children.\n"));
                     done = TRUE;
                 }
             }
-            
-        } else
+        }
+        else
             done = TRUE;
         /*
 			// wait for children
@@ -845,15 +871,17 @@ void endOfSimulation(int sig)
 			// in caso di errore
 			// in teoria questo si sblocca solo dopo la terminazione di tutti i figli
 			// quindi ha senso fare così*/
-        if (done) {
+        if (done)
+        {
             write(STDOUT_FILENO,
-                "Master: waiting for children to terminate...\n",
-                strlen("Master: waiting for children to terminate...\n"));
+                  "Master: waiting for children to terminate...\n",
+                  strlen("Master: waiting for children to terminate...\n"));
             /*
                 Conviene fare comunque la wait anche se tutti sono già terminati
                 in modo che non ci siano zombies
             */
-            while (wait(NULL) != -1);
+            while (wait(NULL) != -1)
+                ;
             if (errno == ECHILD)
             {
                 /*
@@ -899,13 +927,14 @@ void endOfSimulation(int sig)
                 safeErrorPrint("Master: an error occurred while waiting for children. Description: ");
             }
             write(STDOUT_FILENO, "Master: simulation terminated successfully!!!\n", strlen("Master: simulation terminated successfully!!!\n"));
-        } else {
+        }
+        else
+        {
             deallocateFacilities(&exitCode);
             exitCode = EXIT_FAILURE;
-            write(STDOUT_FILENO, 
-                "Master: failed to terminate children. IPC facilties will be deallocated anyway.\n", 
-                strlen("Master: failed to terminate children. IPC facilties will be deallocated anyway.\n")
-            );
+            write(STDOUT_FILENO,
+                  "Master: failed to terminate children. IPC facilties will be deallocated anyway.\n",
+                  strlen("Master: failed to terminate children. IPC facilties will be deallocated anyway.\n"));
         }
     }
     /* Releasing local variables' memory*/
@@ -1106,7 +1135,7 @@ void printBudget()
     free(buf);
 }
 
-void deallocateFacilities(int *exitCode)
+boolean deallocateFacilities(int *exitCode)
 {
     /*
     // Ovviamente i processi figli dovranno scollegarsi
@@ -1139,10 +1168,8 @@ void deallocateFacilities(int *exitCode)
     char *aus = (char *)calloc(100, sizeof(char));
     int msgLength = 0;
     int i = 0;
-    TPElement * tmp;
+    TPElement *tmp;
 
-    printf("**********Il deallocatore è %ld**********\n", (long)getpid());
-    printf("**********Il padre del deallocatore è %ld**********\n", (long)getppid());
     fflush(stdout);
     /* Deallocating register's partitions*/
     write(STDOUT_FILENO,
@@ -1477,4 +1504,147 @@ void deallocateFacilities(int *exitCode)
 
     /* Releasing local variables' memory*/
     free(aus);
+}
+
+void checkNodeCreationRequests()
+{
+    /*
+        CORREGGERE: vogliamo fare un ciclo??
+        Anche in questo caso secondo me è meglio di no
+        perchè così è possibile ripartire le chiamante in
+        modo uniforme tra le varie iterazioni del ciclo 
+        di vita del master
+    */
+    MsgGlobalQueue aus;
+    pid_t procPid = -1;
+    int tpId = -1;
+    pid_t currPid = getPid();
+    MsgTP firstTrans;
+    int tmp = -1;
+    int j = 0;
+    ProcListElem newNode;
+
+    if (msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue), currPid, IPC_NOWAIT) == -1)
+    {
+        /*
+            Su questa coda l'unico tipo di messaggio per il master è NEWNODE
+        */
+        if (aus.msgContent == NEWNODE)
+        {
+            procPid = fork();
+            if (procPid == 0)
+            {
+                /*
+                    1) Creazione tp: Ok
+                    2) aggiunta messaggio: Ok
+                    3) Assegnazione amici: Ok
+                    4) Eseguire codice nodo (opportunamente modificato): Ok
+               */
+                noEffectiveNodes++;
+                noAllTimesNodes++;
+                if (realloc(nodesList, noAllTimesNodes) == -1){
+                    /*
+                        STesse considerazioni fatte sotto per quanto concerne
+                        la fine delle risorse
+                    */
+                    safeErrorPrint("Master: failed to alloc more memory for nodes list. Error: ");
+                } else {
+                    /*
+                        CORREGGE: MANCA SINCRONIZZAZIONE
+                    */
+                    newNode.procId = getpid();
+                    newNode.procState = ACTIVE;
+                    nodesList[noAllTimesNodes - 1] = newNode;
+
+                    tpId = msgget(ftok("msgfile.txt", currPid), IPC_EXCL | IPC_CREAT);
+                    if (tpId == -1)
+                        safeErrorPrint("Master: failed to create additional node's transaction pool. Error: ");
+                    else {
+                        /*
+                            CORREGGERE:
+                            MsgTP è inutile
+                            Toglierlo
+                        */
+                        firstTrans.mType = getpid();
+                        firstTrans.transaction = aus.transaction;
+
+                        if (msgsnd(tpId, &(aus.transaction), sizeof(MsgTP), 0) == -1){
+                            safeErrorPrint("Master: failed to initialize additional node's transaction pool. Error: ");
+                        } else {
+                            aus.mType = getpid();
+                            aus.msgContent = FRIENDINIT;
+                            /*
+                                srand() ???
+                            */
+                            estrai(noEffectiveNodes);
+                            for (j = 0; j < SO_FRIENDS_NUM; j++)
+                            {
+                                aus.friend = nodesList[extractedFriendsIndex[j]];
+                                if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue), 0) == -1){
+                                    /*
+                                        CORREGGERE: possiamo semplicemente segnalare l'errore senza fare nulla?
+                                        Io direi di sì, non mi sembra che gestioni più complicate siano utili
+                                    */
+                                    safeErrorPrint("Master: failed to send a friend to new node. Error: ");
+                                }
+                            }
+
+                            if (execle("./node.o", ADDITIONAL, environ) == -1)
+                                safeErrorPrint("Master: failed to load node's code. Error: ");
+                        }
+                    }
+                }
+            }
+            else if (procPid > 0)
+            {
+                /*
+                    1) Chiedere ad altri nodi
+                    di aggiungere il nuovo processo agli amici:Ok
+               */
+                /*
+                CORREGGERE: è giusto passare noEffectiveNodes????
+              */
+                newNode.procId = procPid;
+                newNode.procState = ACTIVE;
+
+                aus.friend = newNode;
+                aus.msgContent = NEWFRIEND;
+                estrai(noEffectiveNodes);
+                for (j = 0; j < SO_FRIENDS_NUM; j++)
+                {
+                    /*
+                        CORREGGERE: manca sincronizzazione
+                    */
+                    aus.mType = nodesList[extractedFriendsIndex[j]].procId;
+                    if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue), 0) == -1)
+                    {
+                        /*
+                                        CORREGGERE: possiamo semplicemente segnalare l'errore senza fare nulla?
+                                        Io direi di sì, non mi sembra che gestioni più complicate siano utili
+                                    */
+                        safeErrorPrint("Master: failed to ask a node to add the new process to its fiends' list. Error: ");
+                    }
+                }
+            }
+            else
+            {
+                /*
+                Sono finite le risorse, cosa facciamo?
+                    1) Segnaliamo stampando la cosa a video e basta (del resto
+                    nodi ed utenti esistenti possono continuare, però una transazione viene scartata
+                    quindi sarebbe carino segnalarlo al sender)
+                    2) Terminiamo la simulazione: mi sembra eccessivo
+
+                    Io propenderei per la prima soluzione, cercando anche di segnalare il fallimento
+                    al sender
+               */
+            }
+        }
+        else
+        {
+            /*
+            ?????
+           */
+        }
+    }
 }
