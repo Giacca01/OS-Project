@@ -30,6 +30,7 @@
 #define NOREADERSTWOSEED 7
 #define NOREADERSTHREESEED 8
 #define NOUSRSEGRDERSSEED 9
+#define NONODESEGRDERSSEED 10
 
 #define MSGFILEPATH "../msgfile.txt"
 #define GLOBALMSGSEED 1
@@ -187,6 +188,8 @@ typedef struct /* Modificato 10/12/2021*/
 
     TRANSTPFULL: message sent to user (or node) to node to inform it that a transaction
     must be served either by requesting the creation of new node or by dispatching it to a friend
+
+    TERMINATEDUSER: message sent from user when it terminates its execution
 */
 typedef enum
 {
@@ -194,7 +197,8 @@ typedef enum
     NEWFRIEND,
     FAILEDTRANS,
     FRIENDINIT,
-    TRANSTPFULL
+    TRANSTPFULL,
+    TERMINATEDUSER
 } GlobalMsgContent;
 
 /* attenzione!!!! Per friends va fatta una memcopy
@@ -221,7 +225,19 @@ typedef struct
     ProcListElem friend;     /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
     Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
     long hoops;              /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    pid_t userPid; /* pid of terminated user, garbage if msgContent != TERMINATEDUSER */
 } MsgGlobalQueue;
+
+/*
+ * Fields:
+ * mType = pid of node which the transaction is sent
+ * transaction = transaction sent to the node
+ */
+typedef struct
+{
+    long int mType; /* pid of node - not that important, the transaction pool is private to the node */
+    Transaction transaction;
+} MsgTP;
 
 typedef enum
 {
