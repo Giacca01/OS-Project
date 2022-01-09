@@ -1,0 +1,58 @@
+globalQueueId: 
+/*
+    Serve perchè su di essa potrebbe arrivare
+    la notifica del fallimento di una transazione nel caso in cui
+    il master non possa aggiornare la lista utenti perchè
+    un utente la sta già leggendo, vedendo ancora attivo
+    un utente in realtà terminato (vale la pena fare tutto ciò??)
+*/
+
+nodeListSem, noNodeSegReaders, noNodeSegReadersPtr
+/*
+ * Serve una variabile per contare il lettori perchè per estrarre un nodo a cui mandare la 
+ * transazione da processare bisogna leggere la lista dei nodi.
+ */
+
+variabili globali per parametri configurazione
+/*
+    Meglio usare long: i valori potrebbero essere molto grandi
+*/
+
+transactionsSent 
+/*
+    CORREGGERE: ALLOCARLO
+    Dato che potrebbe essere molto grande bisognerebbe fare 
+    inserimento ordinato (si ma in base a cosa?) e ricerca dicotomica
+*/
+
+in funzione allocateMemory
+/* CORREGGERE USANDO CALLOC E FARE SEGNALAZIONE ERRORI
+    (in caso di errore deallocare quanto già allocato e terminare la simulazione ??)
+*/
+
+in funzione initializeFacilities
+/*
+    CORREGGERE: sostituire i numeri con costanti simboliche
+    testare errori shmat
+*/
+
+in funzione removeTransaction
+/*
+    CORREGGERE: i tempi si possono confrontare direttamente???
+*/
+/*
+    Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
+*/
+
+in funzione deallocateFacilities
+/*
+    CORREGGERE CON NUOVO MECCANISMO DI RILEVAZIONE ERRORI
+*/
+in ciclo deallocazione regPtrs
+/* serve riprovare per un certo numero di tentativi? */
+
+in funzione extractReceiver
+/* do we need to end execution ? */
+
+in funzione extractNode
+/* do we need to end execution ? */

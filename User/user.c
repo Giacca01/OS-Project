@@ -1,14 +1,35 @@
 #include "user.h"
 
-Register **regPtrs = NULL;
+/*** GLOBAL VARIABLES FOR IPC ***/
+#pragma region GLOBAL VARIABLES FOR IPC
+/* Poiter to the array that contains the ids of the shared memory segments of the register's partitions.
+ * regPartsIds[0]: id of the first partition segment
+ * regPartsIds[1]: id of the second partition segment
+ * regPartsIds[2]: id of the third partition segment
+ */
 int *regPartsIds = NULL;
 
+/* Pointer to the array that contains the pointers to the the register's partitions.
+ * regPtrs[0]: pointer to the first partition segment
+ * regPtrs[1]: pointer to the second partition segment
+ * regPtrs[2]: pointer to the third partition segment
+ */
+Register **regPtrs = NULL;
+
+/* Id of the shared memory segment that contains the users list */
 int usersListId = -1;
+
+/* Pointer to the users list */
 ProcListElem *usersList = NULL;
 
+/* Id of the shared memory segment that contains the nodes list */
 int nodesListId = -1;
+
+/* Pointer to the nodes list */
 ProcListElem *nodesList = NULL;
 
+/* Id of the global message queue where users, nodes and master communicate */
+int globalQueueId = -1;
 /*
     Serve perchè su di essa potrebbe arrivare
     la notifica del fallimento di una transazione nel caso in cui
@@ -16,72 +37,189 @@ ProcListElem *nodesList = NULL;
     un utente la sta già leggendo, vedendo ancora attivo
     un utente in realtà terminato (vale la pena fare tutto ciò??)
 */
-/*** Global variables for IPC ***/
-int globalQueueId = -1;
 
-int fairStartSem = -1; /* Id of the set that contais the three semaphores*/
-                       /* used to write on the register's partitions*/
-int wrPartSem = -1;    /* Id of the set that contais the three semaphores*/
-                       /* used to write on the register's partitions*/
-int rdPartSem = -1;    /* Id of the set that contais the three semaphores*/
-                       /* used to read from the register's partitions*/
-int mutexPartSem = -1; /* id of the set that contains the three sempagores used to
-                        to access the number of readers variables of the registers partitions
-                        in mutual exclusion*/
+/* Id of the set that contains the three semaphores used to write on the register's partitions */
+int fairStartSem = -1;
 
-int *noReadersPartitions = NULL;      /* Pointer to the array contains the ids of the shared memory segments
-                                // where the variables used to syncronize
-                                 // readers and writes access to register's partition are stored
-// noReadersPartitions[0]: id of first partition's shared variable
-// noReadersPartitions[1]: id of second partition's shared variable
-// noReadersPartitions[2]: id of third partition's shared variable*/
-int **noReadersPartitionsPtrs = NULL; /* Pointer to the array contains the variables used to syncronize
-                                  // readers and writes access to register's partition
-// noReadersPartitionsPtrs[0]: pointer to the first partition's shared variable
-// noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
-// noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable*/
-int userListSem = -1;                 /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
-                    // to read and write users list*/
-int noUserSegReaders = -1;            /* id of the shared memory segment that contains the variable used to syncronize
-                           // readers and writes access to users list*/
+/* Id of the set that contains the three semaphores used to write on the register's partitions */
+int wrPartSem = -1;
+
+/* Id of the set that contains the three semaphores used to read from the register's partitions */
+int rdPartSem = -1;
+
+/* Id of the set that contains the three sempagores used to access the number of readers 
+ * variables of the registers partitions in mutual exclusion 
+ */
+int mutexPartSem = -1;
+
+/* Pointer to the array containing the ids of the shared memory segments where the variables used to syncronize
+ * readers and writers access to register's partition are stored.
+ * noReadersPartitions[0]: id of first partition's shared variable
+ * noReadersPartitions[1]: id of second partition's shared variable
+ * noReadersPartitions[2]: id of third partition's shared variable
+ */
+int *noReadersPartitions = NULL;
+
+/* Pointer to the array containing the variables used to syncronize readers and writers access to register's partition.
+ * noReadersPartitionsPtrs[0]: pointer to the first partition's shared variable
+ * noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
+ * noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable
+ */
+int **noReadersPartitionsPtrs = NULL;
+
+/* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write users list */
+int userListSem = -1;
+
+/* Id of the shared memory segment that contains the variable used to syncronize readers and writers access to users list */
+int noUserSegReaders = -1; 
+
+/* Pointer to the variable that counts the number of readers, used to syncronize readers and writers access to users list */           
 int *noUserSegReadersPtr = NULL;
 
+/* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write nodes list */
+int nodeListSem = -1;
 /*
-    Non serve una variabile per contare il lettori perchè nessuno può leggere o scrivere
-*/
-int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
-                      // to read and write nodes list*/
-/*** End Global variables for IPC ***/
+ * Serve una variabile per contare il lettori perchè per estrarre un nodo a cui mandare la 
+ * transazione da processare bisogna leggere la lista dei nodi.
+ */
 
+/* Id of the shared memory segment that contains the variable used to syncronize readers and writers access to nodes list */
+int noNodeSegReaders = -1;
+
+/* Pointer to the variable that counts the number of readers, used to syncronize readers and writers access to nodes list */           
+int *noNodeSegReadersPtr = NULL;
+
+#pragma endregion
+/*** END GLOBAL VARIABLES FOR IPC ***/
+
+/*** GLOBAL VARIABLES ***/
+#pragma region GLOBAL VARIABLES
 /***** Definition of global variables that contain *****/
 /***** the values ​​of the configuration parameters  *****/
 /*******************************************************/
 /*
     Meglio usare long: i valori potrebbero essere molto grandi
 */
-long SO_USERS_NUM, /* Number of user processes NOn è "statico" ???*/
-    SO_NODES_NUM,  /* Number of node processes ?? NOn è "statico" ???*/
-    SO_REWARD,
-    SO_MIN_TRANS_GEN_NSEC,
-    SO_MAX_TRANS_GEN_NSEC,
-    SO_RETRY,
-    SO_TP_SIZE,
-    SO_MIN_TRANS_PROC_NSEC,
-    SO_MAX_TRANS_PROC_NSEC,
-    SO_BUDGET_INIT,
-    SO_SIM_SEC,     /* Duration of the simulation*/
-    SO_FRIENDS_NUM, /* Number of friends*/
-    SO_HOPS;
+long SO_USERS_NUM;           /* Number of user processes */
+long SO_NODES_NUM;           /* Number of node processes */
+long SO_REWARD;              /* Percentage of node's reward of the transaction */
+long SO_MIN_TRANS_GEN_NSEC;  /* Min time for wait for transaction's processing */
+long SO_MAX_TRANS_GEN_NSEC;  /* Max time for wait for transaction's processing */
+long SO_RETRY;               /* Attempts to send a transaction before termination of user */
+long SO_TP_SIZE;             /* Size of Transaction Pool of node processes */
+long SO_MIN_TRANS_PROC_NSEC; /* Min time for transactions' block processing */
+long SO_MAX_TRANS_PROC_NSEC; /* Max time for transactions' block processing */
+long SO_BUDGET_INIT;         /* Initial budget of user processes */
+long SO_SIM_SEC;             /* Duration of the simulation*/
+long SO_FRIENDS_NUM;         /* Number of friends*/
+long SO_HOPS;                /* Attempts to insert a transaction in a node's TP before elimination */
 /*******************************************************/
 /*******************************************************/
 
+/*
+    List that contains all the transactions sent by a process.
+    We use it to keep track of the transactions sent by a process
+    the haven't been written on the register yet.
+    Dato che potrebbe essere molto grande bisognerebbe fare 
+    inserimento ordinato e ricerca dicotomica
+*/
+TransList *transactionsSent = NULL; /* deve essere globale, altrimenti non posso utilizzarla nella funzione per la generazione della transazione */
+int num_failure = 0;                /* deve essere globale, altrimenti non posso utilizzarla nella funzione per la generazione della transazione */
+struct timespec now;
+#pragma endregion
+/*** END GLOBAL VARIABLES ***/
+
+/*** FUNCTIONS PROTOTYPES DECLARATION ***/
+#pragma region FUNCTIONS PROTOTYPES DECLARATION
+/**
+ * @brief Function that reads from environment variables the parameters necessary for the execution.
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean readParams();
+
+/**
+ * @brief Function that allocates memory for the array variables.
+ * @return Returns TRUE if successfull, FALSE in case an error occurres.
+ */
 boolean allocateMemory();
+
+/**
+ * @brief Function that initializes the IPC facilities for the user.
+ * @return Returns TRUE if successfull, FALSE in case an error occurres.
+ */
 boolean initializeFacilities();
+
+/**
+ * @brief Function that computes the budget of the user counting from the register
+ * and removing the amount of the sent but not processed transaction (the one not in register)
+ * @param transSent it rappresents a pointer to the gloabl list of sent transactions, we must not 
+ * use the global one otherwise we lose the real pointer
+ * @return returns the actual balance as a double
+ */
 double computeBalance(TransList *);
+
+/**
+ * @brief Function that removes the passed transaction from the list of sent transactions.
+ * @param tList a pointer to the list of sent transactions to modify
+ * @param t a pointer to the transaction to remove from list
+ */
 void removeTransaction(TransList *, Transaction *);
 
-int main()
+/**
+ * @brief Function that computes the budget of the user, generates a transaction, 
+ * sends it to a randomly chosen node and then simulates the wait for processing
+ * the transaction.
+ * @param sig the type of event that triggered the handler, 0 if not called on event
+ */
+void transactionGeneration(int);
+
+/**
+ * @brief Function that ends the execution of the user; this can happen in three different ways,
+ * rappresented by the values that the parameter might assume.
+ * @param sig the parameters value are: 0 -> only end of execution; 1 -> end of execution and deallocation (called from error);
+ * SIGUSR1 -> end of execution and deallocation (called by signal from master)
+ */
+void endOfExecution(int);
+
+/**
+ * @brief Function that deallocates the IPC facilities for the user.
+ * @return returns TRUE if successfull, FALSE in case an error occurs
+ */
+boolean deallocatedFacilities();
+
+/**
+ * @brief Function that adds the transaction passed as second argument to the list of sent transactions
+ * passed as first argument.
+ * @param transSent a pointer to the list of sent transactions
+ * @param t a pointer to the transaction to add to the list
+ * @return returns a pointer to the new head of the list of sent transactions
+ */
+TransList * addTransaction(TransList *, Transaction *);
+
+/**
+ * @brief Function that deallocates the list of sent transactions.
+ * @param transSent a pointer to the list of sent transactions to deallocate
+ */
+void freeTransList(TransList *);
+
+/**
+ * @brief Function that extracts randomly a receiver for the transaction which is not the same user 
+ * that generated the transaction, whose pid is the argument passed to the function.
+ * @param pid is the pid of the current user, the return value must be different from this pid
+ * @return Returns the pid of the selected user in the usersList shared array, -1 if the function generates an error.
+ */
+pid_t extractReceiver(pid_t);
+
+/**
+ * @brief Function that extracts randomly a node which to send the generated transaction.
+ * @return Returns the pid of the selected user in the usersList shared array, -1 if the function generates an error. 
+ */
+pid_t extractNode();
+#pragma endregion
+/*** END FUNCTIONS PROTOTYPES DECLARATION ***/
+
+/*** MAIN FUNCTION ***/
+int main(int argc, char *argv[], char *envp[])
 {
     /*
         List that contains all the transactions sent by a process.
@@ -93,45 +231,116 @@ int main()
     /*
         CORREGGERE: ALLOCARLO
     */
-    TransList *transactionsSent = NULL;
+    /*TransList *transactionsSent = NULL;*/ /* spostato globalmente */
     long transCount = 0;
+    struct sigaction actEndOfExec;
+    struct sigaction actGenTrans;
+    sigset_t mask;
+    key_t key;
+    int tId = -1;
+    int trans_gen_time;
+    int balance = 100;
+    float amount = 0.0;
+    float reward = 0.0;
+    pid_t receiver_node;
+    int receiver_node_index;
+    pid_t receiver_user;
+    int receiver_user_index;
+    Transaction new_tran;
+    MsgTP msgT;
+    MsgGlobalQueue msgCheckFailedTrans;
+    struct timespec remaining, request;
+
     if (readParams())
     {
         if (allocateMemory())
         {
             if (initializeFacilities())
             {
-                /*
-                    User's lifecycle
-                */
-                while (TRUE)
+                if(sigfillset(&mask) == -1)
                 {
+                    unsafeErrorPrint("User: failed to initialize signal mask. Error: ");
+                    endOfExecution(1);
+                }
+                else
+                {
+                    actEndOfExec.sa_handler = endOfExecution;
+                    actEndOfExec.sa_mask = mask;
+                    if(sigaction(SIGUSR1, &actEndOfExec, NULL) == -1)
+                    {
+                        unsafeErrorPrint("User: failed to set up end of simulation handler. Error: ");
+                        endOfExecution(1);
+                    }
+                    else
+                    {
+                        actGenTrans.sa_handler = transactionGeneration;
+                        actGenTrans.sa_mask = mask;
+                        if(sigaction(SIGUSR2, &actGenTrans, NULL) == -1)
+                        {
+                            unsafeErrorPrint("User: failed to set up transaction generation handler. Error: ");
+                            endOfExecution(1);
+                        }
+                        else
+                        {
+                            printf("User %5d: starting lifecycle...\n", getpid());
+                            
+                            /*
+                                User's lifecycle
+                            */
+                            while(TRUE)
+                            {
+                                /* check on global queue if a sent transaction failed */
+                                if(msgrcv(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans)-sizeof(long), getpid(), IPC_NOWAIT) != -1)
+                                {
+                                    /* got a message for this user from global queue */
+                                    if(msgCheckFailedTrans.msgContent == FAILEDTRANS)
+                                    {
+                                        /* the transaction failed, so we remove it from the list of sent transactions */
+                                        removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
+                                    }
+                                    else
+                                    {
+                                        /* the message wasn't the one we were looking for, reinserting it on the global queue */
+                                        if(msgsnd(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans)-sizeof(long), 0) == -1)
+                                            unsafeErrorPrint("User: failed to reinsert the message read from global queue while checking for failed transactions. Error: ");
+                                    }
+                                }
+                                else if(errno != ENOMSG)
+                                    unsafeErrorPrint("User: failed to check for failed transaction messages on global queue. Error: ");
+                                /* else errno == ENOMSG, so no transaction has failed */
+                                
+                                /* generate a transaction */
+                                transactionGeneration(0);
+                            }
+                        }
+                    }
                 }
             }
             else
             {
-                /*
-                    Fine esecuzione + deallocazione
-                */
+                endOfExecution(1);
             }
         }
         else
         {
-            /*
-            Fine esecuzione
-        */
+            endOfExecution(0);
         }
     }
     else
     {
-        /*
-            Fine esecuzione
-        */
+        endOfExecution(0);
     }
 
     return 0;
 }
+/*** END MAIN FUNCTION ***/
 
+/*** FUNCTIONS IMPLEMENTATIONS ***/
+#pragma region FUNCTIONS IMPLEMENTATIONS
+/**
+ * @brief Function that reads from environment variables the parameters necessary for the execution.
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean readParams()
 {
     /*
@@ -181,6 +390,10 @@ boolean readParams()
     return TRUE;
 }
 
+/**
+ * @brief Function that allocates memory for the array variables.
+ * @return Returns TRUE if successfull, FALSE in case an error occurres.
+ */
 boolean allocateMemory()
 {
     /* CORREGGERE USANDO CALLOC E FARE SEGNALAZIONE ERRORI
@@ -210,6 +423,10 @@ boolean allocateMemory()
     return TRUE;
 }
 
+/**
+ * @brief Function that initializes the IPC facilities for the user.
+ * @return Returns TRUE if successfull, FALSE in case an error occurres.
+ */
 boolean initializeFacilities()
 {
     /* Initialization of semaphores*/
@@ -303,21 +520,40 @@ boolean initializeFacilities()
     noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, 0);
     SHMAT_TEST_ERROR(noReadersPartitionsPtrs[0], "User");
 
-    noReadersPartitions[1] = shmget(ftok(SHMFILEPATH, NOREADERSTWOSEED), sizeof(SO_USERS_NUM), 0600);
+    key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
+    FTOK_TEST_ERROR(key);
+    noReadersPartitions[1] = shmget(key, sizeof(SO_USERS_NUM), 0600);
     noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, 0);
     SHMAT_TEST_ERROR(noReadersPartitionsPtrs[1], "User");
 
-    noReadersPartitions[2] = shmget(ftok(SHMFILEPATH, NOREADERSTHREESEED), sizeof(SO_USERS_NUM), 0600);
+    key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
+    FTOK_TEST_ERROR(key);
+    noReadersPartitions[2] = shmget(key, sizeof(SO_USERS_NUM), 0600);
     noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, 0);
     SHMAT_TEST_ERROR(noReadersPartitionsPtrs[2], "User");
 
-    noUserSegReaders = shmget(ftok(SHMFILEPATH, NOUSRSEGRDERSSEED), sizeof(SO_USERS_NUM), 0600);
+    key = ftok(SHMFILEPATH, NOUSRSEGRDERSSEED);
+    FTOK_TEST_ERROR(key);
+    noUserSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
     noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
     SHMAT_TEST_ERROR(noUserSegReadersPtr, "User");
+
+    key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
+    FTOK_TEST_ERROR(key);
+    noNodeSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
+    SHMAT_TEST_ERROR(noNodeSegReadersPtr, "User");
 
     return TRUE;
 }
 
+/**
+ * @brief Function that computes the budget of the user counting from the register
+ * and removing the amount of the sent but not processed transaction (the one not in register)
+ * @param transSent it rappresents a pointer to the gloabl list of sent transactions, we must not 
+ * use the global one otherwise we lose the real pointer
+ * @return returns the actual balance as a double
+ */
 double computeBalance(TransList *transSent)
 {
     double balance = 0;
@@ -382,10 +618,9 @@ double computeBalance(TransList *transSent)
                                         else if (ptr->blockList[j].transList[k].sender == procPid)
                                         {
                                             /*
-                                        Togliamo le transazioni già presenti nel master
-                                        dalla lista di quelle inviate
-                                    
-                                    */
+                                                Togliamo le transazioni già presenti nel master
+                                                dalla lista di quelle inviate
+                                            */
                                             balance -= (ptr->blockList[j].transList[k].amountSend) + 
                                                         (ptr->blockList[j].transList[k].reward);
                                             removeTransaction(transSent, &(ptr->blockList[j].transList[k]));
@@ -424,8 +659,8 @@ double computeBalance(TransList *transSent)
         */
         while (transSent != NULL)
         {
-            balance -= (transSent->currTrans->amountSend) + 
-                        (transSent->currTrans->reward);
+            balance -= (transSent->currTrans.amountSend) + 
+                        (transSent->currTrans.reward);
             transSent++;
         }
     }
@@ -433,6 +668,11 @@ double computeBalance(TransList *transSent)
     return balance;
 }
 
+/**
+ * @brief Function that removes the passed transaction from the list of sent transactions.
+ * @param tList a pointer to the list of sent transactions to modify
+ * @param t a pointer to the transaction to remove from list
+ */
 void removeTransaction(TransList *tList, Transaction *t)
 {
     TransList *prev = NULL;
@@ -443,13 +683,16 @@ void removeTransaction(TransList *tList, Transaction *t)
         /*
             CORREGGERE: i tempi si possono confrontare direttamente???
         */
-        if (tList->currTrans->timestamp.tv_nsec == t->timestamp.tv_nsec &&
-            tList->currTrans->sender == t->sender &&
-            tList->currTrans->receiver == t->receiver)
+        if (tList->currTrans.timestamp.tv_nsec == t->timestamp.tv_nsec &&
+            tList->currTrans.sender == t->sender &&
+            tList->currTrans.receiver == t->receiver)
         {
             if (prev != NULL)
             {
                 prev->nextTrans = tList->nextTrans;
+                /*
+                    Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
+                */
             }
             else
             {
@@ -457,7 +700,13 @@ void removeTransaction(TransList *tList, Transaction *t)
                     Caso in cui la lista contiene un solo elemento
                     (quindi tList->nextTrans è gia NULL)
                 */
-                tList->currTrans = NULL;
+                /*tList->currTrans = NULL;*/
+                /* ora currTrans non è più un puntatore, quindi non può essere impostato a NULL; 
+                   soluzione: impostiamo la testa della lista a NULL */
+                tList = NULL; 
+                /*
+                    Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
+                */
             }
 
             done = TRUE;
@@ -466,6 +715,469 @@ void removeTransaction(TransList *tList, Transaction *t)
         {
             prev = tList;
             tList = tList->nextTrans;
+            /*
+                Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
+            */
         }
     }
 }
+
+/**
+ * @brief Function that ends the execution of the user; this can happen in three different ways,
+ * rappresented by the values that the parameter might assume.
+ * @param sig the parameters value are: 0 -> only end of execution; 1 -> end of execution and deallocation (called from error);
+ * SIGUSR1 -> end of execution and deallocation (called by signal from master)
+ */
+void endOfExecution(int sig)
+{
+    int exitCode = EXIT_FAILURE;
+
+    if(sig == 1)
+        deallocatedFacilities();
+    else if(sig == SIGUSR1)
+        exitCode = deallocatedFacilities() ? EXIT_SUCCESS : EXIT_FAILURE;
+        /* 
+         * se deallocatedFacilities termina correttamente (restituisce TRUE), allora l'esecuzione termina con 
+         * successo in quando è stato il master a richiedere la terminazione dello user; in caso contrario 
+         * l'esecuzione termina con un fallimento.
+         */
+    
+    exit(exitCode);
+}
+
+/**
+ * @brief Function that deallocates the IPC facilities for the user.
+ * @return returns TRUE if successfull, FALSE in case an error occurs
+ */
+boolean deallocatedFacilities()
+{
+    /*
+     * Cose da eliminare:
+     *  - collegamento alla memoria condivisa
+     *  - i semafori li dealloca il master
+     *  - bisogna chiudere le write/read end della globalQueue? No, lo fa il master!
+     */
+    int i = 0;
+
+    /*
+        CORREGGERE CON NUOVO MECCANISMO DI RILEVAZIONE ERRORI
+    */
+
+    /*
+        La dprintf è utilissima.
+        Fontana è un genio!!
+    */
+    dprintf(STDOUT_FILENO, "User: detaching from register's partitions...\n");
+    
+    for(i = 0; i < REG_PARTITION_COUNT; i++)
+    {
+        if(shmdt(regPtrs[i]) == -1)
+        {
+            /* serve riprovare per un certo numero di tentativi? */
+            safeErrorPrint("User: failed to detach from register's partition. Error: ");
+            return FALSE;
+        }
+    }
+    free(regPtrs);
+    free(regPartsIds);
+
+    dprintf(STDOUT_FILENO, "User: detaching from users list...\n");
+    if(shmdt(usersList) == -1)
+    {
+        safeErrorPrint("User: failed to detach from users list. Error: ");
+        return FALSE;
+    }
+
+    dprintf(STDOUT_FILENO, "User: detaching from nodes list...\n");
+    if(shmdt(nodesList) == -1)
+    {
+        safeErrorPrint("User: failed to detach from nodes list. Error: ");
+        return FALSE;
+    }
+
+    dprintf(STDOUT_FILENO, "User: detaching from partitions' number of readers shared variable...\n");
+    for(i = 0; i < REG_PARTITION_COUNT; i++)
+    {
+        if(shmdt(noReadersPartitionsPtrs[i]) == -1)
+        {
+            safeErrorPrint("User: failed to detach from partitions' number of readers shared variable. Error: ");
+            return FALSE;
+        }
+    }
+    free(noReadersPartitions);
+    free(noReadersPartitionsPtrs);
+
+    dprintf(STDOUT_FILENO, "User: detaching from users list's number of readers shared variable...\n");
+    if(shmdt(noUserSegReadersPtr) == -1)
+    {
+        safeErrorPrint("User: failed to detach from users list's number of readers shared variable. Error: ");
+        return FALSE;
+    }
+
+    dprintf(STDOUT_FILENO, "User: detaching from nodes list's number of readers shared variable...\n");
+    if(shmdt(noNodeSegReadersPtr) == -1)
+    {
+        safeErrorPrint("User: failed to detach from nodes list's number of readers shared variable. Error: ");
+        return FALSE;
+    }
+
+    dprintf(STDOUT_FILENO, "User: cleanup operations completed. Process is about to end its execution...\n");
+    
+    /* freeing the list of sent transactions */
+    freeTransList(transactionsSent);
+
+    return TRUE;
+}
+
+/**
+ * @brief Function that computes the budget of the user, generates a transaction, 
+ * sends it to a randomly chosen node and then simulates the wait for processing
+ * the transaction.
+ * @param sig the type of event that triggered the handler, 0 if not called on event
+ */
+void transactionGeneration(int sig)
+{
+    int bilancio, queueId;
+    Transaction new_trans;
+    MsgTP msg_to_node;
+    key_t key;
+    pid_t receiver_node, receiver_user;
+    struct timespec request, remaining;
+    MsgGlobalQueue msgOnGQueue;
+    struct sembuf sops;
+    
+    sops.sem_flg = 0;
+
+    bilancio = computeBudget(transactionsSent); /* calcolo del bilancio */
+    srand(getpid());
+
+    if(bilancio > 2)
+    {
+        /* deve essere globale */
+        num_failure = 0; /* sono riuscito a mandare la transazione, azzero il counter dei fallimento consecutivi */
+
+        /* Extracts the receiving user randomly */
+        receiver_user = extractReceiver(getpid());
+        if(receiver_user == -1)
+            safeErrorPrint("User: failed to extract user receiver. Error: ");
+        else 
+        {
+            if(sig == 0)
+                dprintf(STDOUT_FILENO, "User: generating a new transaction...\n");
+            else
+                dprintf(STDOUT_FILENO, "User: generating a new transaction on event request...\n");
+
+            /* Generating transaction */
+            new_trans.sender = getpid();
+            new_trans.receiver = receiver_user;
+            new_trans.amountSend = (rand()%bilancio)+2; /* calcolo del budget fra 2 e il budget (così lo fa solo intero) */
+            new_trans.reward = new_trans.amountSend*SO_REWARD; /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 0 e 1 */
+            /*new_trans.reward = (new_trans.amountSend/100)*SO_REWARD; /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 1 e 100 */
+            if(new_trans.reward < 1)
+                new_trans.reward = 1;
+
+            clock_gettime(CLOCK_REALTIME, &new_trans.timestamp); /* get timestamp for transaction */
+
+            /* extracting node which to send the transaction */
+            receiver_node = extractNode();
+            if(receiver_node == -1)
+                safeErrorPrint("User: failed to extract node which to send transaction on TP. Error: ");
+            else
+            {
+                /* preparing message to send on node's queue */
+                msg_to_node.mType = receiver_node;
+                msg_to_node.transaction = new_trans;
+
+                /* generating key to retrieve node's queue */
+                key = ftok(MSGFILEPATH, receiver_node);
+                if(key == -1)
+                    safeErrorPrint("User: ftok failed during node's queue retrieving. Error: ");
+                else
+                {
+                    /* retrieving the message queue connection */
+                    queueId = msgget(key, 0600);
+                    if(queueId == -1)
+                        safeErrorPrint("User: failed to connect to node's transaction pool. Error: ");
+                    else
+                    {
+                        /* Inserting new transaction on list of transaction sent */
+                        transactionsSent = addTransaction(transactionsSent, &new_trans);
+                        
+                        /* sending the transaction to node */
+                        dprintf(STDOUT_FILENO, "User: sending the created transaction to the node...\n");
+                        if(msgsnd(queueId, &msg_to_node, sizeof(Transaction), IPC_NOWAIT) == -1)
+                        {
+                            if(errno == EAGAIN)
+                            {
+                                /* TP of Selected Node was full, we need to send the message on the global queue */
+                                dprintf(STDOUT_FILENO, "User: transaction pool of selected node was full. Sending transaction on global queue...\n");
+                                
+                                msgOnGQueue.mType = receiver_node;
+                                msgOnGQueue.msgContent = TRANSTPFULL;
+                                msgOnGQueue.transaction = new_trans;
+                                msgOnGQueue.hops = 0;
+                                if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
+                                    safeErrorPrint("User: failed to send transaction on global queue. Error: ");
+                            }
+                            else
+                            {
+                                if(sig == 0)
+                                    safeErrorPrint("User: failed to send transaction to node. Error: ");
+                                else
+                                    safeErrorPrint("User: failed to send transaction generated on event to node. Error: ");
+                            }
+                        }
+                        else
+                        {
+                            if(sig == 0)
+                                dprintf(STDOUT_FILENO, "User: transaction correctly sent to node.\n");
+                            else
+                                dprintf(STDOUT_FILENO, "User: transaction generated on event correctly sent to node.\n");
+                            
+                            /* Wait a random time in between SO_MIN_TRANS_GEN_NSEC and SO_MAX_TRANS_GEN_NSEC */
+                            request.tv_sec = 0;
+                            request.tv_nsec = (rand() % SO_MAX_TRANS_GEN_NSEC) + SO_MIN_TRANS_GEN_NSEC;
+                            
+                            dprintf(STDOUT_FILENO, "User: processing the transaction...\n");
+                            
+                            if (nanosleep(&request, &remaining) == -1)
+                                safeErrorPrint("User: failed to simulate wait for processing the transaction. Error: ");
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        dprintf(STDOUT_FILENO, "User: not enough money to make a transaction...\n");
+        
+        num_failure++; /* incremento il numero consecutivo di volte che non riesco a mandare una transazione */
+        if(num_failure == SO_RETRY)
+        {
+            /* non sono riuscito a mandare la transazione per SO_RETRY volte, devo terminare */
+            kill(getppid(), SIGCHLD);
+        }
+    }
+}
+
+/**
+ * @brief Function that adds the transaction passed as second argument to the list of sent transactions
+ * passed as first argument.
+ * @param transSent a pointer to the list of sent transactions
+ * @param t a pointer to the transaction to add to the list
+ * @return returns a pointer to the new head of the list of sent transactions
+ */
+TransList * addTransaction(TransList * transSent, Transaction *t)
+{
+    if(t == NULL) {
+        dprintf(STDERR_FILENO, "User: transaction passed to function is a NULL pointer.\n");
+        return NULL;
+    }
+
+    /* insertion of new transaction to list */
+    TransList * new_el = (TransList*) malloc(sizeof(TransList));
+    new_el->currTrans = *t;
+    new_el->nextTrans = transSent;
+    transSent = new_el;
+    
+    return transSent;
+}
+
+/**
+ * @brief Function that deallocates the list of sent transactions.
+ * @param transSent a pointer to the list of sent transactions to deallocate
+ */
+void freeTransList(TransList * transSent)
+{
+    if(transSent == NULL)
+        return;
+
+    freeTransList(transSent->nextTrans);
+    free(transSent);
+}
+
+/**
+ * @brief Function that extracts randomly a receiver for the transaction which is not the same user 
+ * that generated the transaction, whose pid is the argument passed to the function.
+ * @param pid is the pid of the current user, the return value must be different from this pid
+ * @return Returns the pid of the selected user in the usersList shared array, -1 if the function generates an error.
+ */
+pid_t extractReceiver(pid_t pid)
+{
+    int n = -1;
+    struct sembuf sops;
+    pid_t pid_to_return = -1;
+    sops.sem_flg = 0;
+
+    sops.sem_num = 0;
+    sops.sem_op = -1;
+    if (semop(userListSem, &sops, 1) != -1)
+    {
+        (*noUserSegReadersPtr)++;
+        if ((*noUserSegReadersPtr) == 1)
+        {
+            sops.sem_num = 2;
+            sops.sem_op = -1;
+            if (semop(userListSem, &sops, 1) == -1)
+            {
+                safeErrorPrint("User: failed to reserve write usersList semaphore. Error: ");
+                /* do we need to end execution ? */
+            }
+        }
+
+        sops.sem_num = 0;
+        sops.sem_op = 1;
+        if (semop(userListSem, &sops, 1) != -1)
+        {
+            do
+            {
+                /*
+                    Serve per il seme di generazione
+                */
+                clock_gettime(CLOCK_REALTIME, &now);
+                n = now.tv_nsec % SO_USERS_NUM;
+            } while (pid == usersList[n].procId && usersList[n].procState != ACTIVE);
+            /* cicla finché il pid estratto casualmente è uguale a quello dell'utente stesso e finché l'utente scelto non è attivo */
+
+            pid_to_return = usersList[n].procId; /* save user pid so as to return it */
+
+            sops.sem_num = 0;
+            sops.sem_op = -1;
+            if (semop(userListSem, &sops, 1) != -1)
+            {
+                (*noUserSegReadersPtr)--;
+                if ((*noUserSegReadersPtr) == 0)
+                {
+                    sops.sem_num = 2;
+                    sops.sem_op = 1;
+                    if (semop(userListSem, &sops, 1) == -1)
+                    {
+                        safeErrorPrint("User: failed to release write usersList semaphore. Error: ");
+                        /* do we need to end execution ? */
+                    }
+                }
+
+                sops.sem_num = 0;
+                sops.sem_op = 1;
+                if (semop(userListSem, &sops, 1) != -1)
+                {
+                    return pid_to_return;
+                }
+                else
+                {
+                    safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ");
+                    /* do we need to end execution ? */
+                }
+            }
+            else
+            {
+                safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ");
+                /* do we need to end execution ? */
+            }
+        }
+        else
+        {
+            safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ");
+            /* do we need to end execution ? */
+        }
+    }
+    else
+    {
+        safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ");
+        /* do we need to end execution ? */
+    }
+
+    return (pid_t)-1;
+}
+
+/**
+ * @brief Function that extracts randomly a node which to send the generated transaction.
+ * @return Returns the pid of the selected user in the usersList shared array, -1 if the function generates an error. 
+ */
+pid_t extractNode()
+{
+    int n = -1;
+    struct sembuf sops;
+    pid_t pid_to_return = -1;
+    sops.sem_flg = 0;
+
+    sops.sem_num = 0; 
+    sops.sem_op = -1;
+    if(semop(nodeListSem, &sops, 1) != -1)
+    {
+        (*noNodeSegReadersPtr)++;
+        if((*noNodeSegReadersPtr) == 1)
+        {
+            sops.sem_num = 2;
+            sops.sem_op = -1;
+            if(semop(nodeListSem, &sops, 1) == -1)
+            {
+                safeErrorPrint("User: failed to reserve write nodesList semaphore. Error: ");
+                /* do we need to end execution ? */
+            }
+        }
+
+        sops.sem_num = 0;
+        sops.sem_op = 1;
+        if(semop(nodeListSem, &sops, 1) != -1)
+        {
+            do
+            {
+                clock_gettime(CLOCK_REALTIME, &now);
+                n = now.tv_nsec % SO_NODES_NUM;
+            } while (nodesList[n].procState != ACTIVE);
+            /* cicla finché il nodo scelto casualmente non è attivo */
+            
+            pid_to_return = nodesList[n].procId;
+
+            sops.sem_num = 0;
+            sops.sem_op = -1;
+            if(semop(nodeListSem, &sops, 1) != -1)
+            {
+                (*noNodeSegReadersPtr)--;
+                if((*noNodeSegReadersPtr) == 0)
+                {
+                    sops.sem_num = 2;
+                    sops.sem_op = 1;
+                    if(semop(nodeListSem, &sops, 1) == -1)
+                    {
+                        safeErrorPrint("User: failed to release write nodesList semaphore. Error: ");
+                        /* do we need to end execution ? */
+                    }
+                }
+
+                sops.sem_num = 0;
+                sops.sem_op = 1;
+                if(semop(nodeListSem, &sops, 1) != -1)
+                {
+                    return pid_to_return;
+                }
+                else
+                {
+                    safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ");
+                    /* do we need to end execution ? */
+                }
+            }
+            else
+            {
+                safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ");
+                /* do we need to end execution ? */
+            }
+        }
+        else
+        {
+            safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ");
+            /* do we need to end execution ? */
+        }
+    }
+    else
+    {
+        safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ");
+        /* do we need to end execution ? */
+    }
+
+    return (pid_t)-1;
+}
+#pragma endregion
+/*** END FUNCTIONS IMPLEMENTATIONS ***/

@@ -12,15 +12,17 @@
     quando tutti sono terminati (vedere bene se possono esserci figli non terminati)
 5) COntrollare sincronizzazione lista utenti e nodi
     -utente per scelta utente destinatario: OK
-    -utente per scelta nodo a cui chiedere processamento
+    -utente per scelta nodo a cui chiedere processamento: OK
     -master per registare terminazione nodi ed utenti
 6) Sostituire sleep con nanosleep
-7) sostituire write con dprintf
+7) sostituire write con dprintf (prima controllare se dprintf è reentrant come write)
 8) Testare meccanismo deallocazioni IPC in caso di errore su master
 9) Terminazione in caso di errore fork nel master
 10) Segnalazione terminazione nodo ed utente a master:
-    si invia un sigchld al master (attenzione a sganciare l'handler prima della wait a fine simulazione)
-11) Aggiornare inizializzazione random in nodo
+    si invia un sigchld al master (attenzione a sganciare l'handler prima della wait a fine simulazione): utente aggiornato, manca il resto
+11) Aggiornare inizializzazione random in nodo (con clock_gettime ?)
+12) Sostituire atoi/atol con strtoi/strtol
+
 4) Aggiornare file di intestazione: Ok
 5) Sistemazione e Test Nodo:
     -implementare parte aggiuntiva versione FULL
@@ -38,7 +40,7 @@
     No, lasciamo il timer
 6) Collegarsi alla lista dei nodi in sola lettura:OK
 7) Fissare con precisione il numero di partizioni (per me va bene vincolarlo a 3): sono per forza 3
-8) Verificare stato utente e nodo in inivio transazione
+8) Verificare stato utente e nodo in inivio transazione: OK
 8.2) Verificare stato nodo amico quando gli mandi la transazioni
 9) Spostare TEST_ERROR_PARAM in info.h e correggerla
 10) Definire una procedura che deallochi le facilities in caso di errore: OK
