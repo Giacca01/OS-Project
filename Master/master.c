@@ -15,16 +15,37 @@
         Vedere perchè ci siano più processi master: A quanto pare non ci sono
         Fare in modo che kill non segnali il master
 */
+
 #define _GNU_SOURCE
+
+/**** Headers inclusion ****/
 #include <time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include "info.h"
+/**** End of Headers inclusion ****/
 
-#define NO_ATTEMPS 3 /* Maximum number of attemps to terminate the simulation*/
-#define MAX_PRINT_PROCESSES 15 /* Maximum number of processes which we show budget, if noEffective > MAX_PRINT_PROCESSES we only print max and min budget */
+/**** Constants definition ****/
+#define NO_ATTEMPS_TERM 3 /* Maximum number of attemps to terminate the simulation*/
+#define MAX_PRINT_PROCESSES 15 /* Maximum number of processes of which we show budget, if noEffectiveNodes + noEffectiveUsers > MAX_PRINT_PROCESSES we only print max and min budget */
 #define NO_ATTEMPTS_UPDATE_BUDGET 3 /* Number of attempts to update budget reading a block on register */
+/**** End of Constants definition ****/
+
+/**********  Function prototypes  *****************/
+boolean assignEnvironmentVariables();
+int readConfigParameters();
+boolean allocateGlobalStructures();
+boolean initializeIPCFacilities();
+
+void endOfSimulation(int);
+void printBudget();
+boolean deallocateFacilities(int *);
+void freeGlobalVariables();
+void checkNodeCreationRequests();
+/**************************************************/
+
+/*****        Global structures        *****/
 
 union semun
 {
@@ -34,18 +55,8 @@ union semun
     struct seminfo *__buf;
 };
 
-/**********  Function prototypes  *****************/
-void endOfSimulation(int);
-void printBudget();
-boolean deallocateFacilities(int *);
-void freeGlobalVariables();
-void checkNodeCreationRequests();
-/**************************************************/
-
-/*****        Global structures        *****/
-/*******************************************/
-Register **regPtrs = NULL;
-int *regPartsIds = NULL;
+Register **regPtrs = NULL; /* Array of pointers to register's partitions */
+int *regPartsIds = NULL;   /* Array of ids of register's partitions */
 
 int usersListId = -1;
 ProcListElem *usersList = NULL;
@@ -53,66 +64,67 @@ ProcListElem *usersList = NULL;
 int nodesListId = -1;
 ProcListElem *nodesList = NULL;
 
-TPElement *tpList = NULL;
+TPElement * tpList = NULL;
 
 int globalQueueId = -1;
 
 int fairStartSem = -1; /* Id of the set that contais the three semaphores*/
                        /* used to write on the register's partitions*/
+
 int wrPartSem = -1;    /* Id of the set that contais the three semaphores*/
                        /* used to write on the register's partitions*/
+
 int rdPartSem = -1;    /* Id of the set that contais the three semaphores*/
                        /* used to read from the register's partitions*/
+
 int mutexPartSem = -1; /* id of the set that contains the three sempagores used to
                         to access the number of readers variables of the registers partitions
                         in mutual exclusion*/
 
 /* Si dovrebbe fare due vettori*/
 int *noReadersPartitions = NULL;      /* Pointer to the array contains the ids of the shared memory segments
-                                // where the variables used to syncronize
-                                 // readers and writes access to register's partition are stored
-// noReadersPartitions[0]: id of first partition's shared variable
-// noReadersPartitions[1]: id of second partition's shared variable
-// noReadersPartitions[2]: id of third partition's shared variable*/
+                                        where the variables used to syncronize
+                                        readers and writes access to register's partition are stored, e.g:
+                                        noReadersPartitions[0]: id of first partition's shared variable
+                                        */
 int **noReadersPartitionsPtrs = NULL; /* Pointer to the array contains the variables used to syncronize
-                                  // readers and writes access to register's partition
-// noReadersPartitions[0]: pointer to the first partition's shared variable
-// noReadersPartitions[1]: pointer to the second partition's shared variable
-// noReadersPartitions[2]: pointer to the third partition's shared variable*/
+                                        readers and writes access to register's partition. E.g:
+                                        noReadersPartitions[0]: pointer to the first partition's shared variable
+                                        */
 int userListSem = -1;                 /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
-                    // to read and write users list*/
+                                        to read and write users list*/
 int noUserSegReaders = -1;            /* id of the shared memory segment that contains the variable used to syncronize
-                           // readers and writes access to users list*/
-int *noUserSegReadersPtr = NULL;
+                                        readers and writes access to users list*/
+int *noUserSegReadersPtr = NULL;    /* Pointer to the shared memory segment described above */
 
 int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
-                      // to read and write nodes list*/
+                        to read and write nodes list
+                        */
 
-/* IO L'HO AGGIUNTO; CHIEDERE SE VA BENE O SE NON SERVE */
 int noNodeSegReaders = -1; /* id of the shared memory segment that contains the variable used to syncronize
                               readers and writers access to nodes list */
 int *noNodeSegReadersPtr = NULL;
 
 /*
-    ATTENZIONE AL TIPO DI DATO!!!
+    We use a long int variable to handle an outstanding number
+    of child processes
 */
-int noTerminated = 0; /* NUmber of processes that terminated before end of simulation*/
-/*
-    CORREGGERE: sostituire con due variabili
-    una che conta il numero di nodi effettivi
-    ed uno che conta il numero di utenti effettivi
-*/
-int noEffectiveNodes = 0; /* Holds the effective number of nodes */
-int noEffectiveUsers = 0; /* Holds the effective number of users */
-int noAllTimesNodes = 0; /* Historical number of nodes: it counts also the terminated ones */
-int tplLength = 0;       /* AGGIUNTO DA STEFANO - keeps tpList length */
-/******************************************/
+long noTerminated = 0; /* NUmber of processes that terminated before end of simulation*/
 
-/***** Definition of global variables that contain *****/
-/***** the values ​​of the configuration parameters  *****/
-/*******************************************************/
-int SO_USERS_NUM, /* Number of user processes NOn è "statico" ???*/
-    SO_NODES_NUM, /* Number of node processes ?? NOn è "statico" ???*/
+long noEffectiveNodes = 0; /* Holds the effective number of nodes */
+long noEffectiveUsers = 0; /* Holds the effective number of users */
+long noAllTimesNodes = 0; /* Historical number of nodes: it counts also the terminated ones */
+
+long tplLength = 0;       /* keeps tpList length */
+
+extern **environ;
+struct timespec now;
+int *extractedFriendsIndex;
+/***** End of Global structures *****/
+
+/***** Configuration parameters *****/
+int SO_USERS_NUM,
+    SO_NODES_NUM,
     SO_REWARD,
     SO_MIN_TRANS_GEN_NSEC,
     SO_MAX_TRANS_GEN_NSEC,
@@ -121,294 +133,10 @@ int SO_USERS_NUM, /* Number of user processes NOn è "statico" ???*/
     SO_MIN_TRANS_PROC_NSEC,
     SO_MAX_TRANS_PROC_NSEC,
     SO_BUDGET_INIT,
-    SO_SIM_SEC,     /* Duration of the simulation*/
-    SO_FRIENDS_NUM; /* Number of friends*/
-/*******************************************************/
-/*******************************************************/
-
-extern ** environ;
-
-/***** Function that assigns the values ​​of the environment *****/
-/***** variables to the global variables defined above     *****/
-/***************************************************************/
-void assignEnvironmentVariables()
-{
-    SO_USERS_NUM = atoi(getenv("SO_USERS_NUM"));
-    SO_NODES_NUM = atoi(getenv("SO_NODES_NUM"));
-    SO_REWARD = atoi(getenv("SO_REWARD"));
-    SO_MIN_TRANS_GEN_NSEC = atoi(getenv("SO_MIN_TRANS_GEN_NSEC"));
-    SO_MAX_TRANS_GEN_NSEC = atoi(getenv("SO_MAX_TRANS_GEN_NSEC"));
-    SO_RETRY = atoi(getenv("SO_RETRY"));
-    SO_TP_SIZE = atoi(getenv("SO_TP_SIZE"));
-    SO_MIN_TRANS_PROC_NSEC = atoi(getenv("SO_MIN_TRANS_PROC_NSEC"));
-    SO_MAX_TRANS_PROC_NSEC = atoi(getenv("SO_MAX_TRANS_PROC_NSEC"));
-    SO_BUDGET_INIT = atoi(getenv("SO_BUDGET_INIT"));
-    SO_SIM_SEC = atoi(getenv("SO_SIM_SEC"));
-    SO_FRIENDS_NUM = atoi(getenv("SO_FRIENDS_NUM"));
-}
-/***************************************************************/
-/***************************************************************/
-
-struct timespec now;
-int *extractedFriendsIndex;
-
-/***** Function that reads the file containing the configuration    *****/
-/***** parameters to save them as environment variables             *****/
-/************************************************************************/
-int readConfigParameters()
-{
-    char *filename = "params.txt";
-    FILE *fp = fopen(filename, "r");
-    /* Reading line by line, max 128 bytes*/
-    const unsigned MAX_LENGTH = 128;
-    /* Array that will contain the lines read from the file
-    // each "row" of the "matrix" will contain a different file line*/
-    char line[14][128];
-    /* Counter of the number of lines in the file*/
-    int k = 0;
-    char *aus = NULL;
-    int exitCode = 0;
-    int i = 0;
-
-    /* Handles any error in opening the file*/
-    if (fp == NULL)
-    {
-        sprintf(aus, "Error: could not open file %s", filename);
-        unsafeErrorPrint(aus);
-        exitCode = -1;
-    }
-    else
-    {
-        /* Inserts the lines read from the file into the array*/
-        while (fgets(line[k], MAX_LENGTH, fp))
-            k++;
-
-        /* It inserts the parameters read into environment variables*/
-        for (i = 0; i < k; i++)
-            putenv(line[i]);
-
-        /* Assigns the values ​​of the environment
-        // variables to the global variables defined above*/
-        assignEnvironmentVariables();
-
-        /* Close the file*/
-        fclose(fp);
-    }
-
-    return exitCode;
-}
-/************************************************************************/
-/************************************************************************/
-
-/****   Function that creates the ipc structures used in the project    *****/
-/****************************************************************************/
-boolean createIPCFacilties()
-{
-    boolean ret = FALSE;
-
-    /* CORREGGERE USANDO CALLOC E FARE SEGNALAZIONE ERRORI
-     */
-    regPtrs = (Register **)malloc(REG_PARTITION_COUNT * sizeof(Register *));
-    /*
-        È sbagliato: con questo ciclo allochiamo già le partizioni
-        sullo heap del processo master, mentre noi vogliamo
-        allocarle nel segmento di memoria condiviso, avvinchè siano accessibili
-        da più processi.
-        È quindi sufficiente la prima malloc, con la quale allochiamo lo spazio
-        per tre puntatori a dati di tipo register, che poi  valorizzeremo
-        con i risultati di shat
-    for (int i = 0; i < REG_PARTITION_COUNT; i++)
-        regPtrs[i] = (Register *)malloc(REG_PARTITION_SIZE * sizeof(Register));*/
-    regPartsIds = (int *)malloc(REG_PARTITION_COUNT * sizeof(int));
-
-    /*CORREGGERE: NON SERVE LA MALLOC, perchè usiamo un segmento di memoria condivisa*/
-    /*usersList = (ProcListElem *)malloc(SO_USERS_NUM * sizeof(ProcListElem));*/
-
-    /*CORREGGERE: NON SERVE LA MALLOC, perchè usiamo un segmento di memoria condivisa*/
-    /*nodesList = (ProcListElem *)malloc(SO_NODES_NUM * sizeof(ProcListElem));*/
-
-    tpList = (TPElement *)malloc(SO_NODES_NUM * sizeof(TPElement));
-
-    noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    if (noReadersPartitions == NULL)
-        unsafeErrorPrint("Master: failed to allocate shared variables' ids array. ");
-    else
-    {
-        noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
-        if (noReadersPartitionsPtrs == NULL)
-            unsafeErrorPrint("Master: failed to allocate shared variables' array. ");
-        else
-        {
-            ret = TRUE;
-            /* we need to do this to reserve some space where to store
-            the beginning address of each segment*/
-            /*
-                Sbagliato anche questo per gli stessi motivi di cui sopra
-            */
-            /*
-            for (j = 0; j < REG_PARTITION_COUNT && ret; j++){
-                noReadersPartitionsPtrs[j] = malloc(sizeof(int *));
-                if (noReadersPartitionsPtrs[j] == NULL){
-                    safeErrorPrint("Master: failed to allocate shared variables' pointers array. ");
-                    ret = FALSE;
-                }
-            }*/
-        }
-    }
-
-    return ret;
-}
-/****************************************************************************/
-/****************************************************************************/
-
-/*****  Function that initialize the ipc structures used in the project *****/
-/****************************************************************************/
-void initializeIPCFacilities()
-{
-    /*
-        Sostituire la macro attuale con un meccanismo che deallochi
-        le risorse IPC in caso di errore
-    */
-    union semun arg;
-    unsigned short aux[REG_PARTITION_COUNT] = {1, 1, 1};
-    /* Initialization of semaphores*/
-    key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
-    FTOK_TEST_ERROR(key);
-    /*
-        CORREGGERE AGGIUNGENDO METTERE IPC_CREAT ED IPC_EXCL!!! per non correre
-        il rischio di legere dati sporchi
-    */
-    fairStartSem = semget(key, 1, IPC_CREAT | 0600);
-    SEM_TEST_ERROR(fairStartSem);
-
-    key = ftok(SEMFILEPATH, WRPARTSEED);
-    FTOK_TEST_ERROR(key);
-    wrPartSem = semget(key, 3, IPC_CREAT | 0600);
-    SEM_TEST_ERROR(wrPartSem);
-
-    key = ftok(SEMFILEPATH, RDPARTSEED);
-    FTOK_TEST_ERROR(key);
-    rdPartSem = semget(key, 3, IPC_CREAT | 0600);
-    SEM_TEST_ERROR(rdPartSem);
-
-    key = ftok(SEMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key);
-    userListSem = semget(key, 3, IPC_CREAT | 0600);
-    SEM_TEST_ERROR(userListSem);
-
-    key = ftok(SEMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key);
-    nodeListSem = semget(key, 3, IPC_CREAT | 0600);
-    SEM_TEST_ERROR(nodeListSem);
-
-    key = ftok(SEMFILEPATH, PARTMUTEXSEED);
-    FTOK_TEST_ERROR(key);
-    mutexPartSem = semget(key, 3, IPC_CREAT | 0600);
-    SEM_TEST_ERROR(mutexPartSem);
-
-    arg.val = SO_USERS_NUM + SO_NODES_NUM; /*+1*/
-    semctl(fairStartSem, 0, SETVAL, arg);
-
-    arg.array = aux;
-    semctl(rdPartSem, 0, SETALL, arg);
-
-    aux[0] = SO_USERS_NUM + SO_NODES_NUM + 1;
-    aux[1] = SO_USERS_NUM + SO_NODES_NUM + 1;
-    aux[2] = SO_USERS_NUM + SO_NODES_NUM + 1;
-    arg.array = aux;
-    semctl(wrPartSem, 0, SETALL, arg);
-
-    arg.val = 1;
-    semctl(userListSem, 0, SETVAL, arg); /* mutex*/
-    arg.val = 0;                         /*CORREGGERE mettendolo nel master, prima della sleep su fairStart*/
-    semctl(userListSem, 1, SETVAL, arg); /* read*/
-    arg.val = 1;
-    semctl(userListSem, 2, SETVAL, arg); /* write*/
-
-    arg.val = 1;
-    semctl(nodeListSem, 0, SETVAL, arg); /* mutex*/
-    arg.val = 0;                         /*CORREGGERE*/
-    semctl(nodeListSem, 1, SETVAL, arg); /* read*/
-    arg.val = 1;
-    semctl(nodeListSem, 2, SETVAL, arg); /* write*/
-
-    aux[0] = aux[1] = aux[2] = 1;
-    arg.array = aux;
-    semctl(mutexPartSem, 0, SETALL, arg);
-
-    /*****  Creates and initialize the messages queues  *****/
-    /********************************************************/
-    /* Creates the global queue*/
-    key = ftok(MSGFILEPATH, GLOBALMSGSEED);
-    globalQueueId = msgget(key, IPC_CREAT | IPC_EXCL | 0600);
-    MSG_TEST_ERROR(globalQueueId);
-    /********************************************************/
-    /********************************************************/
-
-    /*****  Initialization of shared memory segments    *****/
-    /********************************************************/
-    key = ftok(SHMFILEPATH, REGPARTONESEED);
-    FTOK_TEST_ERROR(key);
-    regPartsIds[0] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | S_IRUSR | S_IWUSR);
-    SHM_TEST_ERROR(regPartsIds[0]);
-    key = ftok(SHMFILEPATH, REGPARTTWOSEED);
-    FTOK_TEST_ERROR(key);
-    regPartsIds[1] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | S_IRUSR | S_IWUSR);
-    SHM_TEST_ERROR(regPartsIds[1]);
-    key = ftok(SHMFILEPATH, REGPARTTHREESEED);
-    FTOK_TEST_ERROR(key);
-    regPartsIds[2] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | S_IRUSR | S_IWUSR);
-    SHM_TEST_ERROR(regPartsIds[2]);
-    regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
-    regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
-    regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
-    regPtrs[0]->nBlocks = 2;
-    regPtrs[1]->nBlocks = 2;
-    regPtrs[2]->nBlocks = 2;
-
-    key = ftok(SHMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key);
-    usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), IPC_CREAT | S_IRUSR | S_IWUSR);
-    SHM_TEST_ERROR(usersListId);
-    usersList = (ProcListElem *)shmat(usersListId, NULL, 0);
-
-    key = ftok(SHMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key);
-    nodesListId = shmget(key, SO_NODES_NUM * sizeof(ProcListElem), IPC_CREAT | S_IRUSR | S_IWUSR);
-    SHM_TEST_ERROR(nodesListId);
-    nodesList = (ProcListElem *)shmat(nodesListId, NULL, 0);
-
-    /* Aggiungere segmenti per variabili condivise*/
-    noReadersPartitions[0] = shmget(ftok(SHMFILEPATH, NOREADERSONESEED), sizeof(SO_USERS_NUM), IPC_CREAT | S_IRUSR | S_IWUSR);
-    noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, 0);
-    *(noReadersPartitionsPtrs[0]) = 0;
-
-    noReadersPartitions[1] = shmget(ftok(SHMFILEPATH, NOREADERSTWOSEED), sizeof(SO_USERS_NUM), IPC_CREAT | S_IRUSR | S_IWUSR);
-    noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, 0);
-    *(noReadersPartitionsPtrs[1]) = 0;
-
-    noReadersPartitions[2] = shmget(ftok(SHMFILEPATH, NOREADERSTHREESEED), sizeof(SO_USERS_NUM), IPC_CREAT | S_IRUSR | S_IWUSR);
-    noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, 0);
-    *(noReadersPartitionsPtrs[2]) = 0;
-
-    noUserSegReaders = shmget(ftok(SHMFILEPATH, NOUSRSEGRDERSSEED), sizeof(SO_USERS_NUM), IPC_CREAT | S_IRUSR | S_IWUSR);
-    noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
-    *noUserSegReadersPtr = 0;
-
-    /* AGGIUNTO DA STEFANO */
-	key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
-    FTOK_TEST_ERROR(key);
-	noNodeSegReaders = shmget(key, sizeof(SO_NODES_NUM), IPC_CREAT | S_IRUSR | S_IWUSR);
-	SHM_TEST_ERROR(noNodeSegReaders);
-    noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
-    *noNodeSegReadersPtr = 0;
-    /* END */
-
-    /********************************************************/
-    /********************************************************/
-}
-/****************************************************************************/
-/****************************************************************************/
+    SO_SIM_SEC,     
+    SO_FRIENDS_NUM,
+    SO_HOPS;
+/***** End of Configuration parameters ***********/
 
 /*****  Momentary functions created for testing purposes  *****/
 /**************************************************************/
@@ -670,11 +398,11 @@ int main(int argc, char *argv[])
                     /*****  Creates and initialize the IPC Facilities   *****/
                     /********************************************************/
                     printf("Master: creating IPC facilitites...\n");
-                    if (createIPCFacilties() == TRUE)
+                    if (allocateGlobalStructures() == TRUE)
                     {
                         printf("Master: initializating IPC facilitites...\n");
                         /*
-                            Fare una funzione che ritorna un valore come createIPCFacilties
+                            Fare una funzione che ritorna un valore come allocateGlobalStructures
                             in modo da poter eliminare le facilities IPC in caso di errore
                         */
                         initializeIPCFacilities();
@@ -1966,6 +1694,294 @@ int main(int argc, char *argv[])
     exit(exitCode);
 }
 
+/***** Function that assigns the values ​​of the environment *****/
+/***** variables to the global variables defined above     *****/
+/***************************************************************/
+boolean assignEnvironmentVariables()
+{
+    /*
+        We use strtol because it can detect error (due to overflow)
+        while atol can't
+    */
+
+    printf("Master: loading environment...\n");
+    SO_USERS_NUM = strtol(getenv("SO_USERS_NUM"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_NODES_NUM = strtol(getenv("SO_NODES_NUM"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_REWARD = strtol(getenv("SO_REWARD"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_MIN_TRANS_GEN_NSEC = strtol(getenv("SO_MIN_TRANS_GEN_NSEC"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_MAX_TRANS_GEN_NSEC = strtol(getenv("SO_MAX_TRANS_GEN_NSEC"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_RETRY = strtol(getenv("SO_RETRY"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_TP_SIZE = strtol(getenv("SO_TP_SIZE"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_MIN_TRANS_PROC_NSEC = strtol(getenv("SO_MIN_TRANS_PROC_NSEC"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_MAX_TRANS_PROC_NSEC = strtol(getenv("SO_MAX_TRANS_PROC_NSEC"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_BUDGET_INIT = strtol(getenv("SO_BUDGET_INIT"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_SIM_SEC = strtol(getenv("SO_SIM_SEC"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_FRIENDS_NUM = strtol(getenv("SO_FRIENDS_NUM"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    SO_HOPS = strtol(getenv("SO_HOPS"), NULL, 10);
+    TEST_ERROR_PARAM;
+
+    return TRUE;
+}
+
+/***** Function that reads the file containing the configuration    *****/
+/***** parameters to save them as environment variables             *****/
+/************************************************************************/
+int readConfigParameters()
+{
+    char *filename = "params.txt";
+    FILE *fp = fopen(filename, "r");
+    /* Reading line by line, max 128 bytes*/
+    /* 
+        Array that will contain the lines read from the file:
+        each "row" of the "matrix" will contain a different file line
+    */
+    char line[CONF_MAX_LINE_NO][CONF_MAX_LINE_SIZE];
+    /* Counter of the number of lines in the file*/
+    int k = 0;
+    char *aus = NULL;
+    int exitCode = 0;
+    int i = 0;
+
+    printf("Node: reading configuration parameters...\n");
+
+    aus = (char *)calloc(35, sizeof(char));
+    if (aus == NULL)
+        unsafeErrorPrint("Node: failed to allocate memory. Error: ");
+    else
+    {
+        /* Handles any error in opening the file*/
+        if (fp == NULL)
+        {
+            sprintf(aus, "Error: could not open file %s", filename);
+            unsafeErrorPrint(aus);
+            exitCode = EXIT_FAILURE;
+        }
+        else
+        {
+            /* Inserts the lines read from the file into the array*/
+            /* It also inserts the parameters read into environment variables*/
+            while (fgets(line[k], CONF_MAX_LINE_SIZE, fp) != NULL)
+            {
+                putenv(line[i]);
+                k++;
+            }
+
+            if (line[k] == NULL && errno)
+            {
+                unsafeErrorPrint("Node: failed to read cofiguration parameters. Error: ");
+                exitCode = EXIT_FAILURE;
+            }
+            else
+                assignEnvironmentVariables();
+
+            /* Close the file*/
+            fclose(fp);
+        }
+    }
+
+    return exitCode;
+}
+/************************************************************************/
+/************************************************************************/
+
+/****   Allocation of global structures    *****/
+/***********************************************/
+boolean allocateGlobalStructures()
+{
+    regPtrs = (Register **)calloc(REG_PARTITION_COUNT, sizeof(Register *));
+    TEST_MALLOC_ERROR(regPtrs);
+
+    regPartsIds = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
+    TEST_MALLOC_ERROR(regPartsIds);
+
+
+    tpList = (TPElement *)calloc(SO_NODES_NUM, sizeof(TPElement));
+    TEST_MALLOC_ERROR(tpList);
+
+    noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
+    TEST_MALLOC_ERROR(noReadersPartitions);
+
+    noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
+    TEST_MALLOC_ERROR(noReadersPartitionsPtrs);
+
+    return TRUE;
+}
+/****************************************************************************/
+/****************************************************************************/
+
+/*****  Ipc structures allocation *****/
+/****************************************************************************/
+boolean initializeIPCFacilities()
+{
+    /*
+        Sostituire la macro attuale con un meccanismo che deallochi
+        le risorse IPC in caso di errore
+    */
+    union semun arg;
+    unsigned short aux[REG_PARTITION_COUNT] = {1, 1, 1};
+    /* Initialization of semaphores*/
+    key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
+    FTOK_TEST_ERROR(key);
+    
+    fairStartSem = semget(key, 1, IPC_CREAT | IPC_EXCL | 0600);
+    SEM_TEST_ERROR(fairStartSem);
+
+    key = ftok(SEMFILEPATH, WRPARTSEED);
+    FTOK_TEST_ERROR(key);
+    wrPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | 0600);
+    SEM_TEST_ERROR(wrPartSem);
+
+    key = ftok(SEMFILEPATH, RDPARTSEED);
+    FTOK_TEST_ERROR(key);
+    rdPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | 0600);
+    SEM_TEST_ERROR(rdPartSem);
+
+    key = ftok(SEMFILEPATH, USERLISTSEED);
+    FTOK_TEST_ERROR(key);
+    userListSem = semget(key, 3, IPC_CREAT | IPC_EXCL | 0600);
+    SEM_TEST_ERROR(userListSem);
+
+    key = ftok(SEMFILEPATH, NODESLISTSEED);
+    FTOK_TEST_ERROR(key);
+    nodeListSem = semget(key, 3, IPC_CREAT | IPC_EXCL | 0600);
+    SEM_TEST_ERROR(nodeListSem);
+
+    key = ftok(SEMFILEPATH, PARTMUTEXSEED);
+    FTOK_TEST_ERROR(key);
+    mutexPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | 0600);
+    SEM_TEST_ERROR(mutexPartSem);
+
+    /*
+        Each process will subtract one by waiting on the sempahore
+    */
+    arg.val = SO_USERS_NUM + SO_NODES_NUM;
+    semctl(fairStartSem, 0, SETVAL, arg);
+
+    arg.array = aux;
+    semctl(rdPartSem, 0, SETALL, arg);
+
+    aux[0] = SO_USERS_NUM + SO_NODES_NUM + 1;
+    aux[1] = SO_USERS_NUM + SO_NODES_NUM + 1;
+    aux[2] = SO_USERS_NUM + SO_NODES_NUM + 1;
+    arg.array = aux;
+    semctl(wrPartSem, 0, SETALL, arg);
+
+    arg.val = 1;
+    semctl(userListSem, 0, SETVAL, arg); /* mutex*/
+    arg.val = 0;                         /*CORREGGERE mettendolo nel master, prima della sleep su fairStart*/
+    semctl(userListSem, 1, SETVAL, arg); /* read*/
+    arg.val = 1;
+    semctl(userListSem, 2, SETVAL, arg); /* write*/
+
+    arg.val = 1;
+    semctl(nodeListSem, 0, SETVAL, arg); /* mutex*/
+    arg.val = 0;                         /*CORREGGERE*/
+    semctl(nodeListSem, 1, SETVAL, arg); /* read*/
+    arg.val = 1;
+    semctl(nodeListSem, 2, SETVAL, arg); /* write*/
+
+    aux[0] = aux[1] = aux[2] = 1;
+    arg.array = aux;
+    semctl(mutexPartSem, 0, SETALL, arg);
+
+    /*****  Creates and initialize the messages queues  *****/
+    /********************************************************/
+    /* Creates the global queue*/
+    key = ftok(MSGFILEPATH, GLOBALMSGSEED);
+    globalQueueId = msgget(key, IPC_CREAT | IPC_EXCL | 0600);
+    MSG_TEST_ERROR(globalQueueId);
+    /********************************************************/
+    /********************************************************/
+
+    /*****  Initialization of shared memory segments    *****/
+    /********************************************************/
+    key = ftok(SHMFILEPATH, REGPARTONESEED);
+    FTOK_TEST_ERROR(key);
+    regPartsIds[0] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(regPartsIds[0]);
+    key = ftok(SHMFILEPATH, REGPARTTWOSEED);
+    FTOK_TEST_ERROR(key);
+    regPartsIds[1] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(regPartsIds[1]);
+    key = ftok(SHMFILEPATH, REGPARTTHREESEED);
+    FTOK_TEST_ERROR(key);
+    regPartsIds[2] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(regPartsIds[2]);
+    regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
+    regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
+    regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
+    regPtrs[0]->nBlocks = 2;
+    regPtrs[1]->nBlocks = 2;
+    regPtrs[2]->nBlocks = 2;
+
+    key = ftok(SHMFILEPATH, USERLISTSEED);
+    FTOK_TEST_ERROR(key);
+    usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), IPC_CREAT | S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(usersListId);
+    usersList = (ProcListElem *)shmat(usersListId, NULL, 0);
+
+    key = ftok(SHMFILEPATH, NODESLISTSEED);
+    FTOK_TEST_ERROR(key);
+    nodesListId = shmget(key, SO_NODES_NUM * sizeof(ProcListElem), IPC_CREAT | S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(nodesListId);
+    nodesList = (ProcListElem *)shmat(nodesListId, NULL, 0);
+
+    /* Aggiungere segmenti per variabili condivise*/
+    noReadersPartitions[0] = shmget(ftok(SHMFILEPATH, NOREADERSONESEED), sizeof(SO_USERS_NUM), IPC_CREAT | S_IRUSR | S_IWUSR);
+    noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, 0);
+    *(noReadersPartitionsPtrs[0]) = 0;
+
+    noReadersPartitions[1] = shmget(ftok(SHMFILEPATH, NOREADERSTWOSEED), sizeof(SO_USERS_NUM), IPC_CREAT | S_IRUSR | S_IWUSR);
+    noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, 0);
+    *(noReadersPartitionsPtrs[1]) = 0;
+
+    noReadersPartitions[2] = shmget(ftok(SHMFILEPATH, NOREADERSTHREESEED), sizeof(SO_USERS_NUM), IPC_CREAT | S_IRUSR | S_IWUSR);
+    noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, 0);
+    *(noReadersPartitionsPtrs[2]) = 0;
+
+    noUserSegReaders = shmget(ftok(SHMFILEPATH, NOUSRSEGRDERSSEED), sizeof(SO_USERS_NUM), IPC_CREAT | S_IRUSR | S_IWUSR);
+    noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
+    *noUserSegReadersPtr = 0;
+
+    /* AGGIUNTO DA STEFANO */
+    key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
+    FTOK_TEST_ERROR(key);
+    noNodeSegReaders = shmget(key, sizeof(SO_NODES_NUM), IPC_CREAT | S_IRUSR | S_IWUSR);
+    SHM_TEST_ERROR(noNodeSegReaders);
+    noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
+    *noNodeSegReadersPtr = 0;
+    /* END */
+
+    /********************************************************/
+    /********************************************************/
+}
+/****************************************************************************/
+/****************************************************************************/
+
 /* Function to free the space dedicated to the budget list p passed as argument */
 void budgetlist_free(budgetlist p)
 {
@@ -2167,7 +2183,7 @@ void endOfSimulation(int sig)
                 There are still active children that need
                 to be notified the end of simulation
             */
-            for (i = 0; i < NO_ATTEMPS && !done; i++)
+            for (i = 0; i < NO_ATTEMPS_TERM && !done; i++)
             {
                 if (kill(0, SIGUSR1) == -1)
                 {
@@ -2916,56 +2932,59 @@ void checkNodeCreationRequests()
                */
                 noEffectiveNodes++;
                 noAllTimesNodes++;
-                if (realloc(nodesList, noAllTimesNodes) == -1){
-                    /*
-                        STesse considerazioni fatte sotto per quanto concerne
-                        la fine delle risorse
-                    */
-                    safeErrorPrint("Master: failed to alloc more memory for nodes list. Error: ");
-                } else {
-                    /*
+                /*
                         CORREGGE: MANCA SINCRONIZZAZIONE
                     */
-                    newNode.procId = getpid();
-                    newNode.procState = ACTIVE;
-                    nodesList[noAllTimesNodes - 1] = newNode;
+                newNode.procId = getpid();
+                newNode.procState = ACTIVE;
+                /*
+                    NO, putroppo non si può fare, perchè dovremmo redimensionare
+                    il segmento di memoria condivisa.
+                    L'idea è far sì che un nuovo nodo sia servito dagli amici.
 
-                    tpId = msgget(ftok("msgfile.txt", currPid), IPC_EXCL | IPC_CREAT);
-                    if (tpId == -1)
-                        safeErrorPrint("Master: failed to create additional node's transaction pool. Error: ");
-                    else {
-                        /*
+                    nodesList[noAllTimesNodes - 1] = newNode;
+                */
+
+                tpId = msgget(ftok("msgfile.txt", currPid), IPC_EXCL | IPC_CREAT);
+                if (tpId == -1)
+                    safeErrorPrint("Master: failed to create additional node's transaction pool. Error: ");
+                else
+                {
+                    /*
                             CORREGGERE:
                             MsgTP è inutile
                             Toglierlo
                         */
-                        firstTrans.mType = getpid();
-                        firstTrans.transaction = aus.transaction;
+                    firstTrans.mType = getpid();
+                    firstTrans.transaction = aus.transaction;
 
-                        if (msgsnd(tpId, &(aus.transaction), sizeof(MsgTP), 0) == -1){
-                            safeErrorPrint("Master: failed to initialize additional node's transaction pool. Error: ");
-                        } else {
-                            aus.mType = getpid();
-                            aus.msgContent = FRIENDINIT;
-                            /*
+                    if (msgsnd(tpId, &(aus.transaction), sizeof(MsgTP), 0) == -1)
+                    {
+                        safeErrorPrint("Master: failed to initialize additional node's transaction pool. Error: ");
+                    }
+                    else
+                    {
+                        aus.mType = getpid();
+                        aus.msgContent = FRIENDINIT;
+                        /*
                                 srand() ???
                             */
-                            estrai(noEffectiveNodes);
-                            for (j = 0; j < SO_FRIENDS_NUM; j++)
+                        estrai(noEffectiveNodes);
+                        for (j = 0; j < SO_FRIENDS_NUM; j++)
+                        {
+                            aus.friend = nodesList[extractedFriendsIndex[j]];
+                            if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue), 0) == -1)
                             {
-                                aus.friend = nodesList[extractedFriendsIndex[j]];
-                                if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue), 0) == -1){
-                                    /*
+                                /*
                                         CORREGGERE: possiamo semplicemente segnalare l'errore senza fare nulla?
                                         Io direi di sì, non mi sembra che gestioni più complicate siano utili
                                     */
-                                    safeErrorPrint("Master: failed to send a friend to new node. Error: ");
-                                }
+                                safeErrorPrint("Master: failed to send a friend to new node. Error: ");
                             }
-
-                            if (execle("./node.o", ADDITIONAL, environ) == -1)
-                                safeErrorPrint("Master: failed to load node's code. Error: ");
                         }
+
+                        if (execle("./node.o", ADDITIONAL, environ) == -1)
+                            safeErrorPrint("Master: failed to load node's code. Error: ");
                     }
                 }
             }

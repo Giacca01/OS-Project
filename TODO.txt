@@ -130,14 +130,23 @@
 */
 24) Modificare nodo per fare in modo che solo i nodi normali attendano l'inizio della simulazione
 25) CONTROLLARE LO STATO DELL'UTENTE E DEL NODO A CUI SI INVIA UNA TRANSAZIONE
+26) Inviare notifica fallimento transazione a sender
+27) Verificare il bilancio prima di generare transazione in risposta a sigusr2
+28) Aggiungere lettura variabili globali nell'utente
 
 1) Parte full master: OK
 2) SIstemare terminazione nodi (sincronizzazione accesso lista): IO
+    -risolvere problema dimensione lista: Putroppo si risolve solo non redimensionando
+    -controllare se si acceda alla lista nodi in modo sincronizzato
 3) Aggiornare e testare il master integrando tutto: IO
 4) Testare e uniformare il nodo
 6) Testare e uniformare l'utente
 7) Scrivere Relazione: Urru
 9) Implementare modifiche scritte su file: Fontana
 10) Cerchi problemi da risolvere: Fontana
+
+Printf vs write:
+    In tutte le funzioni che possono essere interrotti da un segnale per poi ripartire
+    (gli handler, ma non solo) bisogna usare write
 
 Tutto ciò entro il 12/01/2022
