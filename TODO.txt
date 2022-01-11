@@ -133,6 +133,8 @@
 26) Inviare notifica fallimento transazione a sender
 27) Verificare il bilancio prima di generare transazione in risposta a sigusr2
 28) Aggiungere lettura variabili globali nell'utente
+29) Sostituire write con printf
+30) Handler CTRL + C master
 
 1) Parte full master: OK
 2) SIstemare terminazione nodi (sincronizzazione accesso lista): IO

@@ -54,22 +54,29 @@ i figli lo preleveranno dalla lista dei nodi*/
 #define FTOK_TEST_ERROR(key)                                                       \
     if (key == -1)                                                                 \
     {                                                                              \
-        unsafeErrorPrint("Node: ftok failed during semaphores creation. Error: "); \
+        unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: "); \
         return FALSE;                                                              \
     }
 
-#define SEM_TEST_ERROR(id)                                                          \
-    if (id == -1)                                                                   \
-    {                                                                               \
-        unsafeErrorPrint("Node: semget failed during semaphore creation. Error: "); \
-        return FALSE;                                                               \
+#define SEM_TEST_ERROR(id)                                                            \
+    if (id == -1)                                                                     \
+    {                                                                                 \
+        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: "); \
+        return FALSE;                                                                 \
     }
 
-#define SHM_TEST_ERROR(id)                                                                     \
-    if (id == -1)                                                                              \
-    {                                                                                          \
-        unsafeErrorPrint("Nde: shmget failed during shared memory segment creation. Error: "); \
-        return FALSE;                                                                          \
+#define SEMCTL_TEST_ERROR(id)                                                         \
+    if (id == -1)                                                                     \
+    {                                                                                 \
+        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: "); \
+        return FALSE;                                                                 \
+    }
+
+#define SHM_TEST_ERROR(id)                                                                        \
+    if (id == -1)                                                                                 \
+    {                                                                                             \
+        unsafeErrorPrint("Master: shmget failed during shared memory segment creation. Error: "); \
+        return FALSE;                                                                             \
     }
 
 #define MSG_TEST_ERROR(id)                                                                 \
@@ -79,18 +86,18 @@ i figli lo preleveranno dalla lista dei nodi*/
         return FALSE;                                                                      \
     }
 
-#define TEST_MALLOC_ERROR(ptr)                                        \
-    if (ptr == NULL)                                                  \
-    {                                                                 \
-        unsafeErrorPrint("User: failed to allocate memory. Error: "); \
-        return FALSE;                                                 \
+#define TEST_MALLOC_ERROR(ptr)                                          \
+    if (ptr == NULL)                                                    \
+    {                                                                   \
+        unsafeErrorPrint("Master: failed to allocate memory. Error: "); \
+        return FALSE;                                                   \
     }
 
-#define TEST_SHMAT_ERROR(ptr)                                                         \
-    if (ptr == NULL)                                                                  \
-    {                                                                                 \
-        unsafeErrorPrint("User: failed to attach to shared memory segment. Error: "); \
-        return FALSE;                                                                 \
+#define TEST_SHMAT_ERROR(ptr)                                                           \
+    if (ptr == NULL)                                                                    \
+    {                                                                                   \
+        unsafeErrorPrint("Master: failed to attach to shared memory segment. Error: "); \
+        return FALSE;                                                                   \
     }
 
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
@@ -102,6 +109,7 @@ i figli lo preleveranno dalla lista dei nodi*/
 #define CONF_MAX_LINE_SIZE 128 /* Configuration file's line maximum bytes length*/
 #define CONF_MAX_LINE_NO 14    /* Configuration file's maximum lines count*/
 #define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + REG_PARTITION_COUNT - 1) / REG_PARTITION_COUNT)
+#define MASTERPERMITS 0600
 
 /*
     By using this new datatype we're able
