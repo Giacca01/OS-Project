@@ -1,3 +1,29 @@
+1) Inizializzare facilities
+    -Allocazione var globali: Ok
+    -aggancio a facilities: Ok
+    -letture var d'ambiente: Ok
+2) Leggere Variabili d'ambiente: Ok
+3) Calcolo bilancio: Ok
+4) Test e revisione
+5) Controllare sincronizzazione register:
+    -utente per calcolo bilancio: Ok
+    -nodo per registrare blocco: Ok
+    -master per stampa?? In teoria no, perchè accedi al registro
+    quando tutti sono terminati (vedere bene se possono esserci figli non terminati)
+5) COntrollare sincronizzazione lista utenti e nodi
+    -utente per scelta utente destinatario: OK
+    -utente per scelta nodo a cui chiedere processamento: OK
+    -master per registrare terminazione nodi ed utenti
+6) Sostituire sleep con nanosleep: utente e nodo ok
+7) sostituire write con printf [VEDI AL FONDO DI QUESTO FILE]
+8) Testare meccanismo deallocazioni IPC in caso di errore su master
+9) Terminazione in caso di errore fork nel master
+10) Segnalazione terminazione nodo ed utente a master:
+    si invia un sigchld al master (attenzione a sganciare l'handler prima della wait a fine simulazione): 
+        utente aggiornato (manca in funzione endOfExecution), manca il resto
+11) Aggiornare inizializzazione random in nodo (con clock_gettime ?): OK
+12) Sostituire atoi/atol con strtoi/strtol: nodo e utente ok
+
 4) Aggiornare file di intestazione: Ok
 5) Sistemazione e Test Nodo:
     -implementare parte aggiuntiva versione FULL
@@ -12,33 +38,32 @@
     ed inviare una transazione ad ogni iterazione del ciclo di vita del nodo
     (così però non si fanno un po' troppi invii? E soprattutto, non si perde
     la possibilità di regolare la velocità??)
+    No, lasciamo il timer
 6) Collegarsi alla lista dei nodi in sola lettura:OK
-7) Fissare con precisione il numero di partizioni (per me va bene vincolarlo a 3)
-8) /*
-        Se un nodo è terminato ed un processo prova a mandargli una transazione bisogna
-        segnalare un errore
-       */
-9) Spostare TEST_ERROR_PARAM in info.h e correggerla
+7) Fissare con precisione il numero di partizioni (per me va bene vincolarlo a 3): sono per forza 3
+8) Verificare stato utente e nodo in inivio transazione: OK
+8.2) Verificare stato nodo amico quando gli mandi la transazioni: come facciamo???
+9) Spostare TEST_ERROR_PARAM in info.h e correggerla (cosa bisogna cambiare ?)
 10) Definire una procedura che deallochi le facilities in caso di errore: OK
     -modificare la procedura di deallocazione corrente in modo che sappia
-    gestire senza errori il caso in cui un ogetto IPC non esiste: Ok (solo per nodo)
+    gestire senza errori il caso in cui un ogetto IPC non esiste: Ok (solo per nodo e utente(?))
     -agganciare la procedure con atexit in modo che venga sempre eseguita alla terminazione
     (o richiamarla in caso di errore: questa è la soluzione scelta, l'altra è inutile): OK
     -agganciarla anche in caso di terminazione anomala
 11) COntrollare i collegamenti in sola lettura ai segmenti
 12) COmpilare tutto (check parentesi calcolo bilancio)
-13) Implementare parte full master
+13) Implementare parte full master: OK
 14) Inserire, nel nodo, l'aggiunta dell'amico su richiesta del master: Ok
 15) Aggiornare il progetto alla luce del fatto che i nodi possano terminare
-16) Rilevare inivio ad utenti terminati
-    -bisogna farlo sia nel nodo che nell'utente???
-17) Segnalazione fallimento transazione a sender
-18) Per il master e i segmenti di shared memory abbiamo usato una soluzione read first, va bene?
-19) Aggiungere sincronizzazione in calcolo bilancio
+17) Segnalazione fallimento transazione a sender: controllo in utente già fatto, invio da parte di nodo OK
+18) Per il master e i segmenti di shared memory abbiamo usato la soluzione fair di Gunetti
+19) Aggiungere sincronizzazione in calcolo bilancio: Ok
 20) sistemare costante dimensione file
-21) Rilevazione invio a nodi terminati
-22) Eliminare facilities inutili da node
-/*
+21) Rilevazione invio a nodi terminati: OK, in fase di invio viene scelto un nodo attivo
+22) Eliminare facilities inutili da node:
+    lista: usersList, nodesList, rdPartSem, mutexPartSem, noReadersPartition, noUserSegReaders, nodeListSem, userListSem
+23) Aggiornare lettura da file con versione seguente
+    /*
     Versione ottimizzata lettura da file
     int readConfigParameters()
 {
@@ -105,3 +130,34 @@
     return exitCode;
 }
 */
+24) Modificare nodo per fare in modo che solo i nodi normali attendano l'inizio della simulazione
+25) CONTROLLARE LO STATO DELL'UTENTE E DEL NODO A CUI SI INVIA UNA TRANSAZIONE: in utente ok (viene fatto in funzione di estrazione nodo e utente dest.)
+26) Inviare notifica fallimento transazione a sender: controllo in utente già fatto, manca invio da parte di nodo
+27) Verificare il bilancio prima di generare transazione in risposta a sigusr2: OK
+28) Aggiungere lettura variabili globali nell'utente: OK
+29) Sostituire write con printf: utente ok, nodo ok
+30) Handler CTRL + C master
+31) Occorre rimuovere eventuali handler quando si esegue la procedura di terminazione??
+32) DOBBIAMO STUDIARE SISTEMA DI AGGIONAMENTO STATO DEI NODI AMICI PER I NODI (AL MOMENTO NON POSSIAMO SAPERE SE UN NODO AMICO È TERMINATO O MENO!!!!)
+33) Cosa facciamo in caso fallisca l'invio del messaggio che informa il sender che una sua transazione non è stata processata?
+34) Controllare i sizeof di tutte le msgsnd e msgrcv (non bisogna sottrarre la size del campo mType?)
+35) Quando in nodo leggiamo una transazione dalla coda globale, prima di inviarla al master o ad un nodo amico non dovremmo vedere
+    se sta nella TP del nodo che l'ha letta? Con la gestione che abbiamo fatto la transazione viene rimbalzata SO_HOPS volte finché
+    un nodo la manda al master e richiede la creazione di un nuovo nodo... Non credo vada bene...
+
+1) Parte full master: OK
+2) SIstemare terminazione nodi (sincronizzazione accesso lista): IO
+    -risolvere problema dimensione lista: Putroppo si risolve solo non redimensionando
+    -controllare se si acceda alla lista nodi in modo sincronizzato
+3) Aggiornare e testare il master integrando tutto: IO
+4) Testare e uniformare il nodo
+6) Testare e uniformare l'utente
+7) Scrivere Relazione: Urru
+9) Implementare modifiche scritte su file: Fontana
+10) Cerchi problemi da risolvere: Fontana
+
+Printf vs write:
+    In tutte le funzioni che possono essere interrotti da un segnale per poi ripartire
+    (gli handler, ma non solo) bisogna usare write
+
+Tutto ciò entro il 12/01/2022

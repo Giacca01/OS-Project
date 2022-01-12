@@ -30,6 +30,7 @@
 #define NOREADERSTWOSEED 7
 #define NOREADERSTHREESEED 8
 #define NOUSRSEGRDERSSEED 9
+#define NONODESEGRDERSSEED 10
 
 #define MSGFILEPATH "../msgfile.txt"
 #define GLOBALMSGSEED 1
@@ -50,58 +51,83 @@ i figli lo preleveranno dalla lista dei nodi*/
         exit(EXIT_FAILURE);                  \
     }
 
-#define FTOK_TEST_ERROR(key) \
-    if (key == -1){          \
-        unsafeErrorPrint("Node: ftok failed during semaphores creation. Error: ");\
-        return FALSE; \
+#define FTOK_TEST_ERROR(key)                                                       \
+    if (key == -1)                                                                 \
+    {                                                                              \
+        unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: "); \
+        return FALSE;                                                              \
     }
 
-#define SEM_TEST_ERROR(id) \
-    if (id == -1) {         \
-        unsafeErrorPrint("Node: semget failed during semaphore creation. Error: ");\
-        return FALSE;\
+#define SEM_TEST_ERROR(id)                                                            \
+    if (id == -1)                                                                     \
+    {                                                                                 \
+        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: "); \
+        return FALSE;                                                                 \
     }
 
-#define SHM_TEST_ERROR(id) \
-    if (id == -1){          \
-        unsafeErrorPrint("Nde: shmget failed during shared memory segment creation. Error: ");\
-        return FALSE;\
+#define SEMCTL_TEST_ERROR(id)                                                         \
+    if (id == -1)                                                                     \
+    {                                                                                 \
+        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: "); \
+        return FALSE;                                                                 \
+    }
+
+#define SHM_TEST_ERROR(id)                                                                        \
+    if (id == -1)                                                                                 \
+    {                                                                                             \
+        unsafeErrorPrint("Master: shmget failed during shared memory segment creation. Error: "); \
+        return FALSE;                                                                             \
     }
 
 #define MSG_TEST_ERROR(id)                                                                 \
-    if (id == -1){                                                                          \
-        unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: ");\
-        return FALSE;\
+    if (id == -1)                                                                          \
+    {                                                                                      \
+        unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: "); \
+        return FALSE;                                                                      \
     }
 
-#define TEST_MALLOC_ERROR(ptr)                                        \
-    if (ptr == NULL) {                                               \
-        unsafeErrorPrint("User: failed to allocate memory. Error: "); \
+#define TEST_MALLOC_ERROR(ptr)                                          \
+    if (ptr == NULL)                                                    \
+    {                                                                   \
+        unsafeErrorPrint("Master: failed to allocate memory. Error: "); \
         return FALSE;                                                   \
     }
 
-#define TEST_SHMAT_ERROR(ptr)                                        \
-    if (ptr == NULL)                                                                   \
-    {                                                                                 \
-        unsafeErrorPrint("User: failed to attach to shared memory segment. Error: "); \
-        return FALSE;                                                 \
+#define TEST_SHMAT_ERROR(ptr)                                                           \
+    if (ptr == NULL)                                                                    \
+    {                                                                                   \
+        unsafeErrorPrint("Master: failed to attach to shared memory segment. Error: "); \
+        return FALSE;                                                                   \
     }
 
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
-#define REG_PARTITION_SIZE (SO_REGISTRY_SIZE / 3) 
-#define REWARD_TRANSACTION -1                     
-#define INIT_TRANSACTION -1                       
-#define REG_PARTITION_COUNT 3                     
-#define SO_BLOCK_SIZE 10                          /* Modificato 10/12/2021*/
-                          /* Modificato 10/12/2021*/
+#define REWARD_TRANSACTION -1
+#define INIT_TRANSACTION -1
+#define REG_PARTITION_COUNT 3
+#define SO_BLOCK_SIZE 10       /* Modificato 10/12/2021*/
+                               /* Modificato 10/12/2021*/
 #define CONF_MAX_LINE_SIZE 128 /* Configuration file's line maximum bytes length*/
-#define CONF_MAX_LINE_NO 14 /* Configuration file's maximum lines count*/
+#define CONF_MAX_LINE_NO 14    /* Configuration file's maximum lines count*/
+#define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + REG_PARTITION_COUNT - 1) / REG_PARTITION_COUNT)
+#define MASTERPERMITS 0600
+
+/*
+    By using this new datatype we're able
+    to distinguish between a "normal" node, that
+    must wait for the simulation to start, and
+    an "additional one", that doesn't have to, because
+    it's created when the simulation has already started
+*/
+typedef enum {
+    NORMAL = 0,
+    ADDITIONAL = 1
+} NodeType;
 
 typedef enum
 {
     TERMINATED = 0,
     ACTIVE
-} States; 
+} States;
 
 /* Nella documentazione fare disegno di sta roba*/
 typedef struct
@@ -109,7 +135,7 @@ typedef struct
     /* meglio mettere la struct e non il singolo campo
     così non ci sono rischi di portablità*/
     struct timespec timestamp;
-    long int sender;    /* Sender's PID*/
+    long int sender;   /* Sender's PID*/
     long int receiver; /* Receiver's PID*/
     float amountSend;
     float reward;
@@ -138,7 +164,7 @@ typedef struct /* Modificato 10/12/2021*/
 typedef struct /* Modificato 10/12/2021*/
 {
     long int procId;
-    States procState;  /* dA ignorare se il processo è un nodo*/
+    States procState; /* dA ignorare se il processo è un nodo*/
 } ProcListElem;
 
 /* Il singolo elemento della lista degli amici è una coppia
@@ -160,16 +186,20 @@ typedef struct /* Modificato 10/12/2021*/
             to request the creation of a new node to serve a transaction
     
     NEWFRIEND: message sent to node from master to order the latter
-                to add a new process to its friends
-
+            to add a new process to its friends
+    
     FAILEDTRANS: message sent to user from node to inform it that
-    the attached transaction has failed (this is used in case
-    the receiver was a terminated user)   
+            the attached transaction has failed (this is used in case
+            the receiver was a terminated user)
 
-    FRIENDINIT: massage sent to user from master to initialize its friends list 
+    FRIENDINIT: message sent to user from master to initialize its friends list 
 
     TRANSTPFULL: message sent to user (or node) to node to inform it that a transaction
-    must be served either by requesting the creation of new node or by dispatching it to a friend
+            must be served either by requesting the creation of new node or by dispatching it to a friend
+    
+    TERMINATEDUSER: message sent from user when it terminates its execution
+
+    TERMINATEDNODE: message sent from node when it terminates its execution
 */
 typedef enum
 {
@@ -177,7 +207,9 @@ typedef enum
     NEWFRIEND,
     FAILEDTRANS,
     FRIENDINIT,
-    TRANSTPFULL
+    TRANSTPFULL,
+    TERMINATEDUSER,
+    TERMINATEDNODE
 } GlobalMsgContent;
 
 /* attenzione!!!! Per friends va fatta una memcopy
@@ -198,14 +230,19 @@ typedef struct
      * sulla coda globale e starà quindi al nodo destinatario leggere i messaggi dalla coda e creare la 
      * sua lista di nodi amici.
      */
-    ProcListElem friend; /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
+    /*
+        CORREGGERE: mettere solo il pid
+    */
+    ProcListElem friend;     /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
     Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
-    long hoops;              /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    long hops;              /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    pid_t userPid;          /* pid of terminated user, garbage if msgContent != TERMINATEDUSER */
+    pid_t nodePid;          /* pid of terminated node, garbage if msgContent != TERMINATEDNODE */
 } MsgGlobalQueue;
 
 typedef enum
 {
-    FALSE = 0, 
+    FALSE = 0,
     TRUE
 } boolean;
 
