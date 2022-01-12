@@ -183,9 +183,8 @@ void endOfExecution(int);
 
 /**
  * @brief Function that deallocates the IPC facilities for the user.
- * @return returns TRUE if successfull, FALSE in case an error occurs
  */
-boolean deallocatedFacilities();
+void deallocateIPCFacilities();
 
 /**
  * @brief Function that adds the transaction passed as second argument to the list of sent transactions
@@ -732,24 +731,23 @@ void endOfExecution(int sig)
 {
     int exitCode = EXIT_FAILURE;
 
-    if(sig == 1)
-        deallocatedFacilities();
-    else if(sig == SIGUSR1)
-        exitCode = deallocatedFacilities() ? EXIT_SUCCESS : EXIT_FAILURE;
-        /* 
-         * se deallocatedFacilities termina correttamente (restituisce TRUE), allora l'esecuzione termina con 
-         * successo in quando è stato il master a richiedere la terminazione dello user; in caso contrario 
-         * l'esecuzione termina con un fallimento.
-         */
+    deallocateIPCFacilities(); 
+        
+    if(sig == SIGUSR1)
+        exitCode = EXIT_SUCCESS;
+    /*
+     * se il metodo viene chiamato in risposta alla ricezione del segnale SIGUSR1, allora è stato 
+     * il master a richiedere la terminazione dello user, quindi impostiamo come stato di 
+     * terminazione EXIT_SUCCESS; in caso contrario l'esecuzione termina con un fallimento.
+     */
     
     exit(exitCode);
 }
 
 /**
  * @brief Function that deallocates the IPC facilities for the user.
- * @return returns TRUE if successfull, FALSE in case an error occurs
  */
-boolean deallocatedFacilities()
+void deallocateIPCFacilities()
 {
     /*
      * Cose da eliminare:
@@ -763,70 +761,95 @@ boolean deallocatedFacilities()
         CORREGGERE CON NUOVO MECCANISMO DI RILEVAZIONE ERRORI
     */
 
-    /*
-        La dprintf è utilissima.
-        Fontana è un genio!!
-    */
-    dprintf(STDOUT_FILENO, "User: detaching from register's partitions...\n");
+    write(STDOUT_FILENO, 
+        "User: detaching from register's partitions...\n",
+        strlen("User: detaching from register's partitions...\n"));
     
     for(i = 0; i < REG_PARTITION_COUNT; i++)
     {
         if(shmdt(regPtrs[i]) == -1)
         {
-            /* serve riprovare per un certo numero di tentativi? */
-            safeErrorPrint("User: failed to detach from register's partition. Error: ");
-            return FALSE;
+            if (errno != EINVAL) {
+                /*
+                    Implementare un meccanismo di retry??
+                    Contando che non è un errore così frequente si potrebbe anche ignorare...
+                    Non vale la pena, possiamo limitarci a proseguire la deallocazione
+                    riducendo al minimo il memory leak
+                */
+                safeErrorPrint("User: failed to detach from register's partition. Error: ");
+            }
         }
     }
-    free(regPtrs);
-    free(regPartsIds);
+    if(regPtrs != NULL)
+        free(regPtrs);
+    
+    if(regPartsIds != NULL)
+        free(regPartsIds);
 
-    dprintf(STDOUT_FILENO, "User: detaching from users list...\n");
+    write(STDOUT_FILENO, 
+        "User: detaching from users list...\n",
+        strlen("User: detaching from users list...\n"));
+
     if(shmdt(usersList) == -1)
     {
-        safeErrorPrint("User: failed to detach from users list. Error: ");
-        return FALSE;
+        if (errno != EINVAL)
+            safeErrorPrint("User: failed to detach from users list. Error: ");
     }
 
-    dprintf(STDOUT_FILENO, "User: detaching from nodes list...\n");
+    write(STDOUT_FILENO, 
+        "User: detaching from nodes list...\n",
+        strlen("User: detaching from nodes list...\n"));
+
     if(shmdt(nodesList) == -1)
     {
-        safeErrorPrint("User: failed to detach from nodes list. Error: ");
-        return FALSE;
+        if (errno != EINVAL)
+            safeErrorPrint("User: failed to detach from nodes list. Error: ");
     }
 
-    dprintf(STDOUT_FILENO, "User: detaching from partitions' number of readers shared variable...\n");
+    write(STDOUT_FILENO, 
+        "User: detaching from partitions' number of readers shared variable...\n",
+        strlen("User: detaching from partitions' number of readers shared variable...\n"));
+
     for(i = 0; i < REG_PARTITION_COUNT; i++)
     {
         if(shmdt(noReadersPartitionsPtrs[i]) == -1)
         {
-            safeErrorPrint("User: failed to detach from partitions' number of readers shared variable. Error: ");
-            return FALSE;
+            if(errno != EINVAL)
+                safeErrorPrint("User: failed to detach from partitions' number of readers shared variable. Error: ");
         }
     }
-    free(noReadersPartitions);
-    free(noReadersPartitionsPtrs);
+    if(noReadersPartitions != NULL)
+        free(noReadersPartitions);
+    
+    if(noReadersPartitionsPtrs != NULL)
+        free(noReadersPartitionsPtrs);
 
-    dprintf(STDOUT_FILENO, "User: detaching from users list's number of readers shared variable...\n");
+    write(STDOUT_FILENO, 
+        "User: detaching from users list's number of readers shared variable...\n",
+        strlen("User: detaching from users list's number of readers shared variable...\n"));
+    
     if(shmdt(noUserSegReadersPtr) == -1)
     {
-        safeErrorPrint("User: failed to detach from users list's number of readers shared variable. Error: ");
-        return FALSE;
+        if(errno != EINVAL)
+            safeErrorPrint("User: failed to detach from users list's number of readers shared variable. Error: ");
     }
 
-    dprintf(STDOUT_FILENO, "User: detaching from nodes list's number of readers shared variable...\n");
+    write(STDOUT_FILENO, 
+        "User: detaching from nodes list's number of readers shared variable...\n",
+        strlen("User: detaching from nodes list's number of readers shared variable...\n"));
+    
     if(shmdt(noNodeSegReadersPtr) == -1)
     {
-        safeErrorPrint("User: failed to detach from nodes list's number of readers shared variable. Error: ");
-        return FALSE;
+        if(errno != EINVAL)
+            safeErrorPrint("User: failed to detach from nodes list's number of readers shared variable. Error: ");
     }
 
-    dprintf(STDOUT_FILENO, "User: cleanup operations completed. Process is about to end its execution...\n");
+    write(STDOUT_FILENO, 
+        "User: cleanup operations completed. Process is about to end its execution...\n",
+        strlen("User: cleanup operations completed. Process is about to end its execution...\n"));
     
     /* freeing the list of sent transactions */
     freeTransList(transactionsSent);
-
-    return TRUE;
 }
 
 /**
@@ -863,9 +886,13 @@ void transactionGeneration(int sig)
         else 
         {
             if(sig == 0)
-                dprintf(STDOUT_FILENO, "User: generating a new transaction...\n");
+                write(STDOUT_FILENO, 
+                    "User: generating a new transaction...\n", 
+                    strlen("User: generating a new transaction...\n"));
             else
-                dprintf(STDOUT_FILENO, "User: generating a new transaction on event request...\n");
+                write(STDOUT_FILENO, 
+                    "User: generating a new transaction on event request...\n",
+                    strlen("User: generating a new transaction on event request...\n"));
 
             /* Generating transaction */
             new_trans.sender = getpid();
@@ -904,13 +931,18 @@ void transactionGeneration(int sig)
                         transactionsSent = addTransaction(transactionsSent, &new_trans);
                         
                         /* sending the transaction to node */
-                        dprintf(STDOUT_FILENO, "User: sending the created transaction to the node...\n");
+                        write(STDOUT_FILENO, 
+                            "User: sending the created transaction to the node...\n",
+                            strlen("User: sending the created transaction to the node...\n"));
+
                         if(msgsnd(queueId, &msg_to_node, sizeof(Transaction), IPC_NOWAIT) == -1)
                         {
                             if(errno == EAGAIN)
                             {
                                 /* TP of Selected Node was full, we need to send the message on the global queue */
-                                dprintf(STDOUT_FILENO, "User: transaction pool of selected node was full. Sending transaction on global queue...\n");
+                                write(STDOUT_FILENO, 
+                                    "User: transaction pool of selected node was full. Sending transaction on global queue...\n",
+                                    strlen("User: transaction pool of selected node was full. Sending transaction on global queue...\n"));
                                 
                                 msgOnGQueue.mType = receiver_node;
                                 msgOnGQueue.msgContent = TRANSTPFULL;
@@ -930,15 +962,21 @@ void transactionGeneration(int sig)
                         else
                         {
                             if(sig == 0)
-                                dprintf(STDOUT_FILENO, "User: transaction correctly sent to node.\n");
+                                write(STDOUT_FILENO, 
+                                    "User: transaction correctly sent to node.\n",
+                                    strlen("User: transaction correctly sent to node.\n"));
                             else
-                                dprintf(STDOUT_FILENO, "User: transaction generated on event correctly sent to node.\n");
+                                write(STDOUT_FILENO, 
+                                    "User: transaction generated on event correctly sent to node.\n",
+                                    strlen("User: transaction generated on event correctly sent to node.\n"));
                             
                             /* Wait a random time in between SO_MIN_TRANS_GEN_NSEC and SO_MAX_TRANS_GEN_NSEC */
                             request.tv_sec = 0;
                             request.tv_nsec = (rand() % SO_MAX_TRANS_GEN_NSEC) + SO_MIN_TRANS_GEN_NSEC;
                             
-                            dprintf(STDOUT_FILENO, "User: processing the transaction...\n");
+                            write(STDOUT_FILENO, 
+                                "User: processing the transaction...\n",
+                                strlen("User: processing the transaction...\n"));
                             
                             if (nanosleep(&request, &remaining) == -1)
                                 safeErrorPrint("User: failed to simulate wait for processing the transaction. Error: ");
@@ -950,7 +988,9 @@ void transactionGeneration(int sig)
     }
     else
     {
-        dprintf(STDOUT_FILENO, "User: not enough money to make a transaction...\n");
+        write(STDOUT_FILENO, 
+            "User: not enough money to make a transaction...\n",
+            strlen("User: not enough money to make a transaction...\n"));
         
         num_failure++; /* incremento il numero consecutivo di volte che non riesco a mandare una transazione */
         if(num_failure == SO_RETRY)
@@ -971,7 +1011,9 @@ void transactionGeneration(int sig)
 TransList * addTransaction(TransList * transSent, Transaction *t)
 {
     if(t == NULL) {
-        dprintf(STDERR_FILENO, "User: transaction passed to function is a NULL pointer.\n");
+        write(STDERR_FILENO, 
+            "User: transaction passed to function is a NULL pointer.\n",
+            strlen("User: transaction passed to function is a NULL pointer.\n"));
         return NULL;
     }
 

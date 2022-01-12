@@ -13,9 +13,9 @@
 5) COntrollare sincronizzazione lista utenti e nodi
     -utente per scelta utente destinatario: OK
     -utente per scelta nodo a cui chiedere processamento: OK
-    -master per registare terminazione nodi ed utenti
+    -master per registrare terminazione nodi ed utenti
 6) Sostituire sleep con nanosleep
-7) sostituire write con dprintf (prima controllare se dprintf è reentrant come write)
+7) sostituire write con printf [VEDI AL FONDO DI QUESTO FILE]
 8) Testare meccanismo deallocazioni IPC in caso di errore su master
 9) Terminazione in caso di errore fork nel master
 10) Segnalazione terminazione nodo ed utente a master:
@@ -42,23 +42,23 @@
 7) Fissare con precisione il numero di partizioni (per me va bene vincolarlo a 3): sono per forza 3
 8) Verificare stato utente e nodo in inivio transazione: OK
 8.2) Verificare stato nodo amico quando gli mandi la transazioni
-9) Spostare TEST_ERROR_PARAM in info.h e correggerla
+9) Spostare TEST_ERROR_PARAM in info.h e correggerla (cosa bisogna cambiare ?)
 10) Definire una procedura che deallochi le facilities in caso di errore: OK
     -modificare la procedura di deallocazione corrente in modo che sappia
-    gestire senza errori il caso in cui un ogetto IPC non esiste: Ok (solo per nodo)
+    gestire senza errori il caso in cui un ogetto IPC non esiste: Ok (solo per nodo e utente(?))
     -agganciare la procedure con atexit in modo che venga sempre eseguita alla terminazione
     (o richiamarla in caso di errore: questa è la soluzione scelta, l'altra è inutile): OK
     -agganciarla anche in caso di terminazione anomala
 11) COntrollare i collegamenti in sola lettura ai segmenti
 12) COmpilare tutto (check parentesi calcolo bilancio)
-13) Implementare parte full master
+13) Implementare parte full master: OK
 14) Inserire, nel nodo, l'aggiunta dell'amico su richiesta del master: Ok
 15) Aggiornare il progetto alla luce del fatto che i nodi possano terminare
-17) Segnalazione fallimento transazione a sender
+17) Segnalazione fallimento transazione a sender: controllo in utente già fatto, manca invio da parte di nodo
 18) Per il master e i segmenti di shared memory abbiamo usato la soluzione fair di Gunetti
 19) Aggiungere sincronizzazione in calcolo bilancio: Ok
 20) sistemare costante dimensione file
-21) Rilevazione invio a nodi terminati
+21) Rilevazione invio a nodi terminati: OK, in fase di invio viene scelto un nodo attivo
 22) Eliminare facilities inutili da node
 23) Aggiornare lettura da file con versione seguente
     /*
@@ -128,14 +128,28 @@
     return exitCode;
 }
 */
+24) Modificare nodo per fare in modo che solo i nodi normali attendano l'inizio della simulazione
+25) CONTROLLARE LO STATO DELL'UTENTE E DEL NODO A CUI SI INVIA UNA TRANSAZIONE: in utente ok (viene fatto in funzione di estrazione nodo e utente dest.)
+26) Inviare notifica fallimento transazione a sender: controllo in utente già fatto, manca invio da parte di nodo
+27) Verificare il bilancio prima di generare transazione in risposta a sigusr2: OK
+28) Aggiungere lettura variabili globali nell'utente: OK
+29) Sostituire write con printf: utente ok
+30) Handler CTRL + C master
+31) Occorre rimuovere eventuali handler quando si esegue la procedura di terminazione??
 
-1) Parte full master: IO
-2) SIstemare terminazione nodi: IO
+1) Parte full master: OK
+2) SIstemare terminazione nodi (sincronizzazione accesso lista): IO
+    -risolvere problema dimensione lista: Putroppo si risolve solo non redimensionando
+    -controllare se si acceda alla lista nodi in modo sincronizzato
 3) Aggiornare e testare il master integrando tutto: IO
 4) Testare e uniformare il nodo
 6) Testare e uniformare l'utente
 7) Scrivere Relazione: Urru
 9) Implementare modifiche scritte su file: Fontana
 10) Cerchi problemi da risolvere: Fontana
+
+Printf vs write:
+    In tutte le funzioni che possono essere interrotti da un segnale per poi ripartire
+    (gli handler, ma non solo) bisogna usare write
 
 Tutto ciò entro il 12/01/2022
