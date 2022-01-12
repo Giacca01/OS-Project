@@ -410,9 +410,14 @@ int main(int argc, char *argv[])
                                             /*Handle error*/
                                             unsafeErrorPrint("Master: fork failed. Error: ");
                                             /*
-                                                Correggere: fine simulazione??
+                                                (**)
+                                                In case we failed to create a process we end
+                                                the simulation. 
+                                                This solution is quite restrictive, but we have to consider
+                                                that loosing even one process before it even started
+                                                means violating the project requirments
                                             */
-                                            break;
+                                            endOfSimulation(-1);
                                         case 0:
                                             /*
                                         // The process tells the father that it is ready to run
@@ -421,8 +426,10 @@ int main(int argc, char *argv[])
                                             /*
                                             For test's sake
                                         */
+                                            /*
                                             signal(SIGALRM, SIG_IGN);
                                             signal(SIGUSR1, tmpHandler);
+                                            */
                                             /*
                                         sops[0].sem_op = -1;
                                         semop(fairStartSem, &sops[0], 1);*/
@@ -431,14 +438,25 @@ int main(int argc, char *argv[])
                                             sops[0].sem_op = 0;
                                             sops[0].sem_num = 0;
                                             sops[0].sem_flg = 0;
-                                            semop(fairStartSem, &sops[0], 1);
-
-                                            /* Temporary part to get the process to do something*/
-                                            do_stuff(1);
-                                            printf("Eseguo user...\n");
-                                            printf("User done! PID:%d\n", getpid());
-                                            busy_cpu(1);
-                                            exit(i);
+                                            if (semop(fairStartSem, &sops[0], 1) == -1){
+                                                /*
+                                                    See comment above (**)
+                                                */
+                                                unsafeErrorPrint("User: failed to wait for zero on start semaphore. Error ");
+                                                endOfSimulation(-1);
+                                            } else {
+                                                /* Temporary part to get the process to do something*/
+                                                if (execle("./User/user.o", "user", NULL, environ) == -1){
+                                                    unsafeErrorPrint("User: failed to load user's code. Error: ");
+                                                    endOfSimulation(-1);
+                                                }
+                                                /*
+                                                do_stuff(1);
+                                                printf("Eseguo user...\n");
+                                                printf("User done! PID:%d\n", getpid());
+                                                busy_cpu(1);
+                                                exit(i);*/
+                                            }
                                             break;
 
                                         default:
@@ -446,19 +464,41 @@ int main(int argc, char *argv[])
                                             sops[0].sem_num = 0;
                                             sops[0].sem_op = -1;
                                             sops[0].sem_flg = IPC_NOWAIT;
-                                            semop(fairStartSem, &sops[0], 1);
+                                            if (semop(fairStartSem, &sops[0], 1) == -1){
+                                                safeErrorPrint("Master: failed to decrement start semaphore. Error: ");
+                                                endOfSimulation(-1);
+                                            }
 
                                             /* Save users processes pid and state into usersList*/
+
+                                            /*
+                                                No user or node is writing or reading on the
+                                                read but it's better to be one hundred percent
+                                                to check no one is reading or writing from the list
+                                            */
+                                            /*
+                                                ENTRY SECTION:
+                                                Reserve read semaphore and Reserve write semaphore
+                                            */
+                                            sops[0].sem_op = -1;
+                                            sops[0].sem_num = 1;
+
                                             sops[1].sem_op = -1;
                                             sops[1].sem_num = 2;
-                                            semop(userListSem, &sops[1], 1);
+                                            semop(userListSem, sops, 2);
 
                                             usersList[i].procId = child_pid;
                                             usersList[i].procState = ACTIVE;
 
+                                            /*  
+                                                Exit section
+                                            */
+                                            sops[0].sem_op = 1;
+                                            sops[0].sem_num = 1;
+
                                             sops[1].sem_op = 1;
                                             sops[1].sem_num = 2;
-                                            semop(userListSem, &sops[1], 1);
+                                            semop(userListSem, sops, 2);
 
                                             break;
                                     }
@@ -474,59 +514,71 @@ int main(int argc, char *argv[])
                                     printf("Master: node number %d\n", i);
                                     switch (child_pid = fork())
                                     {
-                                    case -1:
-                                        /* Handle error*/
-                                        unsafeErrorPrint("Master: fork failed. Error: ");
-                                        exit(EXIT_FAILURE);
-                                    case 0:
-                                        /*
-                                    // The process tells the father that it is ready to run
-                                    // and that it waits for all processes to be ready*/
-                                        printf("Node of PID %ld starts its execution....\n", (long)getpid());
-                                        /*sops[0].sem_op = -1;
-                                    semop(fairStartSem, &sops[0], 1);*/
-                                        /*
-                                        Provvisorio
-                                    */
-                                        signal(SIGALRM, SIG_IGN);
-                                        signal(SIGUSR1, tmpHandler);
+                                        case -1:
+                                            /* Handle error*/
+                                            unsafeErrorPrint("Master: fork failed. Error: ");
+                                            endOfSimulation(-1);
+                                        case 0:
+                                            /*
+                                        // The process tells the father that it is ready to run
+                                        // and that it waits for all processes to be ready*/
+                                            printf("Node of PID %ld starts its execution....\n", (long)getpid());
+                                            /*sops[0].sem_op = -1;
+                                        semop(fairStartSem, &sops[0], 1);*/
+                                            /*
+                                            signal(SIGALRM, SIG_IGN);
+                                            signal(SIGUSR1, tmpHandler);*/
 
-                                        /* Temporary part to get the process to do something*/
-                                        do_stuff(2);
-                                        printf("Eseguo nodo...\n");
-                                        printf("Node done! PID:%d\n", getpid());
-                                        busy_cpu(1);
-                                        exit(i);
-                                        break;
+                                            /* Temporary part to get the process to do something*/
+                                            if (execle("./Node/node.o", "node", NULL, environ) == -1)
+                                                unsafeErrorPrint("Node: failed to load node's code. Error: ");
+                                            /*
+                                            do_stuff(2);
+                                            printf("Eseguo nodo...\n");
+                                            printf("Node done! PID:%d\n", getpid());
+                                            busy_cpu(1);
+                                            exit(i);*/
+                                            break;
 
-                                    default:
-                                        noEffectiveNodes++;
-                                        sops[0].sem_num = 0;
-                                        sops[0].sem_op = -1;
-                                        sops[0].sem_flg = IPC_NOWAIT;
-                                        semop(fairStartSem, &sops[0], 1);
+                                        default:
+                                            noEffectiveNodes++;
 
-                                        /*Initialize messages queue for transactions pools*/
-                                        tpList[i].procId = (long)child_pid;
-                                        key = ftok(MSGFILEPATH, child_pid);
-                                        FTOK_TEST_ERROR(key);
-                                        tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL);
-                                        MSG_TEST_ERROR(tpList[i].msgQId);
-                                        tplLength++; /* updating tpList length */
+                                            sops[0].sem_num = 0;
+                                            sops[0].sem_op = -1;
+                                            sops[0].sem_flg = IPC_NOWAIT;
+                                            if (semop(fairStartSem, &sops[0], 1) == -1){
+                                                unsafeErrorPrint("User: failed to wait for zero on start semaphore. Error ");
+                                                endOfSimulation(-1);
+                                            }
 
-                                        /* Save users processes pid and state into usersList*/
-                                        sops[1].sem_op = -1;
-                                        sops[1].sem_num = 2;
-                                        semop(nodeListSem, &sops[1], 1);
+                                            /*Initialize messages queue for transactions pools*/
+                                            tpList[i].procId = (long)child_pid;
+                                            key = ftok(MSGFILEPATH, child_pid);
+                                            /*
+                                                CORREGGERE: in caso di e
+                                            */
+                                            FTOK_TEST_ERROR(key);
+                                            tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL);
+                                            MSG_TEST_ERROR(tpList[i].msgQId);
+                                            tplLength++; /* updating tpList length */
 
-                                        nodesList[i].procId = child_pid;
-                                        nodesList[i].procState = ACTIVE;
+                                            /* Save users processes pid and state into usersList*/
+                                            sops[1].sem_op = -1;
+                                            sops[1].sem_num = 1;
+                                            sops[1].sem_op = -1;
+                                            sops[1].sem_num = 2;
+                                            semop(nodeListSem, sops, 2);
 
-                                        sops[1].sem_op = 1;
-                                        sops[1].sem_num = 2;
-                                        semop(nodeListSem, &sops[1], 1);
+                                            nodesList[i].procId = child_pid;
+                                            nodesList[i].procState = ACTIVE;
 
-                                        break;
+                                            sops[1].sem_op = 1;
+                                            sops[1].sem_num = 1;
+                                            sops[1].sem_op = 1;
+                                            sops[1].sem_num = 2;
+                                            semop(nodeListSem, sops, 2);
+
+                                            break;
                                     }
                                 }
                                 /*
@@ -1876,31 +1928,26 @@ boolean initializeIPCFacilities()
     res = semctl(wrPartSem, 0, SETALL, arg);
     SEMCTL_TEST_ERROR(res);
 
+    /*
     aux[0] = SO_USERS_NUM + SO_NODES_NUM + 1;
     aux[1] = SO_USERS_NUM + SO_NODES_NUM + 1;
     aux[2] = SO_USERS_NUM + SO_NODES_NUM + 1;
-    arg.array = aux;
+    arg.array = aux;*/
     res = semctl(rdPartSem, 0, SETALL, arg);
     SEMCTL_TEST_ERROR(res);
 
+    res = semctl(mutexPartSem, 0, SETALL, arg);
+    SEMCTL_TEST_ERROR(res);
+
     /*CORREGGERE mettendolo nel master, prima della sleep su fairStart*/
-    aux[0] = 1;
-    aux[1] = 0;
-    aux[2] = 1;
     arg.array = aux;
     res = semctl(userListSem, 0, SETALL, arg); /* mutex, read, write*/
     SEMCTL_TEST_ERROR(res)
 
     /*CORREGGERE*/
-    arg.val = 1;
+    /*arg.val = 1;*/
     res = semctl(nodeListSem, 0, SETALL, arg); /* mutex, read, write*/
     SEMCTL_TEST_ERROR(res);
-
-    aux[0] = aux[1] = aux[2] = 1;
-    arg.array = aux;
-    res = semctl(mutexPartSem, 0, SETALL, arg);
-    SEMCTL_TEST_ERROR(res);
-
 
     /* Creation of the global queue*/
     key = ftok(MSGFILEPATH, GLOBALMSGSEED);
@@ -2267,8 +2314,10 @@ void endOfSimulation(int sig)
 
                 if (sig == SIGALRM)
                     strcat(terminationMessage, "Termination reason: end of simulation.\n");
-                else
-                    strcat(terminationMessage, "Termination reason: register is full\n");
+                else if (sig == SIGUSR1)
+                    strcat(terminationMessage, "Termination reason: register is full.\n");
+                else if (sig == -1)
+                    strcat(terminationMessage, "Termination reason: critical error.\n");
 
                 /* Writes termination message on standard output*/
                 write(STDOUT_FILENO, terminationMessage, strlen(terminationMessage));
