@@ -60,7 +60,7 @@
 20) sistemare costante dimensione file
 21) Rilevazione invio a nodi terminati
 22) Eliminare facilities inutili da node
-23) Aggiornare lettura da file con versione seguente
+23) Aggiornare lettura da file con versione seguente: Ok
     /*
     Versione ottimizzata lettura da file
     int readConfigParameters()
