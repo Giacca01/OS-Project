@@ -1,0 +1,70 @@
+In funzione main
+controllare vari commenti
+/*
+    CORREGGERE: aggiungere segnalazione errori
+*/
+dopo impostazione dei timer e degli handler
+/*
+    Correggere: vedere se sia meglio metterlo nel while senza usare l'allarme
+*/
+verso fine del main
+/*
+    Cosa succede in caso di errore?
+    Terminiamo il ciclo?
+    Oppure segnaliamo l'errore e procediamo
+    con la prossima elaborazione?
+*/
+
+in funzione initializeFacilities
+/*
+    CORREGGERE: modificare segnalazione errori
+    in modo da deallocare le facilities (e terminare la simulazione ??)
+*/
+
+in funzione dispatchToFriend
+in fallimento lettura transazione da TP
+/*
+    CORREGGERE: In caso di errore procediamo limitandoci a segnalarlo??
+*/
+in estrazione randomica nodo amico
+/*
+    Bisogna mettere srand????
+*/
+/*
+    Bisogna controllare se nodo amico è terminato?
+*/
+in reset timer e dispatcher per invio transazione ad amico
+/*
+    Vedere se togliere il segnale di fine simulazione
+*/ 
+
+in funzione sendTransaction
+controllare ovunque ci sia 
+/*
+    Correggere: dovremmo avvisare il sender ??
+*/
+in scelta casuale amico cui mandare transazione
+/*
+    Dovremmo controllare se il nodo scelto è attivo?
+*/
+a fine aggiunta nuovo nodo amico
+/*
+    CORREGGERE: dovremmo testare lo stato??
+*/
+
+in funzione sendOnGlobalQueue
+/* non dovrebbe essere -= ? */
+
+in funzione deallocateFacilities
+in fallimento deallocazione regPtrs
+/*
+    Implementare un meccanismo di retry??
+    Contando che non è un errore così frequente si potrebbe anche ignorare...
+    Non vale la pena, possiamo limitarci a proseguire la deallocazione
+    riducendo al minimo il memory leak
+*/
+
+in funzione reinsertTransactions
+/*
+    CORREGGERE: dovremmo segnalarlo al sender???
+*/

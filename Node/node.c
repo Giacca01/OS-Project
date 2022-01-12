@@ -9,88 +9,187 @@
     ridurre il numero di chiamate di sistema
 */
 
-/* Macro that rappresents the sender with id -1 in Transactions */
-#define NO_SENDER -1
-
-/*****        Global structures        *****/
-/*******************************************/
-Register **regPtrs = NULL;
+/*** GLOBAL VARIABLES FOR IPC OBJECTS ***/
+#pragma region GLOBAL VARIABLES FOR IPC OBJECTS
+/* Poiter to the array that contains the ids of the shared memory segments of the register's partitions.
+ * regPartsIds[0]: id of the first partition segment
+ * regPartsIds[1]: id of the second partition segment
+ * regPartsIds[2]: id of the third partition segment
+ */
 int *regPartsIds = NULL;
 
+/* Pointer to the array that contains the pointers to the the register's partitions.
+ * regPtrs[0]: pointer to the first partition segment
+ * regPtrs[1]: pointer to the second partition segment
+ * regPtrs[2]: pointer to the third partition segment
+ */
+Register **regPtrs = NULL;
+
+/* Id of the shared memory segment that contains the users list */
 int usersListId = -1;
+
+/* Pointer to the users list */
 ProcListElem *usersList = NULL;
 
+/* Id of the shared memory segment that contains the nodes list */
 int nodesListId = -1;
+
+/* Pointer to the nodes list */
 ProcListElem *nodesList = NULL;
 
+/* Id of the global message queue where users, nodes and master communicate */
 int globalQueueId = -1;
 
-int fairStartSem = -1; /* Id of the set that contais the three semaphores*/
-                       /* used to write on the register's partitions*/
-int wrPartSem = -1;    /* Id of the set that contais the three semaphores*/
-                       /* used to write on the register's partitions*/
-int rdPartSem = -1;    /* Id of the set that contais the three semaphores*/
-                       /* used to read from the register's partitions*/
-int mutexPartSem = -1; /* id of the set that contains the three sempagores used to
-                        to access the number of readers variables of the registers partitions
-                        in mutual exclusion*/
+/* Id of the set that contains the three semaphores used to write on the register's partitions */
+int fairStartSem = -1;
 
-/* Si dovrebbe fare due vettori*/
-int *noReadersPartitions = NULL;      /* Pointer to the array contains the ids of the shared memory segments
-                                // where the variables used to syncronize
-                                 // readers and writes access to register's partition are stored
-// noReadersPartitions[0]: id of first partition's shared variable
-// noReadersPartitions[1]: id of second partition's shared variable
-// noReadersPartitions[2]: id of third partition's shared variable*/
-int **noReadersPartitionsPtrs = NULL; /* Pointer to the array contains the variables used to syncronize
-                                  // readers and writes access to register's partition
-// noReadersPartitionsPtrs[0]: pointer to the first partition's shared variable
-// noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
-// noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable*/
-int userListSem = -1;                 /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
-                    // to read and write users list*/
-int noUserSegReaders = -1;            /* id of the shared memory segment that contains the variable used to syncronize
-                           // readers and writes access to users list*/
+/* Id of the set that contains the three semaphores used to write on the register's partitions */
+int wrPartSem = -1;
+
+/* Id of the set that contains the three semaphores used to read from the register's partitions */
+int rdPartSem = -1;
+
+/* Id of the set that contains the three sempagores used to access the number of readers 
+ * variables of the registers partitions in mutual exclusion 
+ */
+int mutexPartSem = -1;
+
+/* Pointer to the array containing the ids of the shared memory segments where the variables used to syncronize
+ * readers and writers access to register's partition are stored.
+ * noReadersPartitions[0]: id of first partition's shared variable
+ * noReadersPartitions[1]: id of second partition's shared variable
+ * noReadersPartitions[2]: id of third partition's shared variable
+ */
+int *noReadersPartitions = NULL;
+
+/* Pointer to the array containing the variables used to syncronize readers and writers access to register's partition.
+ * noReadersPartitionsPtrs[0]: pointer to the first partition's shared variable
+ * noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
+ * noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable
+ */
+int **noReadersPartitionsPtrs = NULL;
+
+/* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write users list */
+int userListSem = -1;
+
+/* Id of the shared memory segment that contains the variable used to syncronize readers and writers access to users list */
+int noUserSegReaders = -1; 
+
+/* Pointer to the variable that counts the number of readers, used to syncronize readers and writers access to users list */           
 int *noUserSegReadersPtr = NULL;
 
-int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
-                      // to read and write nodes list*/
+/* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write nodes list */
+int nodeListSem = -1;
+
+/* Id of the Transaction Pool of the node */
 int tpId = -1;
 
+#pragma endregion
+/*** END GLOBAL VARIABLES FOR IPC OBJECTS ***/
+
+/*** GLOBAL VARIABLES ***/
+#pragma region GLOBAL VARIABLES
+
+/* List of node friends */
 pid_t *friends_node;
 
 /***** Definition of global variables that contain *****/
 /***** the values ​​of the configuration parameters  *****/
 /*******************************************************/
-long SO_USERS_NUM, /* Number of user processes NOn è "statico" ???*/
-    SO_NODES_NUM,  /* Number of node processes ?? NOn è "statico" ???*/
-    SO_REWARD,
-    SO_MIN_TRANS_GEN_NSEC,
-    SO_MAX_TRANS_GEN_NSEC,
-    SO_RETRY,
-    SO_TP_SIZE,
-    SO_MIN_TRANS_PROC_NSEC,
-    SO_MAX_TRANS_PROC_NSEC,
-    SO_BUDGET_INIT,
-    SO_SIM_SEC,     /* Duration of the simulation*/
-    SO_FRIENDS_NUM, /* Number of friends*/
-    SO_HOPS;
+long SO_USERS_NUM;           /* Number of user processes */
+long SO_NODES_NUM;           /* Number of node processes */
+long SO_REWARD;              /* Percentage of node's reward of the transaction */
+long SO_MIN_TRANS_GEN_NSEC;  /* Min time for wait for transaction's processing */
+long SO_MAX_TRANS_GEN_NSEC;  /* Max time for wait for transaction's processing */
+long SO_RETRY;               /* Attempts to send a transaction before termination of user */
+long SO_TP_SIZE;             /* Size of Transaction Pool of node processes */
+long SO_MIN_TRANS_PROC_NSEC; /* Min time for transactions' block processing */
+long SO_MAX_TRANS_PROC_NSEC; /* Max time for transactions' block processing */
+long SO_BUDGET_INIT;         /* Initial budget of user processes */
+long SO_SIM_SEC;             /* Duration of the simulation*/
+long SO_FRIENDS_NUM;         /* Number of friends*/
+long SO_HOPS;                /* Attempts to insert a transaction in a node's TP before elimination */
 /*******************************************************/
 /*******************************************************/
 
-boolean sembufInit(struct sembuf *, int);
-void reinsertTransactions(Block);
-void endOfExecution(int);
-int readConfigParameters();
-boolean createIPCFacilties();
-boolean initializeIPCFacilities();
-void dispatchToFriend();
+#pragma endregion
+/*** END GLOBAL VARIABLES ***/
+
+/*** FUNCTIONS PROTOTYPES DECLARATION ***/
+#pragma region FUNCTIONS PROTOTYPES DECLARATION
+/**
+ * @brief Function that assigns the values of the environment variables to the global 
+ * variables defined above.
+ * @return Returns TRUE if successfull, FALSE in case an error occurred. 
+ */
 boolean assignEnvironmentVariables();
+
+/**
+ * @brief Function that creates the ipc structures used in the node.
+ * @return Returns TRUE if successfull, FALSE in case an error occured.
+ */
+boolean createIPCFacilties();
+
+/**
+ * @brief Function that initialize the ipc structures used in the node.
+ * @return Returns TRUE if successfull, FALSE in case an error occured.
+ */
+boolean initializeIPCFacilities();
+
+/**
+ * @brief Function that initializes the sops semaphore buffer passed as parameter.
+ * @param sops the buffer to initialize
+ * @param op the type of operation to do on semaphore
+ * @return Returns TRUE if successfull, FALSE in case an error occurred.
+ */
+boolean sembufInit(struct sembuf *, int);
+
+/**
+ * @brief Function that reinserts the transaction of a block on the TP of the node in case
+ * it was not possible to insert the block on the register.
+ * @param failedTrs the block of transactions that couldn't be inserted in register.
+ */
+void reinsertTransactions(Block);
+
+/**
+ * @brief Function that sends a transaction from this node's transaction pool to 
+ * a friend chosen randomly.
+ */
+void dispatchToFriend();
+
+/**
+ * @brief Function that gets a message for this node from the global queue and if its msgContent is
+ * TRANSTPFULL it sends the transaction to a friend or on global queue if transaction remaining hops are 0;
+ * in case the msgContent of the message received is NEWNODE, the functions adds the new friend to the 
+ * friends list.
+ */
 void sendTransaction();
-void deallocateIPCFacilities();
+
+/**
+ * @brief Function that sends on the global queue a message depending on the parameters that
+ * the function receives.
+ * @param trans message to send on the global queue
+ * @param pid pid of the receiver of the message
+ * @param cnt type of content of the message
+ * @param hp value to add/subract to the hops of the transaction
+ * @return Returns TRUE if successfull, FALSE in case an error occurred while sending the message.
+ */
 boolean sendOnGlobalQueue(MsgGlobalQueue *, pid_t, GlobalMsgContent, long);
 
-int main()
+/**
+ * @brief Function that end the execution of the node.
+ * @param sig the signal that called the handler
+ */
+void endOfExecution(int);
+
+/**
+ * @brief Function that deallocates the IPC facilities allocated for the node.
+ */
+void deallocateIPCFacilities();
+#pragma endregion
+/*** END FUNCTIONS PROTOTYPES DECLARATION ***/
+
+int main(int argc, char *argv[], char* envp[])
 {
     int exitCode = EXIT_FAILURE;
     /* To be read from environment variables */
@@ -123,6 +222,8 @@ int main()
         dal segnale di fine simulazione, ma in tal caso
         l'esecuzione della procedura in corso non ripartirebbe 
         da capo, quindi qui si può usare codice non rientrante
+        
+        Falso!!! Un nodo può terminare in caso di errori non aspettati durante l'esecuzione!!!
     */
 
     /* Assigns the values ​​of the environment variables to the global variables */
@@ -131,27 +232,27 @@ int main()
     */
     if (assignEnvironmentVariables())
     {
-        /* Allocate the array that will contain friends pid */
         /* CORREGGERE: TESTARE ERRORI*/
+        /* Allocate the array that will contain friends pid */
         friends_node = calloc(SO_NODES_NUM, sizeof(pid_t));
-        if (friends_node != NULL){
+        if (friends_node != NULL)
+        {
             printf("Node %d: hooking up of IPC facilitites...\n", getpid());
 
             if (createIPCFacilties() == TRUE)
             {
                 /*
-                CORREGGERE: SEGNALAZIONE ERRORI
-            */
-
-                if (initializeIPCFacilities() == TRUE){
-
+                    CORREGGERE: SEGNALAZIONE ERRORI
+                */
+                if (initializeIPCFacilities() == TRUE)
+                {
                     /* Receives all friends pid from global message queue and stores them in the array */
                     while (contMex < SO_FRIENDS_NUM && !error)
                     {
                         rcv_type = getpid();
                         /*
-                        CORREGGERE: aggiungere segnalazione errori
-                    */
+                            CORREGGERE: aggiungere segnalazione errori
+                        */
                         num_bytes = msgrcv(globalQueueId, &mybuf, sizeof(pid_t), rcv_type, 0);
                         if (num_bytes == -1){
                             safeErrorPrint("Node: failed to initialize friends list. Error: ");
@@ -163,14 +264,15 @@ int main()
                     }
 
                     /*
-                    PROVVISORIO, CORREGGERE
-                */
+                        PROVVISORIO, CORREGGERE
+                    */
                     for (i = 0; i < SO_FRIENDS_NUM; i++)
                     {
                         printf("Nodo %d -> Amico: %d\n", getpid(), friends_node[i]);
                     }
 
-                    if (error){
+                    if (error)
+                    {
                         /* Wait all processes are ready to start the simulation */
                         printf("Node %ld is waiting for simulation to start....\n", (long)getpid());
                         sops[0].sem_op = 0;
@@ -209,11 +311,11 @@ int main()
                                         else
                                         {
                                             /*
-                                            There should be no previous alarms set
-                                        */
+                                                There should be no previous alarms set
+                                            */
                                             /*
-                                        Correggere: vedere se si meglio metterlo nel while senza usare l'allarme
-                                    */
+                                                Correggere: vedere se sia meglio metterlo nel while senza usare l'allarme
+                                            */
                                             if (alarm(TRANS_FRIEND_INTERVAL) == 0)
                                             {
                                                 timeSinceEpoch = time(NULL);
@@ -222,10 +324,11 @@ int main()
                                                 else
                                                 {
                                                     /* Vedere se metterlo nel ciclo di vita */
-                                                    srand(time(NULL) - getpid()); /*Inizializza il seme di generazione*/
-                                                                                /*Essendoci più processi nodo in esecuzione, è probabile che
-                                    alcuni nodi vengano eseguiti nello stesso secondo e che si abbia quindi 
-                                    la stessa sequenza di numeri random. Per evitare ciò sottraiamo il PID*/
+                                                    srand(time(NULL) - getpid()); /* Inizializza il seme di generazione */
+                                                    /* Essendoci più processi nodo in esecuzione, è probabile che
+                                                       alcuni nodi vengano eseguiti nello stesso secondo e che si abbia quindi 
+                                                       la stessa sequenza di numeri random. Per evitare ciò sottraiamo il PID
+                                                    */
                                                     if (sembufInit(reservation, -1) && sembufInit(release, 1)){
                                                         printf("Node: starting lifecycle...\n");
                                                         while (!waitForTerm)
@@ -305,10 +408,10 @@ int main()
                                                             printf("Node: transactions' block creation completed.\n");
                                                             
                                                             /*
-                                            PRECONDIZIONE:
-                                                minSim e maxSim sono state caricate leggendole
-                                                dalle variabili d'ambiente
-                                        */
+                                                                PRECONDIZIONE:
+                                                                    minSim e maxSim sono state caricate leggendole
+                                                                    dalle variabili d'ambiente
+                                                            */
                                                             /*generates a random number in [minSim, maxSim]*/
                                                             printf("Node: elaborating transactions' block...\n");
                                                             simTime = rand() % (maxSim + 1) + minSim;
@@ -316,50 +419,50 @@ int main()
                                                             if (sleep(simTime / 1000) == 0)
                                                             {
                                                                 /*
-                                                Writes the block of transactions "elaborated"
-                                                on the register
-                                            */
+                                                                    Writes the block of transactions "elaborated"
+                                                                    on the register
+                                                                */
                                                                 /*
-                                                    PRECONDIZIONE:
-                                                        extractedBlock.bIndex == SO_BLOCK_SIZE - 1
-                                                        extractedBlock.transList == Transazioni da scrivere sul blocco 
-                                                                                    estratte dalla transaction pool
+                                                                        PRECONDIZIONE:
+                                                                            extractedBlock.bIndex == SO_BLOCK_SIZE - 1
+                                                                            extractedBlock.transList == Transazioni da scrivere sul blocco 
+                                                                                                        estratte dalla transaction pool
 
-                                                        candidateBlock.bIndex == SO_BLOCK_SIZE
-                                                        candidateBlock.transList == Transazioni da scrivere sul blocco 
-                                                                                    estratte dalla transaction pool + transazione di reward
-                                            */
+                                                                            candidateBlock.bIndex == SO_BLOCK_SIZE
+                                                                            candidateBlock.transList == Transazioni da scrivere sul blocco 
+                                                                                                        estratte dalla transaction pool + transazione di reward
+                                                                */
                                                                 /*
-                                                Due possibilità:
-                                                    -eseguire le wait sui semafori delle partizioni in maniera atomica, facendo
-                                                    cioè si che il processo venga sbloccato solo quanto sarà possibile accedere in mutua
-                                                    esclusione a tutte e tre le partizioni
-                                                    -oppure, eseguire la wait sulla partizione i-esima, vedere se ci sia spazio per un nuovo
-                                                    blocco e solo in caso negativo procedere con la wait sul semaforo della partizione i+1-esima
+                                                                    Due possibilità:
+                                                                        -eseguire le wait sui semafori delle partizioni in maniera atomica, facendo
+                                                                        cioè si che il processo venga sbloccato solo quanto sarà possibile accedere in mutua
+                                                                        esclusione a tutte e tre le partizioni
+                                                                        -oppure, eseguire la wait sulla partizione i-esima, vedere se ci sia spazio per un nuovo
+                                                                        blocco e solo in caso negativo procedere con la wait sul semaforo della partizione i+1-esima
 
-                                                    Il primo approccio consente di eseguire n operazioni con una sola system call, mentre il secondo
-                                                    evita che il processo rimanga sospeso per accedere in mutua esclusione a partizioni sulle quali 
-                                                    non scriverà
-                                    
-                                                    Io ho implementato il primo approccio
-                                            */
+                                                                        Il primo approccio consente di eseguire n operazioni con una sola system call, mentre il secondo
+                                                                        evita che il processo rimanga sospeso per accedere in mutua esclusione a partizioni sulle quali 
+                                                                        non scriverà
+                                                        
+                                                                        Io ho implementato il primo approccio
+                                                                */
                                                                 /*
-                                                Entry section
-                                            */
+                                                                    Entry section
+                                                                */
                                                                 printf("Node: trying to write transactions on registr...\n");
                                                                 if (semop(wrPartSem, reservation, REG_PARTITION_COUNT) == -1)
                                                                     unsafeErrorPrint("Node: failed to reserve register partitions' semaphore. Error: ");
                                                                 else
                                                                 {
                                                                     /*
-                                                    PRECONDIZIONE:
-                                                        Il processo arriva qui soolo dopo aver guadagnato l'accesso
-                                                        in mutua esclusione a tutte le partizioni
-                                                */
+                                                                        PRECONDIZIONE:
+                                                                            Il processo arriva qui soolo dopo aver guadagnato l'accesso
+                                                                            in mutua esclusione a tutte le partizioni
+                                                                    */
 
                                                                     /*
-                                                    Verifica esitenza spazio libero sul registro
-                                                */
+                                                                        Verifica esitenza spazio libero sul registro
+                                                                    */
                                                                     for (i = 0; i < REG_PARTITION_COUNT && !available; i++)
                                                                     {
                                                                         if (regPtrs[i]->nBlocks != REG_PARTITION_SIZE)
@@ -367,28 +470,28 @@ int main()
                                                                     }
 
                                                                     /*
-                                                    Postcondizione: i == indirizzo della partizione libera
-                                                    se available == FALSE ==> registro pieno
-                                                */
+                                                                        Postcondizione: i == indirizzo della partizione libera
+                                                                        se available == FALSE ==> registro pieno
+                                                                    */
 
                                                                     if (available)
                                                                     {
                                                                         /*
-                                                        Inserimento blocco
-                                                    */
+                                                                            Inserimento blocco
+                                                                        */
                                                                         /*
-                                                        Precondizione: nBlocks == Prima posizione libera nel blocco
-                                                    */
+                                                                            Precondizione: nBlocks == Prima posizione libera nel blocco
+                                                                        */
                                                                         /*
-                                                            Quando questa istruzione verà eseguita verrà fatta una copia
-                                                            per valore di candidateBlock.
-                                                            È inefficiente, ma non possiamo fare altrimenti
-                                                            se vogliamo condividere la transazione tra processi registri
-                                                    */
+                                                                            Quando questa istruzione verà eseguita verrà fatta una copia
+                                                                            per valore di candidateBlock.
+                                                                            È inefficiente, ma non possiamo fare altrimenti
+                                                                            se vogliamo condividere la transazione tra processi registri
+                                                                        */
                                                                         /*
-                                                        regPtrs[i] PUNTATORE ad un di tipo register allocato nel segmento
-                                                        di memoria condivisa, che rappresenta l'i-esima partizione del registro
-                                                    */
+                                                                            regPtrs[i] PUNTATORE ad un di tipo register allocato nel segmento
+                                                                            di memoria condivisa, che rappresenta l'i-esima partizione del registro
+                                                                        */
                                                                         newBlockPos = &(regPtrs[i]->nBlocks);
                                                                         regPtrs[i]->blockList[*newBlockPos] = candidateBlock;
                                                                         (*newBlockPos)++;
@@ -396,8 +499,8 @@ int main()
                                                                     else
                                                                     {
                                                                         /*
-                                                        Registro pieno ==> invio segnale di fine simulazione
-                                                    */
+                                                                            Registro pieno ==> invio segnale di fine simulazione
+                                                                        */
                                                                         printf("Node: no space left on register. Rollingback and signaling end of simulation...\n");
                                                                         reinsertTransactions(extractedBlock);
                                                                         if (kill(getppid(), SIGUSR1) == -1)
@@ -409,8 +512,8 @@ int main()
                                                                     }
 
                                                                     /*
-                                                    Exit section
-                                                */
+                                                                        Exit section
+                                                                    */
                                                                     printf("Node: releasing register's partition...\n");
                                                                     if (semop(wrPartSem, release, REG_PARTITION_COUNT) == -1)
                                                                         unsafeErrorPrint("Node: failed to release register partitions' semaphore. Error: ");
@@ -419,32 +522,32 @@ int main()
                                                             else
                                                             {
                                                                 /*
-                                                A node can only be interrupted by the end of simulation signal
-                                            */
+                                                                    A node can only be interrupted by the end of simulation signal
+                                                                */
                                                                 unsafeErrorPrint("Node: an unexpected event occured before the end of the computation.");
                                                             }
                                                         }
                                                     }
                                                     
                                                     /*
-                                        Cosa succede in caso di errore?
-                                        Terminiamo il ciclo?
-                                        Oppure segnaliamo l'errore e procediamo
-                                        con la prossima elaborazione?
-                                    */
+                                                        Cosa succede in caso di errore?
+                                                        Terminiamo il ciclo?
+                                                        Oppure segnaliamo l'errore e procediamo
+                                                        con la prossima elaborazione?
+                                                    */
                                                     
 
                                                     /*
-                                        Node wait for the master to detect that the register is full.
-                                        By doing this we take the process out of the ready queue, therefore
-                                        increasing the chance of  the master being scheduled and detecting the
-                                        end of simulation (it will happen, because the master checks it every time)
-                                        (or at least, the timer will elapse and the simulation will utimately end)
-                                    */
+                                                        Node wait for the master to detect that the register is full.
+                                                        By doing this we take the process out of the ready queue, therefore
+                                                        increasing the chance of  the master being scheduled and detecting the
+                                                        end of simulation (it will happen, because the master checks it every time)
+                                                        (or at least, the timer will elapse and the simulation will utimately end)
+                                                    */
                                                     /*
-                                        In the case tha node has successfully signaled the master, the process
-                                        waits to be signaled so that its end-of-execution handler will be executed.
-                                    */
+                                                        In the case tha node has successfully signaled the master, the process
+                                                        waits to be signaled so that its end-of-execution handler will be executed.
+                                                    */
                                                     printf("Node: waiting for end of simulation signal...\n");
                                                     pause();
                                                 }
@@ -474,9 +577,9 @@ int main()
     else
     {
         /*
-        Se un nodo è terminato ed un processo prova a mandargli una transazione bisogna
-        segnalare un errore
-       */
+            Se un nodo è terminato ed un processo prova a mandargli una transazione bisogna
+            segnalare un errore
+        */
         unsafeErrorPrint("Node: about to terminate execution...");
     }
 
@@ -484,9 +587,13 @@ int main()
     exit(exitCode);
 }
 
-/***** Function that assigns the values ​​of the environment *****/
-/***** variables to the global variables defined above     *****/
-/***************************************************************/
+/*** FUNCTIONS IMPLEMENTATION ***/
+#pragma region FUNCTIONS IMPLEMENTATION
+/**
+ * @brief Function that assigns the values of the environment variables to the global 
+ * variables defined above.
+ * @return Returns TRUE if successfull, FALSE in case an error occurred. 
+ */
 boolean assignEnvironmentVariables()
 {
     /*
@@ -549,151 +656,11 @@ boolean assignEnvironmentVariables()
 
     return TRUE;
 }
-/***************************************************************/
-/***************************************************************/
 
-boolean sembufInit(struct sembuf *sops, int op)
-{
-    int i = 0;
-    boolean ret = FALSE;
-
-    sops = (struct sembuf *)calloc(REG_PARTITION_COUNT, sizeof(struct sembuf));
-    if (sops == NULL)
-        safeErrorPrint("Node: failed to allocate semaphores operations' array. ");
-    else
-    {
-        for (i = 0; i < REG_PARTITION_COUNT; i++)
-        {
-            sops[i].sem_op = op;
-            sops[i].sem_num = i;
-            sops[i].sem_flg = 0;
-        }
-
-        ret = TRUE;
-    }
-
-    return ret;
-}
-
-void reinsertTransactions(Block failedTrs)
-{
-    char *aus = NULL;
-
-    aus = (char *)calloc(sizeof(char), 50);
-    while (failedTrs.bIndex == 0)
-    {
-        failedTrs.bIndex--;
-        if (msgsnd(tpId, &(failedTrs.transList[failedTrs.bIndex]), sizeof(Transaction), 0) == -1)
-        {
-            /*
-                CORREGGERE: ovremmo segnalarlo al sender???
-            */
-            sprintf(aus, "Node: failed to reinsert transaction number %d.", failedTrs.bIndex);
-            unsafeErrorPrint(aus);
-        }
-    }
-    printf("Node: Transactions reinserted successfully!\n");
-
-    free(aus);
-}
-
-void endOfExecution(int sig){
-    deallocateIPCFacilities();
-}
-
-void deallocateIPCFacilities()
-{
-    /*
-        Cose da eliminare:
-            -la tp la elimina il master (in modo che possa contare
-            le transazioni rimaste)
-            -collegamento ai registri
-            -i semafori li dealloca il master
-
-            In sostanza bisogna soltanto scollegarsi dalla memoria condivisa
-            in modo che l'eliminazione ordinata dal master sia effettiva
-            e deallocare la memoria allocata dinamicamente
-    */
-    Register **aus = regPtrs;
-    int **ausPtr = NULL;
-
-    write(STDOUT_FILENO,
-          "Node: deatching from register's partitions...\n",
-          strlen("Node: deatching from register's partitions...\n"));
-    while (regPtrs != NULL)
-    {
-        if (shmdt(*regPtrs) == -1)
-        {
-            if (errno != EINVAL) {
-            /*
-                Implementare un meccanismo di retry??
-                Contando che non è un errore così frequente si potrebbe anche ignorare...
-                Non vale la pena, possiamo limitarci a proseguire la deallocazione
-                riducendo al minimo il memory leak
-            */
-            safeErrorPrint("Node: failed to detach from register's partition. Error: ");
-            }
-        }
-        regPtrs++;
-    }
-    if (regPtrs != NULL)
-        free(regPtrs);
-
-    write(STDOUT_FILENO,
-          "Node: deatching from users list...\n",
-          strlen("Node: deatching from users list...\n"));
-    if (shmdt(usersList) == -1)
-    {
-        if (errno != EAGAIN)
-            safeErrorPrint("Node: failed to detach from users list. Error: ");
-    }
-
-    write(STDOUT_FILENO,
-          "Node: deatching from nodes list...\n",
-          strlen("Node: deatching from nodes list...\n"));
-    if (shmdt(nodesList) == -1)
-    {
-        if (errno != EAGAIN)
-            safeErrorPrint("Node: failed to detach from nodes list. Error: ");
-    }
-
-    if (noReadersPartitions != NULL)
-        free(noReadersPartitions);
-
-    write(STDOUT_FILENO,
-          "Node: deatching from partitions' number of readers shared variable...\n",
-          strlen("Node: deatching from partitions' number of readers shared variable...\n"));
-    ausPtr = noReadersPartitionsPtrs;
-    while (noReadersPartitionsPtrs != NULL)
-    {
-        if (shmdt(*noReadersPartitionsPtrs) == -1)
-        {
-            if (errno != EAGAIN)
-                safeErrorPrint("Node: failed to detach from partitions' number of readers shared variable. Error: ");
-        }
-
-        noReadersPartitionsPtrs++;
-    }
-    if (ausPtr != NULL)
-        free(ausPtr);
-
-    write(STDOUT_FILENO,
-          "Node: deatching from users list's number of readers shared variable...\n",
-          strlen("Node: deatching from users list's number of readers shared variable...\n"));
-    if (shmdt(noUserSegReadersPtr) == -1)
-    {
-        if (errno != EAGAIN)
-            safeErrorPrint("Node: failed to detach from users list's number of readers shared variable. Error: ");
-    }
-
-    if (friends_node != NULL)
-        free(friends_node);
-
-    printf("Node: cleanup operations completed. Process is about to end its execution...\n");
-}
-
-/****   Function that creates the ipc structures used in the project    *****/
-/****************************************************************************/
+/**
+ * @brief Function that creates the ipc structures used in the node.
+ * @return Returns TRUE if successfull, FALSE in case an error occured.
+ */
 boolean createIPCFacilties()
 {
     regPtrs = (Register **)malloc(REG_PARTITION_COUNT * sizeof(Register *));
@@ -714,11 +681,11 @@ boolean createIPCFacilties()
 
     return TRUE;
 }
-/****************************************************************************/
-/****************************************************************************/
 
-/*****  Function that initialize the ipc structures used in the project *****/
-/****************************************************************************/
+/**
+ * @brief Function that initialize the ipc structures used in the node.
+ * @return Returns TRUE if successfull, FALSE in case an error occured.
+ */
 boolean initializeIPCFacilities()
 {
     /* Initialization of semaphores*/
@@ -831,9 +798,67 @@ boolean initializeIPCFacilities()
 
     return TRUE;
 }
-/****************************************************************************/
-/****************************************************************************/
 
+/**
+ * @brief Function that initializes the sops semaphore buffer passed as parameter.
+ * @param sops the buffer to initialize
+ * @param op the type of operation to do on semaphore
+ * @return Returns TRUE if successfull, FALSE in case an error occurred.
+ */
+boolean sembufInit(struct sembuf *sops, int op)
+{
+    int i = 0;
+    boolean ret = FALSE;
+
+    sops = (struct sembuf *)calloc(REG_PARTITION_COUNT, sizeof(struct sembuf));
+    if (sops == NULL)
+        safeErrorPrint("Node: failed to allocate semaphores operations' array. ");
+    else
+    {
+        for (i = 0; i < REG_PARTITION_COUNT; i++)
+        {
+            sops[i].sem_op = op;
+            sops[i].sem_num = i;
+            sops[i].sem_flg = 0;
+        }
+
+        ret = TRUE;
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Function that reinserts the transaction of a block on the TP of the node in case
+ * it was not possible to insert the block on the register.
+ * @param failedTrs the block of transactions that couldn't be inserted in register.
+ */
+void reinsertTransactions(Block failedTrs)
+{
+    char *aus = NULL;
+
+    aus = (char *)calloc(sizeof(char), 50);
+    while (failedTrs.bIndex == 0)
+    {
+        failedTrs.bIndex--;
+        if (msgsnd(tpId, &(failedTrs.transList[failedTrs.bIndex]), sizeof(Transaction), 0) == -1)
+        {
+            /*
+                CORREGGERE: dovremmo segnalarlo al sender???
+            */
+            sprintf(aus, "Node: failed to reinsert transaction number %d.", failedTrs.bIndex);
+            unsafeErrorPrint(aus);
+        }
+    }
+    printf("Node: Transactions reinserted successfully!\n");
+
+    free(aus);
+}
+
+/**
+ * @brief Function that sends a transaction from this node's transaction pool to 
+ * a friend chosen randomly.
+ */
 void dispatchToFriend()
 {
     /*
@@ -862,12 +887,15 @@ void dispatchToFriend()
     else
     {
         /*
-        Precondizione: aus contiene la transazione da inviare ad un amico
-       */
+            Precondizione: aus contiene la transazione da inviare ad un amico
+        */
         /*
-        Bisogna mettere srand????
-      */
+            Bisogna mettere srand????
+        */
         i = rand() % (SO_FRIENDS_NUM + 1);
+        /*
+            Bisogna controllare se nodo amico è terminato?
+        */
         key = ftok(MSGFILEPATH, *(friends_node + i));
         if (key == -1)
         {
@@ -937,6 +965,12 @@ void dispatchToFriend()
     }
 }
 
+/**
+ * @brief Function that gets a message for this node from the global queue and if its msgContent is
+ * TRANSTPFULL it sends the transaction to a friend or on global queue if transaction remaining hops are 0;
+ * in case the msgContent of the message received is NEWNODE, the functions adds the new friend to the 
+ * friends list.
+ */
 void sendTransaction()
 {
     MsgGlobalQueue trans;
@@ -971,8 +1005,8 @@ void sendTransaction()
                 if (sendOnGlobalQueue(&trans, getppid(), NEWNODE, 0))
                 {
                     /*
-                Correggere: dovremmo avvisare il sender ??
-               */
+                        Correggere: dovremmo avvisare il sender ??
+                    */
                     unsafeErrorPrint("Node: failed to dispatch transaction to master. Error: ");
                 }
                 else
@@ -986,6 +1020,9 @@ void sendTransaction()
             {
                 i = rand() % (SO_FRIENDS_NUM + 1);
                 key = ftok(MSGFILEPATH, *(friends_node + i));
+                /*
+                    Dovremmo controllare se il nodo scelto è attivo?
+                */
                 if (key == -1)
                 {
                     safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
@@ -996,8 +1033,8 @@ void sendTransaction()
                     else
                     {
                         /*
-                                Correggere: dovremmo avvisare il sender ??
-                            */
+                            Correggere: dovremmo avvisare il sender ??
+                        */
                         unsafeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
                     }
                 }
@@ -1026,12 +1063,12 @@ void sendTransaction()
                         if (msgsnd(friendTp, &aus, sizeof(Transaction), 0600 | IPC_NOWAIT) == -1)
                         {
                             /*
-                        Reinserirla nella coda globale con un'operazione di rollback sarebbe inutile:
-                        tanto vale mandarla all'amico
-                    */
+                                Reinserirla nella coda globale con un'operazione di rollback sarebbe inutile:
+                                tanto vale mandarla all'amico
+                            */
                             /*
-                            Coda dell'amico piena ==> inviare su TP globale
-                        */
+                                Coda dell'amico piena ==> inviare su TP globale
+                            */
                             if (sendOnGlobalQueue(&trans, *(friends_node + i), TRANSTPFULL, -1))
                                 write(STDOUT_FILENO,
                                       "Node: transaction successfully dispatched to friend via global queue.\n",
@@ -1039,8 +1076,8 @@ void sendTransaction()
                             else
                             {
                                 /*
-                                Correggere: dovremmo avvisare il sender ??
-                            */
+                                    Correggere: dovremmo avvisare il sender ??
+                                */
                                 unsafeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
                             }
                         }
@@ -1057,43 +1094,48 @@ void sendTransaction()
             /*
                 Mettere qui aggiunta amico su richiesta master
             */
-           if (listPtr == NULL){
-               /*
-                È improbabile che la lista degli amici sia vuota
-                ma il testo non lo esclude, quindi meglio prevenire
-               */
-              listPtr = trans.friend.procId;
-           } else {
-               listPtr = friends_node;
-               prevPtr = NULL;
-               while (listPtr != NULL)
-               {
-                   prevPtr = listPtr;
-                   listPtr++;
-               }
-               /*
-                POSTCONDIZIONE: prevPtr contiene l'ultimo nodo della lista
-               */
-              prevPtr = trans.friend.procId;
-              /*
-                CORREGGERE: dovremmo testare lo stato??
-              */
-           }
-           
+            if (listPtr == NULL){
+                /*
+                    È improbabile che la lista degli amici sia vuota
+                    ma il testo non lo esclude, quindi meglio prevenire
+                */
+                listPtr = trans.friend.procId;
+            } else {
+                listPtr = friends_node;
+                prevPtr = NULL;
+                while (listPtr != NULL)
+                {
+                    prevPtr = listPtr;
+                    listPtr++;
+                }
+                /*
+                    POSTCONDIZIONE: prevPtr contiene l'ultimo nodo della lista
+                */
+                prevPtr = trans.friend.procId;
+                /*
+                    CORREGGERE: dovremmo testare lo stato??
+                */
+            }
         }
-        
     }
-
-    
 }
 
+/**
+ * @brief Function that sends on the global queue a message depending on the parameters that
+ * the function receives.
+ * @param trans message to send on the global queue
+ * @param pid pid of the receiver of the message
+ * @param cnt type of content of the message
+ * @param hp value to add/subract to the hops of the transaction
+ * @return Returns TRUE if successfull, FALSE in case an error occurred while sending the message.
+ */
 boolean sendOnGlobalQueue(MsgGlobalQueue * trans, pid_t pid, GlobalMsgContent cnt, long hp)
 {
     boolean ret = TRUE;
 
     trans->mType = pid;
     trans->msgContent = cnt;
-    trans->hoops += hp;
+    trans->hoops += hp; /* non dovrebbe essere -= ? */
     if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue), 0) == -1)
     {
         ret = FALSE;
@@ -1101,3 +1143,107 @@ boolean sendOnGlobalQueue(MsgGlobalQueue * trans, pid_t pid, GlobalMsgContent cn
 
     return ret;
 }
+
+/**
+ * @brief Function that end the execution of the node.
+ * @param sig the signal that called the handler
+ */
+void endOfExecution(int sig){
+    deallocateIPCFacilities();
+}
+
+/**
+ * @brief Function that deallocates the IPC facilities allocated for the node.
+ */
+void deallocateIPCFacilities()
+{
+    /*
+        Cose da eliminare:
+            -la tp la elimina il master (in modo che possa contare
+            le transazioni rimaste)
+            -collegamento ai registri
+            -i semafori li dealloca il master
+
+            In sostanza bisogna soltanto scollegarsi dalla memoria condivisa
+            in modo che l'eliminazione ordinata dal master sia effettiva
+            e deallocare la memoria allocata dinamicamente
+    */
+    Register **aus = regPtrs;
+    int **ausPtr = NULL;
+
+    write(STDOUT_FILENO,
+          "Node: deatching from register's partitions...\n",
+          strlen("Node: deatching from register's partitions...\n"));
+    while (regPtrs != NULL)
+    {
+        if (shmdt(*regPtrs) == -1)
+        {
+            if (errno != EINVAL) {
+            /*
+                Implementare un meccanismo di retry??
+                Contando che non è un errore così frequente si potrebbe anche ignorare...
+                Non vale la pena, possiamo limitarci a proseguire la deallocazione
+                riducendo al minimo il memory leak
+            */
+            safeErrorPrint("Node: failed to detach from register's partition. Error: ");
+            }
+        }
+        regPtrs++;
+    }
+    if (regPtrs != NULL)
+        free(regPtrs);
+
+    write(STDOUT_FILENO,
+          "Node: deatching from users list...\n",
+          strlen("Node: deatching from users list...\n"));
+    if (shmdt(usersList) == -1)
+    {
+        if (errno != EAGAIN)
+            safeErrorPrint("Node: failed to detach from users list. Error: ");
+    }
+
+    write(STDOUT_FILENO,
+          "Node: deatching from nodes list...\n",
+          strlen("Node: deatching from nodes list...\n"));
+    if (shmdt(nodesList) == -1)
+    {
+        if (errno != EAGAIN)
+            safeErrorPrint("Node: failed to detach from nodes list. Error: ");
+    }
+
+    if (noReadersPartitions != NULL)
+        free(noReadersPartitions);
+
+    write(STDOUT_FILENO,
+          "Node: deatching from partitions' number of readers shared variable...\n",
+          strlen("Node: deatching from partitions' number of readers shared variable...\n"));
+    ausPtr = noReadersPartitionsPtrs;
+    while (noReadersPartitionsPtrs != NULL)
+    {
+        if (shmdt(*noReadersPartitionsPtrs) == -1)
+        {
+            if (errno != EAGAIN)
+                safeErrorPrint("Node: failed to detach from partitions' number of readers shared variable. Error: ");
+        }
+
+        noReadersPartitionsPtrs++;
+    }
+    if (ausPtr != NULL)
+        free(ausPtr);
+
+    write(STDOUT_FILENO,
+          "Node: deatching from users list's number of readers shared variable...\n",
+          strlen("Node: deatching from users list's number of readers shared variable...\n"));
+    if (shmdt(noUserSegReadersPtr) == -1)
+    {
+        if (errno != EAGAIN)
+            safeErrorPrint("Node: failed to detach from users list's number of readers shared variable. Error: ");
+    }
+
+    if (friends_node != NULL)
+        free(friends_node);
+
+    printf("Node: cleanup operations completed. Process is about to end its execution...\n");
+}
+#pragma endregion
+/*** END FUNCTIONS IMPLEMENTATION ***/
