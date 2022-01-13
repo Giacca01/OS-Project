@@ -38,6 +38,7 @@
 i figli lo preleveranno dalla lista dei nodi*/
 
 #define SO_REGISTRY_SIZE 200
+#define MAX_ADDITIONAL_NODES 100
 /*Right now it's not reentrant, we should modify it*/
 #define EXIT_ON_ERROR                        \
     if (errno)                               \
@@ -230,7 +231,7 @@ typedef struct
     /*
         CORREGGERE: mettere solo il pid
     */
-    ProcListElem friend;     /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
+    pid_t friend;     /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
     Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
     long hoops;              /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
     pid_t userPid; /* pid of terminated user, garbage if msgContent != TERMINATEDUSER */
@@ -264,8 +265,7 @@ typedef struct
     Transaction transaction;
 } MsgTP;
 
-typedef struct
-{
+typedef struct{
     long mtype; /* type of message */
     pid_t pid;  /* user-define message */
 } msgbuff;

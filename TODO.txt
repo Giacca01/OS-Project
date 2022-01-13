@@ -135,6 +135,7 @@
 28) Aggiungere lettura variabili globali nell'utente
 29) Sostituire write con printf
 30) Handler CTRL + C master
+31) Verificare &sops[0]
 
 1) Parte full master: OK
 2) SIstemare terminazione nodi (sincronizzazione accesso lista): IO
@@ -152,3 +153,174 @@ Printf vs write:
     (gli handler, ma non solo) bisogna usare write
 
 Tutto ciò entro il 12/01/2022
+
+Conteggio nodi ed utenti attivi (copiato qui per emergenze, per ora non serve)
+/*
+                                    c_users_active = 0;
+                                    c_nodes_active = 0;
+
+                                    /* we enter the critical section for the noUserSegReadersPtr variabile */
+                                    sops[0].sem_num = 0;
+                                    sops[0].sem_op = -1;
+                                    if (semop(userListSem, &sops[0], 1) == -1)
+                                    {
+                                        safeErrorPrint("Master: failed to reserve mutex usersList semaphore. Error: ");
+                                    }
+                                    else
+                                    {
+                                        (*noUserSegReadersPtr)++;
+                                        if ((*noUserSegReadersPtr) == 1)
+                                        {
+                                            sops[0].sem_num = 2;
+                                            sops[0].sem_op = -1; /* controllare se giusto!!! */
+                                            if (semop(userListSem, &sops[0], 1) == -1)
+                                            {
+                                                safeErrorPrint("Master: failed to reserve write usersList semaphore. Error: ");
+                                            }
+                                            /* 
+                                        * se lo scrittore sta scrivendo, allora il primo lettore che entrerà in questo 
+                                        * ramo si addormenterà su questo semaforo.
+                                        * se lo scrittore non sta scrivendo, allora il primo lettore decrementerà di 1 il
+                                        * valore semaforico, in modo tale se lo scrittore vuole scrivere, si addormenterà 
+                                        * sul semaforo
+                                        */
+                                        }
+                                        /* we exit the critical section for the noUserSegReadersPtr variabile */
+                                        sops[0].sem_num = 0;
+                                        sops[0].sem_op = 1;
+                                        if (semop(userListSem, &sops[0], 1) == -1)
+                                        {
+                                            safeErrorPrint("Master: failed to release mutex usersList semaphore. Error: ");
+                                        }
+                                        else
+                                        {
+                                            /* initializing budget for users processes */
+                                            for (i = 0; i < SO_USERS_NUM; i++)
+                                            {
+                                                if (usersList[i].procState == ACTIVE)
+                                                    c_users_active++;
+                                            }
+
+                                            /* we enter the critical section for the noUserSegReadersPtr variabile */
+                                            sops[0].sem_num = 0;
+                                            sops[0].sem_op = -1;
+                                            if (semop(userListSem, &sops[0], 1) == -1)
+                                            {
+                                                safeErrorPrint("Master: failed to reserve mutex usersList semaphore. Error: ");
+                                            }
+                                            else
+                                            {
+                                                (*noUserSegReadersPtr)--;
+                                                if ((*noUserSegReadersPtr) == 0)
+                                                {
+                                                    sops[0].sem_num = 2;
+                                                    sops[0].sem_op = 1; /* controllare se giusto!!! */
+                                                    if (semop(userListSem, &sops[0], 1) == -1)
+                                                    {
+                                                        safeErrorPrint("Master: failed to reserve write usersList semaphore. Error: ");
+                                                    }
+                                                    /* 
+                                                * se sono l'ultimo lettore e smetto di leggere, allora devo riportare a 0
+                                                * il valore semaforico in modo che se lo scrittore vuole scrivere possa farlo.
+                                                */
+                                                }
+                                                /* we exit the critical section for the noUserSegReadersPtr variabile */
+                                                sops[0].sem_num = 0;
+                                                sops[0].sem_op = 1;
+                                                if (semop(userListSem, &sops[0], 1) == -1)
+                                                {
+                                                    safeErrorPrint("Master: failed to release mutex usersList semaphore. Error: ");
+                                                }
+                                                else
+                                                {
+                                                    /* checking if there are active user processes, if not, simulation must terminate */
+                                                    printf("Master: checking if there are active user processes...\n");
+                                                    if (!c_users_active)
+                                                    {
+                                                        /* it contains an exit call
+                                                    so no need to set exit code*/
+                                                        printf("Master: no more active user processes. Terminating simulation...\n");
+                                                        endOfSimulation(SIGUSR1);
+                                                        /* CHECK IF ITS CORRECT ??? */
+                                                    }
+                                                    printf("Master: there are %d active user processes, continuing...\n", c_users_active);
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    /* we enter the critical section for the noNodeSegReadersPtr variabile */
+                                    sops[0].sem_num = 0;
+                                    sops[0].sem_op = -1;
+                                    if (semop(nodeListSem, &sops[0], 1) == -1)
+                                    {
+                                        safeErrorPrint("Master: failed to reserve mutex nodeList semaphore. Error: ");
+                                    }
+                                    else
+                                    {
+                                        (*noNodeSegReadersPtr)++;
+                                        if ((*noNodeSegReadersPtr) == 1)
+                                        {
+                                            sops[0].sem_num = 2;
+                                            sops[0].sem_op = -1; /* controllare se giusto!!! */
+                                            if (semop(nodeListSem, &sops[0], 1) == -1)
+                                            {
+                                                safeErrorPrint("Master: failed to reserve write nodeList semaphore. Error: ");
+                                            }
+                                            /* 
+                                            * se lo scrittore sta scrivendo, allora il primo lettore che entrerà in questo 
+                                            * ramo si addormenterà su questo semaforo.
+                                            * se lo scrittore non sta scrivendo, allora il primo lettore decrementerà di 1 il
+                                            * valore semaforico, in modo tale se lo scrittore vuole scrivere, si addormenterà 
+                                            * sul semaforo
+                                            */
+                                        }
+                                        /* we exit the critical section for the noNodeSegReadersPtr variabile */
+                                        sops[0].sem_num = 0;
+                                        sops[0].sem_op = 1;
+                                        if (semop(nodeListSem, &sops[0], 1) == -1)
+                                        {
+                                            safeErrorPrint("Master: failed to release mutex nodeList semaphore. Error: ");
+                                        }
+                                        else
+                                        {
+                                            /* initializing budget for nodes processes */
+                                            for (i = 0; i < SO_NODES_NUM; i++)
+                                            {
+                                                if (nodesList[i].procState == ACTIVE)
+                                                    c_nodes_active++;
+                                            }
+
+                                            /* we enter the critical section for the noNodeSegReadersPtr variabile */
+                                            sops[0].sem_num = 0;
+                                            sops[0].sem_op = -1;
+                                            if (semop(nodeListSem, &sops[0], 1) == -1)
+                                            {
+                                                safeErrorPrint("Master: failed to reserve mutex nodeList semaphore. Error: ");
+                                            }
+                                            else
+                                            {
+                                                (*noNodeSegReadersPtr)--;
+                                                if ((*noNodeSegReadersPtr) == 0)
+                                                {
+                                                    sops[0].sem_num = 2;
+                                                    sops[0].sem_op = 1; /* controllare se giusto!!! */
+                                                    if (semop(nodeListSem, &sops[0], 1) == -1)
+                                                    {
+                                                        safeErrorPrint("Master: failed to reserve write nodeList semaphore. Error: ");
+                                                    }
+                                                    /* 
+                                                * se sono l'ultimo lettore e smetto di leggere, allora devo riportare a 0
+                                                * il valore semaforico in modo che se lo scrittore vuole scrivere possa farlo.
+                                                */
+                                                }
+                                                /* we exit the critical section for the noNodeSegReadersPtr variabile */
+                                                sops[0].sem_num = 0;
+                                                sops[0].sem_op = 1;
+                                                if (semop(nodeListSem, &sops[0], 1) == -1)
+                                                    safeErrorPrint("Master: failed to release mutex nodeList semaphore. Error: ");
+                                                else
+                                                    printf("Master: there are %d active node processes\n", c_nodes_active);
+                                            }
+                                        }
+                                    }
