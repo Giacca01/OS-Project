@@ -25,11 +25,6 @@ transactionsSent
     inserimento ordinato (si ma in base a cosa?) e ricerca dicotomica
 */
 
-in funzione allocateMemory
-/* CORREGGERE USANDO CALLOC E FARE SEGNALAZIONE ERRORI
-    (in caso di errore deallocare quanto già allocato e terminare la simulazione ??)
-*/
-
 in funzione initializeFacilities
 /*
     CORREGGERE: sostituire i numeri con costanti simboliche

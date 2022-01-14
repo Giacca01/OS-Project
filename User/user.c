@@ -395,9 +395,6 @@ boolean readParams()
  */
 boolean allocateMemory()
 {
-    /* CORREGGERE USANDO CALLOC E FARE SEGNALAZIONE ERRORI
-        (in caso di errore deallocare quanto già allocato e terminare la simulazione ??)
-     */
     regPtrs = (Register **)calloc(REG_PARTITION_COUNT, sizeof(Register *));
     TEST_MALLOC_ERROR(regPtrs);
 
@@ -675,6 +672,7 @@ double computeBalance(TransList *transSent)
 void removeTransaction(TransList *tList, Transaction *t)
 {
     TransList *prev = NULL;
+    TransList *aus = NULL;
     boolean done = FALSE;
 
     while (tList != NULL && !done)
@@ -692,6 +690,7 @@ void removeTransaction(TransList *tList, Transaction *t)
                 /*
                     Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
                 */
+                free(tList);
             }
             else
             {
@@ -702,10 +701,12 @@ void removeTransaction(TransList *tList, Transaction *t)
                 /*tList->currTrans = NULL;*/
                 /* ora currTrans non è più un puntatore, quindi non può essere impostato a NULL; 
                    soluzione: impostiamo la testa della lista a NULL */
-                tList = NULL; 
+                
                 /*
                     Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
                 */
+                free(tList);
+                tList = NULL;
             }
 
             done = TRUE;
@@ -717,6 +718,7 @@ void removeTransaction(TransList *tList, Transaction *t)
             /*
                 Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
             */
+            free(prev);
         }
     }
 }
@@ -731,15 +733,22 @@ void endOfExecution(int sig)
 {
     int exitCode = EXIT_FAILURE;
 
-    deallocateIPCFacilities(); 
+    deallocateIPCFacilities();
         
     if(sig == SIGUSR1)
+    {
         exitCode = EXIT_SUCCESS;
-    /*
-     * se il metodo viene chiamato in risposta alla ricezione del segnale SIGUSR1, allora è stato 
-     * il master a richiedere la terminazione dello user, quindi impostiamo come stato di 
-     * terminazione EXIT_SUCCESS; in caso contrario l'esecuzione termina con un fallimento.
-     */
+        /*
+        * se il metodo viene chiamato in risposta alla ricezione del segnale SIGUSR1, allora è stato 
+        * il master a richiedere la terminazione dello user, quindi impostiamo come stato di 
+        * terminazione EXIT_SUCCESS; in caso contrario l'esecuzione termina con un fallimento.
+        */
+    }
+    else
+    {
+        /* notify master that user process terminated before expected */
+        kill(getppid(), SIGCHLD);
+    }
     
     exit(exitCode);
 }
@@ -996,7 +1005,7 @@ void transactionGeneration(int sig)
         if(num_failure == SO_RETRY)
         {
             /* non sono riuscito a mandare la transazione per SO_RETRY volte, devo terminare */
-            kill(getppid(), SIGCHLD);
+            endOfExecution(1);
         }
     }
 }
