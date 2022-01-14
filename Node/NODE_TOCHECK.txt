@@ -1,8 +1,4 @@
 In funzione main
-controllare vari commenti
-/*
-    CORREGGERE: aggiungere segnalazione errori
-*/
 dopo impostazione dei timer e degli handler
 /*
     Correggere: vedere se sia meglio metterlo nel while senza usare l'allarme
@@ -16,23 +12,10 @@ verso fine del main
 */
 vedi commenti in else nanosleep
 
-in funzione initializeFacilities
-/*
-    CORREGGERE: modificare segnalazione errori
-    in modo da deallocare le facilities (e terminare la simulazione ??)
-*/
-
 in funzione dispatchToFriend
 in fallimento lettura transazione da TP
 /*
     CORREGGERE: In caso di errore procediamo limitandoci a segnalarlo??
-*/
-in estrazione randomica nodo amico
-/*
-    Bisogna mettere srand????
-*/
-/*
-    Bisogna controllare se nodo amico è terminato?
 */
 in reset timer e dispatcher per invio transazione ad amico
 /*
@@ -42,11 +25,6 @@ in reset timer e dispatcher per invio transazione ad amico
 in funzione sendTransaction
 controllare ovunque ci sia 
 /* Che facciamo in questo caso ??? */
-in scelta casuale amico cui mandare transazione
-/*
-    Dovremmo controllare se il nodo scelto è attivo?
-    Sì, ma come facciamo a controllare il cambio di stato (attivo/terminato) di un nodo amico???
-*/
 a fine aggiunta nuovo nodo amico
 /*
     CORREGGERE: dovremmo testare lo stato??
@@ -68,6 +46,3 @@ in fallimento deallocazione regPtrs
 
 in funzione reinsertTransactions
 /* Che facciamo in questo caso ???*/
-
-in funzione endOfExecution
-/* Cosa possiamo fare in questo caso?? Lasciamo così e non aggiorniamo la lista di nodi nel master?*/

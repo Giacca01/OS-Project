@@ -25,12 +25,6 @@ int *regPartsIds = NULL;
  */
 Register **regPtrs = NULL;
 
-/* Id of the shared memory segment that contains the users list */
-int usersListId = -1;
-
-/* Pointer to the users list */
-ProcListElem *usersList = NULL;
-
 /* Id of the shared memory segment that contains the nodes list */
 int nodesListId = -1;
 
@@ -46,40 +40,19 @@ int fairStartSem = -1;
 /* Id of the set that contains the three semaphores used to write on the register's partitions */
 int wrPartSem = -1;
 
-/* Id of the set that contains the three semaphores used to read from the register's partitions */
-int rdPartSem = -1;
-
-/* Id of the set that contains the three sempagores used to access the number of readers 
+/* Id of the set that contains the three semaphores used to access the number of readers 
  * variables of the registers partitions in mutual exclusion 
  */
 int mutexPartSem = -1;
 
-/* Pointer to the array containing the ids of the shared memory segments where the variables used to syncronize
- * readers and writers access to register's partition are stored.
- * noReadersPartitions[0]: id of first partition's shared variable
- * noReadersPartitions[1]: id of second partition's shared variable
- * noReadersPartitions[2]: id of third partition's shared variable
- */
-int *noReadersPartitions = NULL;
-
-/* Pointer to the array containing the variables used to syncronize readers and writers access to register's partition.
- * noReadersPartitionsPtrs[0]: pointer to the first partition's shared variable
- * noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
- * noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable
- */
-int **noReadersPartitionsPtrs = NULL;
-
-/* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write users list */
-int userListSem = -1;
-
-/* Id of the shared memory segment that contains the variable used to syncronize readers and writers access to users list */
-int noUserSegReaders = -1; 
-
-/* Pointer to the variable that counts the number of readers, used to syncronize readers and writers access to users list */           
-int *noUserSegReadersPtr = NULL;
-
 /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write nodes list */
 int nodeListSem = -1;
+
+/* Id of the shared memory segment that contains the variable used to syncronize readers and writers access to nodes list */
+int noNodeSegReaders = -1; 
+
+/* Pointer to the variable that counts the number of readers, used to syncronize readers and writers access to nodes list */           
+int *noNodeSegReadersPtr = NULL;
 
 /* Id of the Transaction Pool of the node */
 int tpId = -1;
@@ -177,6 +150,13 @@ void sendTransaction();
 boolean sendOnGlobalQueue(MsgGlobalQueue *, pid_t, GlobalMsgContent, long);
 
 /**
+ * @brief Function that extracts randomly a friend node which to send a transaction.
+ * @return Returns the index of the selected friend node to pick from the list of friends,
+ * -1 if the function generates an error. 
+ */
+int extractFriendNode();
+
+/**
  * @brief Function that end the execution of the node.
  * @param sig the signal that called the handler
  */
@@ -192,7 +172,6 @@ void deallocateIPCFacilities();
 int main(int argc, char *argv[], char* envp[])
 {
     int exitCode = EXIT_FAILURE;
-    /* To be read from environment variables */
     time_t timeSinceEpoch = (time_t)-1;
     Block extractedBlock;
     Block candidateBlock;
@@ -207,10 +186,9 @@ int main(int argc, char *argv[], char* envp[])
     sigset_t mask;
     MsgTP new_trans;
     Transaction rew_tran;
-    msgbuff mybuf;
+    MsgGlobalQueue friendFromList;
     struct sembuf sops[3];
     int num_bytes = 0;
-    long rcv_type;
     int contMex = 0;
     boolean error = FALSE;
     struct timespec simTime, remTime; /* simTime = simulation length; remTime = remaining time to wait (in case a signal wakes up process)*/
@@ -225,39 +203,43 @@ int main(int argc, char *argv[], char* envp[])
     */
 
     /* Assigns the values ​​of the environment variables to the global variables */
-    /*
-        Testare codice d'errore
-    */
     if (assignEnvironmentVariables())
     {
-        /* CORREGGERE: TESTARE ERRORI*/
         /* Allocate the array that will contain friends pid */
-        friends_node = calloc(SO_NODES_NUM, sizeof(pid_t));
+        friends_node = calloc(SO_FRIENDS_NUM, sizeof(pid_t));
         if (friends_node != NULL)
         {
             printf("Node %ld: hooking up of IPC facilitites...\n", (long)getpid());
 
             if (createIPCFacilties() == TRUE)
             {
-                /*
-                    CORREGGERE: SEGNALAZIONE ERRORI
-                */
                 if (initializeIPCFacilities() == TRUE)
                 {
                     /* Receives all friends pid from global message queue and stores them in the array */
                     while (contMex < SO_FRIENDS_NUM && !error)
                     {
-                        rcv_type = getpid();
-                        /*
-                            CORREGGERE: aggiungere segnalazione errori
-                        */
-                        num_bytes = msgrcv(globalQueueId, &mybuf, sizeof(pid_t), rcv_type, 0);
-                        if (num_bytes == -1){
-                            safeErrorPrint("Node: failed to initialize friends list. Error: ");
+                        num_bytes = msgrcv(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue)-sizeof(long), getpid(), 0);
+                        if (num_bytes == -1)
+                        {
+                            unsafeErrorPrint("Node: failed to initialize friends' list. Error: ");
                             error = TRUE;
-                        } else {
-                            friends_node[contMex] = mybuf.pid;
-                            contMex++;
+                        } 
+                        else 
+                        {
+                            if(friendFromList.msgContent == FRIENDINIT)
+                            {
+                                friends_node[contMex] = friendFromList.friend.procId;
+                                contMex++;
+                            }
+                            else
+                            {
+                                /* the message wasn't the one we were looking for, so we reinsert it on the global queue */
+                                if(msgsnd(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
+                                {
+                                    unsafeErrorPrint("Node: failed to initialize friends' list. Error: ");
+                                    error = TRUE;
+                                }
+                            }
                         }
                     }
 
@@ -269,7 +251,7 @@ int main(int argc, char *argv[], char* envp[])
                         printf("Nodo %d -> Amico: %d\n", getpid(), friends_node[i]);
                     }*/
 
-                    /* If an error occurred (error == TRUE) while initializing friends list, the node terminates. */
+                    /* If an error occurred (error == TRUE) while initializing friends' list, the node terminates. */
                     if (!error)
                     {
                         /* Wait all processes are ready to start the simulation */
@@ -567,9 +549,22 @@ int main(int argc, char *argv[], char* envp[])
                     free(release);
                     free(newBlockPos);
                 }
+                else
+                {
+                    /* Initialization of one or more IPC facilities failed, deallocate the IPC facilities and end execution */
+                    printf("Node: failed to initialize one or more IPC facilities. Stopping execution...\n");
+                    deallocateIPCFacilities();
+                }
             }
-            deallocateIPCFacilities();
-        } else {
+            else
+            {
+                /* Creation of one or more IPC facilities failed, deallocate the IPC facilities created and end execution */
+                printf("Node: failed to create one or more IPC facilities. Stopping execution...\n");
+                deallocateIPCFacilities();
+            }
+        } 
+        else 
+        {
             unsafeErrorPrint("Node: failed to allocate friends' array. Error: ");
         }    
     }
@@ -579,10 +574,10 @@ int main(int argc, char *argv[], char* envp[])
             Se un nodo è terminato ed un processo prova a mandargli una transazione bisogna
             segnalare un errore
         */
-        unsafeErrorPrint("Node: about to terminate execution...");
+        printf("Node: failed to assign value to environment variables. Stopping execution...\n");
     }
 
-    printf("Node: about to terminate execution...");
+    printf("Node: about to terminate execution...\n");
     exit(exitCode);
 }
 
@@ -595,20 +590,6 @@ int main(int argc, char *argv[], char* envp[])
  */
 boolean assignEnvironmentVariables()
 {
-    /*
-        CORREGGERE: Vedere quale versione tenere
-    SO_USERS_NUM = atoi(getenv("SO_USERS_NUM"));
-    SO_NODES_NUM = atoi(getenv("SO_NODES_NUM"));
-    SO_REWARD = atoi(getenv("SO_REWARD"));
-    SO_MIN_TRANS_GEN_NSEC = atoi(getenv("SO_MIN_TRANS_GEN_NSEC"));
-    SO_MAX_TRANS_GEN_NSEC = atoi(getenv("SO_MAX_TRANS_GEN_NSEC"));
-    SO_RETRY = atoi(getenv("SO_RETRY"));
-    SO_TP_SIZE = atoi(getenv("SO_TP_SIZE"));
-    SO_MIN_TRANS_PROC_NSEC = atoi(getenv("SO_MIN_TRANS_PROC_NSEC"));
-    SO_MAX_TRANS_PROC_NSEC = atoi(getenv("SO_MAX_TRANS_PROC_NSEC"));
-    SO_BUDGET_INIT = atoi(getenv("SO_BUDGET_INIT"));
-    SO_SIM_SEC = atoi(getenv("SO_SIM_SEC"));
-    SO_FRIENDS_NUM = atoi(getenv("SO_FRIENDS_NUM"));*/
     /*
         strtol ci consente di verificare se si sia verificato
         un error (atol invece non setta errno e non c'è modo
@@ -667,16 +648,6 @@ boolean createIPCFacilties()
 
     regPartsIds = (int *)malloc(REG_PARTITION_COUNT * sizeof(int));
     TEST_MALLOC_ERROR(regPartsIds);
-    /*
-        noReadersPartitions e noReadersPartitionsPtrs vanno allocati
-        perchè sono vettori, quindi dobbiamo allocare un'area di memoria
-        abbastanza grande da contenere REG_PARTITION_COUNT interi/puntatori ad interi
-    */
-    noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(noReadersPartitions);
-
-    noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
-    TEST_MALLOC_ERROR(noReadersPartitions);
 
     return TRUE;
 }
@@ -688,10 +659,6 @@ boolean createIPCFacilties()
 boolean initializeIPCFacilities()
 {
     /* Initialization of semaphores*/
-    /*
-        CORREGGERE: modificare segnalazione errori
-        in modo da deallocare le facilities (e terminare la simulazione ??)
-    */
     key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
     FTOK_TEST_ERROR(key);
 
@@ -702,16 +669,6 @@ boolean initializeIPCFacilities()
     FTOK_TEST_ERROR(key);
     wrPartSem = semget(key, 3, 0600);
     SEM_TEST_ERROR(wrPartSem);
-
-    key = ftok(SEMFILEPATH, RDPARTSEED);
-    FTOK_TEST_ERROR(key);
-    rdPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(rdPartSem);
-
-    key = ftok(SEMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key);
-    userListSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(userListSem);
 
     key = ftok(SEMFILEPATH, NODESLISTSEED);
     FTOK_TEST_ERROR(key);
@@ -755,13 +712,6 @@ boolean initializeIPCFacilities()
     regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
     TEST_SHMAT_ERROR(regPtrs[2]);
 
-    key = ftok(SHMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key);
-    usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), 0600);
-    SHM_TEST_ERROR(usersListId);
-    usersList = (ProcListElem *)shmat(usersListId, NULL, SHM_RDONLY);
-    TEST_SHMAT_ERROR(usersList);
-
     key = ftok(SHMFILEPATH, NODESLISTSEED);
     FTOK_TEST_ERROR(key);
     nodesListId = shmget(key, SO_NODES_NUM * sizeof(ProcListElem), 0600);
@@ -769,26 +719,10 @@ boolean initializeIPCFacilities()
     nodesList = (ProcListElem *)shmat(nodesListId, NULL, SHM_RDONLY);
     TEST_SHMAT_ERROR(nodesList);
 
-    /* Aggiungere segmenti per variabili condivise*/
-    noReadersPartitions[0] = shmget(ftok(SHMFILEPATH, NOREADERSONESEED), sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noReadersPartitions[0]);
-    noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, 0);
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0]);
-
-    noReadersPartitions[1] = shmget(ftok(SHMFILEPATH, NOREADERSTWOSEED), sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noReadersPartitions[1]);
-    noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, 0);
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1]);
-
-    noReadersPartitions[2] = shmget(ftok(SHMFILEPATH, NOREADERSTHREESEED), sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noReadersPartitions[2]);
-    noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, 0);
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2]);
-
-    noUserSegReaders = shmget(ftok(SHMFILEPATH, NOUSRSEGRDERSSEED), sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noUserSegReaders);
-    noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
-    TEST_SHMAT_ERROR(noUserSegReadersPtr);
+    noNodeSegReaders = shmget(ftok(SHMFILEPATH, NONODESEGRDERSSEED), sizeof(SO_NODES_NUM), 0600);
+    SHM_TEST_ERROR(noNodeSegReaders);
+    noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
+    TEST_SHMAT_ERROR(noNodeSegReadersPtr);
 
     key = ftok(MSGFILEPATH, getpid());
     FTOK_TEST_ERROR(key);
@@ -845,7 +779,7 @@ void reinsertTransactions(Block failedTrs)
             sprintf(aus, "Node: failed to reinsert transaction number %d.", failedTrs.bIndex);
             safeErrorPrint(aus);
             
-            /* Informiamo il sender che il processamento della transazione è fallito */
+            /* Inform the sender the transaction's processing failed */
             if(!sendOnGlobalQueue(&(failedTrs.transList[failedTrs.bIndex]), failedTrs.transList[failedTrs.bIndex].sender, FAILEDTRANS, 0))
             {
                 /* Che facciamo in questo caso ???*/
@@ -878,13 +812,12 @@ void dispatchToFriend()
     sigset_t mask;
     struct sigaction actSendTrans;
     Block temp;
-    struct timespec rand;
 
     write(STDOUT_FILENO,
           "Node: dispatching transaction to friend...\n",
           strlen("Node: dispatching transaction to friend...\n"));
     
-    if (msgrcv(tpId, &aus, sizeof(MsgTP), getpid(), 0) == -1)
+    if (msgrcv(tpId, &aus, sizeof(Transaction), getpid(), 0) == -1)
     {
         safeErrorPrint("Node: failed to extract a transaction to send it to a friend. Error: ");
         /*
@@ -898,47 +831,53 @@ void dispatchToFriend()
         */
         
         /* generating a random index to access the array of nodes friend */
-        clock_gettime(CLOCK_REALTIME, &rand);
-        i = rand.tv_nsec % (SO_FRIENDS_NUM + 1);
-        /*
-            Bisogna controllare se nodo amico è terminato?
-        */
-        key = ftok(MSGFILEPATH, *(friends_node + i));
-        if (key == -1)
+        i = extractFriendNode();
+        if(i == -1)
         {
-            safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
-            /*
-                Reinserire transazione
-            */
+            safeErrorPrint("Node: failed to extract a friend node which to send the transaction. Error: ");
             temp.bIndex = 0;
             temp.transList[0] = aus.transaction;
             reinsertTransactions(temp);
         }
         else
         {
-            friendTp = msgget(key, 0600);
-            if (friendTp == -1)
+            key = ftok(MSGFILEPATH, *(friends_node + i));
+            if (key == -1)
             {
                 safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
+                /*
+                    Reinserire transazione
+                */
                 temp.bIndex = 0;
                 temp.transList[0] = aus.transaction;
                 reinsertTransactions(temp);
             }
             else
             {
-                aus.mType = *(friends_node + i);
-                if (msgsnd(friendTp, &aus, sizeof(Transaction), 0600) == -1)
+                friendTp = msgget(key, 0600);
+                if (friendTp == -1)
                 {
-                    safeErrorPrint("Node: failed to dispatch transaction to friend. Error: ");
+                    safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
                     temp.bIndex = 0;
                     temp.transList[0] = aus.transaction;
                     reinsertTransactions(temp);
                 }
                 else
                 {
-                    write(STDOUT_FILENO,
-                          "Node: transaction successfully dispatched to friend.\n",
-                          strlen("Node: transaction successfully dispatched to friend.\n"));
+                    aus.mType = *(friends_node + i);
+                    if (msgsnd(friendTp, &aus, sizeof(Transaction), 0600) == -1)
+                    {
+                        safeErrorPrint("Node: failed to dispatch transaction to friend. Error: ");
+                        temp.bIndex = 0;
+                        temp.transList[0] = aus.transaction;
+                        reinsertTransactions(temp);
+                    }
+                    else
+                    {
+                        write(STDOUT_FILENO,
+                            "Node: transaction successfully dispatched to friend.\n",
+                            strlen("Node: transaction successfully dispatched to friend.\n"));
+                    }
                 }
             }
         }
@@ -988,7 +927,6 @@ void sendTransaction()
     MsgTP aus;
     pid_t * listPtr = NULL;
     pid_t * prevPtr = NULL;
-    struct timespec rand;
 
     /*
         Fare ciclo per tutte le transazioni ???
@@ -997,14 +935,15 @@ void sendTransaction()
         in un'invocazione e molto poco nella altre.
         Così invece le system call vengono meglio distribuite
     */
-    if (msgrcv(globalQueueId, &trans, sizeof(MsgGlobalQueue), getpid(), IPC_NOWAIT) == -1)
+    if (msgrcv(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), getpid(), IPC_NOWAIT) == -1)
     {
         if (errno != ENOMSG)
         {
             safeErrorPrint("Node: failed to check existence of transactions on global queue. Error: ");
         }
     } 
-    else {
+    else 
+    {
         /*
             Ora trans contiene il messaggio letto dalla coda globale, dobbiamo verificare il contenuto del messaggio
         */
@@ -1020,7 +959,7 @@ void sendTransaction()
                 {
                     safeErrorPrint("Node: failed to dispatch transaction to master. Error: ");
                     
-                    /* Informiamo il sender che il processamento della transazione è fallito */
+                    /* Inform the sender the transaction's processing failed */
                     if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                     {
                         /* Che facciamo in questo caso ???*/
@@ -1037,34 +976,45 @@ void sendTransaction()
             else
             {
                 /* generating a random index to access the array of nodes friend */
-                clock_gettime(CLOCK_REALTIME, &rand);
-                i = rand.tv_nsec % (SO_FRIENDS_NUM + 1);
-
-                key = ftok(MSGFILEPATH, *(friends_node + i));
-                /*
-                    Dovremmo controllare se il nodo scelto è attivo? 
-                    Sì, ma come facciamo a controllare il cambio di stato (attivo/terminato) di un nodo amico???
-                */
-                if (key == -1)
+                i = extractFriendNode();
+                if(i == -1)
                 {
-                    safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
-                    if (sendOnGlobalQueue(&trans, *(friends_node + i), TRANSTPFULL, -1))
-                        write(STDOUT_FILENO,
-                              "Node: transaction successfully dispatched to friend via global queue.\n",
-                              strlen("Node: transaction successfully dispatched to friend via global queue.\n"));
-                    else
+                    safeErrorPrint("Node: failed to extract a friend node which to send the transaction. Error: ");
+                            
+                    /* Inform the sender the transaction's processing failed */
+                    if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                     {
-                        safeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
-                        
-                        /* Informiamo il sender che il processamento della transazione è fallito */
-                        if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
-                        {
-                            /* Che facciamo in questo caso ??? */
-                            safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ");
-                        }
+                        /* Che facciamo in questo caso ??? */
+                        safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ");
                     }
                 }
                 else
+                {
+                    key = ftok(MSGFILEPATH, *(friends_node + i));
+                    /*
+                        Dovremmo controllare se il nodo scelto è attivo? 
+                        Sì, ma come facciamo a controllare il cambio di stato (attivo/terminato) di un nodo amico???
+                    */
+                    if (key == -1)
+                    {
+                        safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
+                        if (sendOnGlobalQueue(&trans, *(friends_node + i), TRANSTPFULL, -1))
+                            write(STDOUT_FILENO,
+                                "Node: transaction successfully dispatched to friend via global queue.\n",
+                                strlen("Node: transaction successfully dispatched to friend via global queue.\n"));
+                        else
+                        {
+                            safeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
+                            
+                            /* Inform the sender the transaction's processing failed */
+                            if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
+                            {
+                                /* Che facciamo in questo caso ??? */
+                                safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ");
+                            }
+                        }
+                    }
+                    else
                 {
                     friendTp = msgget(key, 0600);
                     if (friendTp == -1)
@@ -1078,7 +1028,7 @@ void sendTransaction()
                         {
                             safeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
 
-                            /* Informiamo il sender che il processamento della transazione è fallito */
+                            /* Inform the sender the transaction's processing failed */
                             if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                             {
                                 /* Che facciamo in questo caso ??? */
@@ -1108,7 +1058,7 @@ void sendTransaction()
                             {
                                 safeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
 
-                                /* Informiamo il sender che il processamento della transazione è fallito */
+                                /* Inform the sender the transaction's processing failed */
                                 if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                                 {
                                     /* Che facciamo in questo caso ??? */
@@ -1124,6 +1074,7 @@ void sendTransaction()
                         }
                     }
                 }
+                }
             }
         } 
         else if (trans.msgContent == NEWFRIEND)
@@ -1131,13 +1082,13 @@ void sendTransaction()
             /*
                 Aggiunta amico su richiesta master
             */
-            if (listPtr == NULL)
+            if (friends_node == NULL)
             {
                 /*
                     È improbabile che la lista degli amici sia vuota
                     ma il testo non lo esclude, quindi meglio prevenire
                 */
-                listPtr = trans.friend.procId;
+                friends_node = trans.friend.procId;
             } else {
                 listPtr = friends_node;
                 prevPtr = NULL;
@@ -1161,6 +1112,11 @@ void sendTransaction()
                 È POSSIBILE CHE IL MESSAGGIO LETTO NON SIA DEI DUE TIPI CERCATI??
                 SE SÌ, OCCORRE REINSERIRLO SULLA CODA GLOBALE!
             */
+            /* the message wasn't the one we were looking for, so we reinsert it on the global queue */
+            if(msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
+            {
+                unsafeErrorPrint("Node: failed to reinsert on global queue a message read from it. Error: ");
+            }
         }
     }
 }
@@ -1181,12 +1137,100 @@ boolean sendOnGlobalQueue(MsgGlobalQueue * trans, pid_t pid, GlobalMsgContent cn
     trans->mType = pid;
     trans->msgContent = cnt;
     trans->hops += hp;
-    if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue), 0) == -1)
+    if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
     {
         ret = FALSE;
     }
 
     return ret;
+}
+
+/**
+ * @brief Function that extracts randomly a friend node which to send a transaction.
+ * @return Returns the index of the selected friend node to pick from the list of friends,
+ * -1 if the function generates an error. 
+ */
+int extractFriendNode()
+{
+    int n = -1;
+    struct sembuf sops;
+    struct timespec now;
+    sops.sem_flg = 0;
+
+    sops.sem_num = 0; 
+    sops.sem_op = -1;
+    if(semop(nodeListSem, &sops, 1) != -1)
+    {
+        (*noNodeSegReadersPtr)++;
+        if((*noNodeSegReadersPtr) == 1)
+        {
+            sops.sem_num = 2;
+            sops.sem_op = -1;
+            if(semop(nodeListSem, &sops, 1) == -1)
+            {
+                safeErrorPrint("Node: failed to reserve write nodesList semaphore. Error: ");
+                /* do we need to end execution ? */
+            }
+        }
+
+        sops.sem_num = 0;
+        sops.sem_op = 1;
+        if(semop(nodeListSem, &sops, 1) != -1)
+        {
+            do
+            {
+                clock_gettime(CLOCK_REALTIME, &now);
+                n = now.tv_nsec % (SO_FRIENDS_NUM + 1);
+            } while (nodesList[n].procState != ACTIVE);
+            /* cicla finché il nodo scelto casualmente non è attivo */
+
+            sops.sem_num = 0;
+            sops.sem_op = -1;
+            if(semop(nodeListSem, &sops, 1) != -1)
+            {
+                (*noNodeSegReadersPtr)--;
+                if((*noNodeSegReadersPtr) == 0)
+                {
+                    sops.sem_num = 2;
+                    sops.sem_op = 1;
+                    if(semop(nodeListSem, &sops, 1) == -1)
+                    {
+                        safeErrorPrint("Node: failed to release write nodesList semaphore. Error: ");
+                        /* do we need to end execution ? */
+                    }
+                }
+
+                sops.sem_num = 0;
+                sops.sem_op = 1;
+                if(semop(nodeListSem, &sops, 1) != -1)
+                {
+                    return n;
+                }
+                else
+                {
+                    safeErrorPrint("Node: failed to release mutex nodesList semaphore. Error: ");
+                    /* do we need to end execution ? */
+                }
+            }
+            else
+            {
+                safeErrorPrint("Node: failed to reserve mutex nodesList semaphore. Error: ");
+                /* do we need to end execution ? */
+            }
+        }
+        else
+        {
+            safeErrorPrint("Node: failed to release mutex nodesList semaphore. Error: ");
+            /* do we need to end execution ? */
+        }
+    }
+    else
+    {
+        safeErrorPrint("Node: failed to reserve mutex nodesList semaphore. Error: ");
+        /* do we need to end execution ? */
+    }
+
+    return -1;
 }
 
 /**
@@ -1224,30 +1268,21 @@ void deallocateIPCFacilities()
     {
         if (shmdt(*regPtrs) == -1)
         {
-            if (errno != EINVAL) {
-            /*
-                Implementare un meccanismo di retry??
-                Contando che non è un errore così frequente si potrebbe anche ignorare...
-                Non vale la pena, possiamo limitarci a proseguire la deallocazione
-                riducendo al minimo il memory leak
-            */
-            safeErrorPrint("Node: failed to detach from register's partition. Error: ");
+            if (errno != EINVAL) 
+            {
+                /*
+                    Implementare un meccanismo di retry??
+                    Contando che non è un errore così frequente si potrebbe anche ignorare...
+                    Non vale la pena, possiamo limitarci a proseguire la deallocazione
+                    riducendo al minimo il memory leak
+                */
+                safeErrorPrint("Node: failed to detach from register's partition. Error: ");
             }
         }
         regPtrs++;
     }
     if (regPtrs != NULL)
         free(regPtrs);
-
-    write(STDOUT_FILENO,
-          "Node: deatching from users list...\n",
-          strlen("Node: deatching from users list...\n"));
-    
-    if (shmdt(usersList) == -1)
-    {
-        if (errno != EAGAIN)
-            safeErrorPrint("Node: failed to detach from users list. Error: ");
-    }
 
     write(STDOUT_FILENO,
           "Node: deatching from nodes list...\n",
@@ -1259,35 +1294,14 @@ void deallocateIPCFacilities()
             safeErrorPrint("Node: failed to detach from nodes list. Error: ");
     }
 
-    if (noReadersPartitions != NULL)
-        free(noReadersPartitions);
-
     write(STDOUT_FILENO,
-          "Node: deatching from partitions' number of readers shared variable...\n",
-          strlen("Node: deatching from partitions' number of readers shared variable...\n"));
-
-    ausPtr = noReadersPartitionsPtrs;
-    while (noReadersPartitionsPtrs != NULL)
-    {
-        if (shmdt(*noReadersPartitionsPtrs) == -1)
-        {
-            if (errno != EAGAIN)
-                safeErrorPrint("Node: failed to detach from partitions' number of readers shared variable. Error: ");
-        }
-
-        noReadersPartitionsPtrs++;
-    }
-    if (ausPtr != NULL)
-        free(ausPtr);
-
-    write(STDOUT_FILENO,
-          "Node: deatching from users list's number of readers shared variable...\n",
-          strlen("Node: deatching from users list's number of readers shared variable...\n"));
+          "Node: deatching from nodes list's number of readers shared variable...\n",
+          strlen("Node: deatching from nodes list's number of readers shared variable...\n"));
     
-    if (shmdt(noUserSegReadersPtr) == -1)
+    if (shmdt(noNodeSegReadersPtr) == -1)
     {
         if (errno != EAGAIN)
-            safeErrorPrint("Node: failed to detach from users list's number of readers shared variable. Error: ");
+            safeErrorPrint("Node: failed to detach from nodes list's number of readers shared variable. Error: ");
     }
 
     if (friends_node != NULL)
