@@ -590,6 +590,8 @@ int main(int argc, char *argv[], char* envp[])
     }
 
     printf("Node: about to terminate execution...\n");
+    /* we signal master that the node terminated */
+    kill(getppid(), SIGCHLD);
     exit(exitCode);
 }
 

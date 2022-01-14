@@ -46,3 +46,6 @@ in fallimento deallocazione regPtrs
 
 in funzione reinsertTransactions
 /* Che facciamo in questo caso ???*/
+
+in funzione extractFriendNode
+/* do we need to end execution ? */
