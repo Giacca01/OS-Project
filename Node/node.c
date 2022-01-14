@@ -529,6 +529,18 @@ int main(int argc, char *argv[], char* envp[])
                                                         In the case tha node has successfully signaled the master, the process
                                                         waits to be signaled so that its end-of-execution handler will be executed.
                                                     */
+                                                    
+                                                    /* 
+                                                     * now the node process must wait for end of simulation signal; we do it
+                                                     * with pause, but a signal could wake it up. We only want the end of simulation
+                                                     * signal to wake up the process, so we must ignore the SIGALRM signal that
+                                                     * might arrive for the periodic sending of a transaction to a friend node.
+                                                     */
+                                                    if(signal(SIGALRM, SIG_IGN) == SIG_ERR)
+                                                    {
+                                                        unsafeErrorPrint("Node: failed to set ignoring of SIGALRM signal before pause of process. Error: ");
+                                                    }
+                                                    
                                                     printf("Node: waiting for end of simulation signal...\n");
                                                     pause();
                                                 }
