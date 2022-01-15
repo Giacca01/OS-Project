@@ -1,3 +1,29 @@
+1) Inizializzare facilities
+    -Allocazione var globali: Ok
+    -aggancio a facilities: Ok
+    -letture var d'ambiente: Ok
+2) Leggere Variabili d'ambiente: Ok
+3) Calcolo bilancio: Ok
+4) Test e revisione
+5) Controllare sincronizzazione register:
+    -utente per calcolo bilancio: Ok
+    -nodo per registrare blocco: Ok
+    -master per stampa?? In teoria no, perchè accedi al registro
+    quando tutti sono terminati (vedere bene se possono esserci figli non terminati)
+5) COntrollare sincronizzazione lista utenti e nodi
+    -utente per scelta utente destinatario: OK
+    -utente per scelta nodo a cui chiedere processamento: OK
+    -master per registrare terminazione nodi ed utenti
+6) Sostituire sleep con nanosleep: utente e nodo ok
+7) sostituire write con printf [VEDI AL FONDO DI QUESTO FILE]
+8) Testare meccanismo deallocazioni IPC in caso di errore su master
+9) Terminazione in caso di errore fork nel master
+10) Segnalazione terminazione nodo ed utente a master:
+    si invia un sigchld al master (attenzione a sganciare l'handler prima della wait a fine simulazione): 
+        utente aggiornato, manca il resto
+11) Aggiornare inizializzazione random in nodo (con clock_gettime ?): OK
+12) Sostituire atoi/atol con strtoi/strtol: nodo e utente ok
+
 4) Aggiornare file di intestazione: Ok
 5) Sistemazione e Test Nodo:
     -implementare parte aggiuntiva versione FULL
@@ -7,39 +33,36 @@
     si leggono solo le var d'ambiente: Ok
     -il codice del nodo va sistemato in modo che sia rientrante
     perchè potrebbe essere interrotto dal segnale della scandenza
-    del timer per inviare la transazione all'invio.
+    del timer per inviare la transazione all'invio. OK
     Ci sarebbe anche la possibilità di non usare un segnale
     ed inviare una transazione ad ogni iterazione del ciclo di vita del nodo
     (così però non si fanno un po' troppi invii? E soprattutto, non si perde
     la possibilità di regolare la velocità??)
-6) Collegarsi alla lista dei nodi in sola lettura:OK
-7) Fissare con precisione il numero di partizioni (per me va bene vincolarlo a 3)
-8) /*
-        Se un nodo è terminato ed un processo prova a mandargli una transazione bisogna
-        segnalare un errore
-       */
-9) Spostare TEST_ERROR_PARAM in info.h e correggerla
+    No, lasciamo il timer
+6) Collegarsi alla lista dei nodi in sola lettura: utente e nodo OK
+7) Fissare con precisione il numero di partizioni (per me va bene vincolarlo a 3): sono per forza 3
+8) Verificare stato utente e nodo in inivio transazione: OK
+8.2) Verificare stato nodo amico quando gli mandi la transazioni: OK [viene fatto in funzione extractFriendNode]
+9) Spostare TEST_ERROR_PARAM in info.h e correggerla (cosa bisogna cambiare ?)
 10) Definire una procedura che deallochi le facilities in caso di errore: OK
     -modificare la procedura di deallocazione corrente in modo che sappia
-    gestire senza errori il caso in cui un ogetto IPC non esiste: Ok (solo per nodo)
+    gestire senza errori il caso in cui un oggetto IPC non esiste: Ok (solo per nodo e utente(?))
     -agganciare la procedure con atexit in modo che venga sempre eseguita alla terminazione
     (o richiamarla in caso di errore: questa è la soluzione scelta, l'altra è inutile): OK
     -agganciarla anche in caso di terminazione anomala
-11) COntrollare i collegamenti in sola lettura ai segmenti
+11) COntrollare i collegamenti in sola lettura ai segmenti: nodo ok
 12) COmpilare tutto (check parentesi calcolo bilancio)
-13) Implementare parte full master
+13) Implementare parte full master: OK
 14) Inserire, nel nodo, l'aggiunta dell'amico su richiesta del master: Ok
 15) Aggiornare il progetto alla luce del fatto che i nodi possano terminare
-16) Rilevare inivio ad utenti terminati
-    -bisogna farlo sia nel nodo che nell'utente???
-17) Segnalazione fallimento transazione a sender
-18) Per il master e i segmenti di shared memory abbiamo usato una soluzione read first, va bene?
-19) Aggiungere sincronizzazione in calcolo bilancio
+17) Segnalazione fallimento transazione a sender: controllo in utente già fatto, invio da parte di nodo OK
+18) Per il master e i segmenti di shared memory abbiamo usato la soluzione fair di Gunetti
+19) Aggiungere sincronizzazione in calcolo bilancio: Ok
 20) sistemare costante dimensione file
-21) Rilevazione invio a nodi terminati
-22) Eliminare facilities inutili da node
-23) Controllare valori semafori
-/*
+21) Rilevazione invio a nodi terminati: OK, in fase di invio viene scelto un nodo attivo
+22) Eliminare facilities inutili da node (usersList, rdPartSem, mutexPartSem, noReadersPartition, noUserSegReaders, userListSem): OK
+23) Aggiornare lettura da file con versione seguente
+    /*
     Versione ottimizzata lettura da file
     int readConfigParameters()
 {
@@ -106,3 +129,60 @@
     return exitCode;
 }
 */
+24) Modificare nodo per fare in modo che solo i nodi normali attendano l'inizio della simulazione: [non più da fare]
+25) CONTROLLARE LO STATO DELL'UTENTE E DEL NODO A CUI SI INVIA UNA TRANSAZIONE: OK
+    in utente ok (viene fatto in funzione di estrazione nodo e utente dest.), in nodo ok (viene fatto in funzione extractFriendNode)
+26) Inviare notifica fallimento transazione a sender: controllo in utente già fatto, invio da parte di nodo OK
+27) Verificare il bilancio prima di generare transazione in risposta a sigusr2: OK
+28) Aggiungere lettura variabili globali nell'utente: OK
+29) Sostituire write con printf (dove serve): utente ok, nodo ok, manca master
+30) Handler CTRL + C master
+31) Occorre rimuovere eventuali handler quando si esegue la procedura di terminazione??
+32) DOBBIAMO STUDIARE SISTEMA DI AGGIONAMENTO STATO DEI NODI AMICI PER I NODI (AL MOMENTO NON POSSIAMO SAPERE SE UN NODO AMICO È TERMINATO O MENO!!!!)
+    [abbiamo risolto stabilendo un massimo di nodi aggiuntivi che possono essere generati nella simulazione]: OK
+33) Cosa facciamo in caso fallisca l'invio del messaggio che informa il sender che una sua transazione non è stata processata dal nodo?
+34) Controllare i sizeof di tutte le msgsnd e msgrcv (non bisogna sottrarre la size del campo mType?): nodo OK
+35) Sistemato ricezione amici da coda globale in nodo OK 
+36) Verificare &sops[0]: funziona (OK)
+37) In User dopo mandare sigchld al master, devo terminare? [DIPENDE DA COME IMPLEMENTIAMO HANDLER SIGCHLD]: OK (per ora termino)
+38) Quando mandiamo in pause il nodo (in attesa che il padre gli dica di terminare), dovrei staccare anche l'handler dell'invio di 
+    transazione ad amico ogni tot tempo? [FATTO]
+39) Bisogna fare Handler SIGCHLD in master per gestire la terminazione prematura di nodi e utenti!!!
+40) Controllare se funzione removeTransaction in User funziona correttamente
+
+1) Parte full master: OK
+2) SIstemare terminazione nodi (sincronizzazione accesso lista): IO
+    -risolvere problema dimensione lista: Putroppo si risolve solo non redimensionando
+    -controllare se si acceda alla lista nodi in modo sincronizzato
+3) Aggiornare e testare il master integrando tutto: IO
+4) Testare e uniformare il nodo
+6) Testare e uniformare l'utente
+7) Scrivere Relazione: Urru
+9) Implementare modifiche scritte su file: Fontana
+10) Cerchi problemi da risolvere: Fontana
+
+Printf vs write:
+    In tutte le funzioni che possono essere interrotti da un segnale per poi ripartire
+    (gli handler, ma non solo) bisogna usare write
+
+Tutto ciò entro il 12/01/2022
+
+PUNTI ANCORA DA FARE:
+5) -master per registrare terminazione nodi ed utenti
+6) Sostituire sleep con nanosleep: utente e nodo ok
+8) Testare meccanismo deallocazioni IPC in caso di errore su master
+9) Terminazione in caso di errore fork nel master
+10) Segnalazione terminazione nodo ed utente a master:
+    si invia un sigchld al master (attenzione a sganciare l'handler prima della wait a fine simulazione): 
+        utente aggiornato, manca il resto
+9) Spostare TEST_ERROR_PARAM in info.h e correggerla (cosa bisogna cambiare ?)
+11) COntrollare i collegamenti in sola lettura ai segmenti: nodo ok
+12) COmpilare tutto (check parentesi calcolo bilancio)
+15) Aggiornare il progetto alla luce del fatto che i nodi possano terminare
+20) sistemare costante dimensione file
+29) Sostituire write con printf (dove serve): utente ok, nodo ok, manca master
+30) Handler CTRL + C master
+31) Occorre rimuovere eventuali handler quando si esegue la procedura di terminazione??
+33) Cosa facciamo in caso fallisca l'invio del messaggio che informa il sender che una sua transazione non è stata processata dal nodo?
+39) Bisogna fare Handler SIGCHLD in master per gestire la terminazione prematura di nodi e utenti!!!
+40) Controllare se funzione removeTransaction in User funziona correttamente

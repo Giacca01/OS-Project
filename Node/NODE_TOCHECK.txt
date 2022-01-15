@@ -1,0 +1,51 @@
+In funzione main
+dopo impostazione dei timer e degli handler
+/*
+    Correggere: vedere se sia meglio metterlo nel while senza usare l'allarme
+*/
+verso fine del main
+/*
+    Cosa succede in caso di errore?
+    Terminiamo il ciclo?
+    Oppure segnaliamo l'errore e procediamo
+    con la prossima elaborazione?
+*/
+vedi commenti in else nanosleep
+
+in funzione dispatchToFriend
+in fallimento lettura transazione da TP
+/*
+    CORREGGERE: In caso di errore procediamo limitandoci a segnalarlo??
+*/
+in reset timer e dispatcher per invio transazione ad amico
+/*
+    Vedere se togliere il segnale di fine simulazione
+*/ 
+
+in funzione sendTransaction
+controllare ovunque ci sia 
+/* Che facciamo in questo caso ??? */
+a fine aggiunta nuovo nodo amico
+/*
+    CORREGGERE: dovremmo testare lo stato??
+*/
+a fine funzione 
+/*
+    È POSSIBILE CHE IL MESSAGGIO LETTO NON SIA DEI DUE TIPI CERCATI??
+    SE SÌ, OCCORRE REINSERIRLO SULLA CODA GLOBALE!
+*/
+
+in funzione deallocateFacilities
+in fallimento deallocazione regPtrs
+/*
+    Implementare un meccanismo di retry??
+    Contando che non è un errore così frequente si potrebbe anche ignorare...
+    Non vale la pena, possiamo limitarci a proseguire la deallocazione
+    riducendo al minimo il memory leak
+*/
+
+in funzione reinsertTransactions
+/* Che facciamo in questo caso ???*/
+
+in funzione extractFriendNode
+/* do we need to end execution ? */
