@@ -129,7 +129,7 @@
     return exitCode;
 }
 */
-24) Modificare nodo per fare in modo che solo i nodi normali attendano l'inizio della simulazione: [non più da fare]
+24) Modificare nodo per fare in modo che solo i nodi normali attendano l'inizio della simulazione: OK
 25) CONTROLLARE LO STATO DELL'UTENTE E DEL NODO A CUI SI INVIA UNA TRANSAZIONE: OK
     in utente ok (viene fatto in funzione di estrazione nodo e utente dest.), in nodo ok (viene fatto in funzione extractFriendNode)
 26) Inviare notifica fallimento transazione a sender: controllo in utente già fatto, invio da parte di nodo OK
