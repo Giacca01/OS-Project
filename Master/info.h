@@ -207,7 +207,8 @@ typedef enum
     FAILEDTRANS,
     FRIENDINIT,
     TRANSTPFULL,
-    TERMINATEDUSER
+    TERMINATEDUSER,
+    TERMINATEDNODE
 } GlobalMsgContent;
 
 /* attenzione!!!! Per friends va fatta una memcopy
@@ -234,7 +235,7 @@ typedef struct
     pid_t friend;     /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
     Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
     long hoops;              /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
-    pid_t userPid; /* pid of terminated user, garbage if msgContent != TERMINATEDUSER */
+    pid_t userPid;           /* pid of terminated user, garbage if msgContent != TERMINATEDUSER || msgContent != TERMINATEDNODE */
 } MsgGlobalQueue;
 
 /*
@@ -269,3 +270,10 @@ typedef struct{
     long mtype; /* type of message */
     pid_t pid;  /* user-define message */
 } msgbuff;
+
+#define TEST_ERROR_PARAM                                                           \
+    if (errno)                                                                     \
+    {                                                                              \
+        unsafeErrorPrint("Master: failed to read configuration parameter. Error: "); \
+        return FALSE;                                                              \
+    }

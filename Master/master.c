@@ -109,7 +109,8 @@ int *noNodeSegReadersPtr = NULL;
     We use a long int variable to handle an outstanding number
     of child processes
 */
-long noTerminatedUsers = 0; /* NUmber of processes that terminated before end of simulation*/
+long noTerminatedUsers = 0; /* NUmber of users that terminated before end of simulation*/
+long noTerminatedNodes = 0; /* NUmber of processes that terminated before end of simulation*/
 
 long noEffectiveNodes = 0; /* Holds the effective number of nodes */
 long noEffectiveUsers = 0; /* Holds the effective number of users */
@@ -344,12 +345,13 @@ int main(int argc, char *argv[])
     Transaction trans;
 
     /* variables that keeps track of user terminated */
-    int noUserTerminated = 0;
+    /*int noUserTerminated = 0;*/
 
     char *argVec[] = {NULL};
     char *envVec[] = {NULL};
 
     char * aus = NULL;
+    long masterPid = -1;
 
     /* Set common semaphore options*/
     sops[0].sem_num = 0;
@@ -369,7 +371,8 @@ int main(int argc, char *argv[])
     for(i = 0; i < REG_PARTITION_COUNT; i++)
 		prev_read_nblock[i] = 0; /* qui memorizzo il blocco a cui mi sono fermato allo scorso ciclo nella i-esima partizione */
 
-    printf("PID MASTER: %ld\n", (long)getpid());
+    masterPid = (long)getpid();
+    printf("PID MASTER: %ld\n", masterPid);
     printf("**** Master: simulation configuration started ****\n");
     printf("Master: setting up simulation timer...\n");
     printf("Master simulation lasts %d seconds\n", SO_SIM_SEC);
@@ -1117,9 +1120,9 @@ int main(int argc, char *argv[])
                                     /********************************/
 
                                     /* Check if a user process has terminated to update the usersList */
-                                    noUserTerminated = 0; /* resetting user terminated counter */
+                                    /*noUserTerminated = 0;*/ /* resetting user terminated counter */
 
-                                    while (msgrcv(globalQueueId, &msg_from_user, sizeof(msg_from_user) - sizeof(long), getpid(), IPC_NOWAIT) != -1)
+                                    while (msgrcv(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue), masterPid, IPC_NOWAIT) != -1)
                                     {
                                         /* come dimensione specifichiamo sizeof(msg_from_user)-sizeof(long) perché bisogna specificare la dimensione del testo, non dell'intera struttura */
                                         /* come mType prendiamo i messaggi destinati al Master, cioè il suo pid (prende il primo messaggio con quel mType) */
@@ -1128,13 +1131,14 @@ int main(int argc, char *argv[])
                                         if (msg_from_user.msgContent == TERMINATEDUSER)
                                         {
                                             /* we enter the critical section for the usersList */
-                                            sops[0].sem_num = 2;
+                                            sops[0].sem_num = 1;
                                             sops[0].sem_op = -1;
-                                            if (semop(userListSem, &sops[0], 1) == -1)
+                                            sops[1].sem_num = 2;
+                                            sops[1].sem_op = -1;
+                                            if (semop(userListSem, sops, 2) == -1)
                                             {
-                                                safeErrorPrint("Master: failed to reserve write usersList semaphore. Error: ");
-                                                /* Is this is necessary ? */
-                                                /*exit(EXIT_FAILURE); /* VA SOSTITUITA CON EndOfSimulation ??? */
+                                                safeErrorPrint("Master: failed to reserve usersList semaphore for writing operation. Error: ");
+                                                endOfSimulation(-1);
                                             }
                                             else
                                             {
@@ -1147,8 +1151,6 @@ int main(int argc, char *argv[])
                                                         usersList[i].procState = TERMINATED;
                                                         /* Updating number of terminated processes */
                                                         noTerminatedUsers++;
-                                                        /* Updating number of user terminated counter*/
-                                                        noUserTerminated++;
                                                         /* Updating number of effective active processes */
                                                         noEffectiveUsers--;
                                                         break;
@@ -1159,11 +1161,17 @@ int main(int argc, char *argv[])
                                                 /* we exit the critical section for the usersList */
                                                 sops[0].sem_num = 2;
                                                 sops[0].sem_op = 1;
-                                                if (semop(userListSem, &sops[0], 1) == -1)
+                                                sops[1].sem_num = 1;
+                                                sops[1].sem_op = 1;
+                                                if (semop(userListSem, sops, 2) == -1)
                                                 {
-                                                    safeErrorPrint("Master: failed to release write usersList semaphore. Error: ");
-                                                    /* Is this is necessary ? */
-                                                    /*exit(EXIT_FAILURE); /* VA SOSTITUITA CON EndOfSimulation ??? */
+                                                    safeErrorPrint("Master: failed to release usersList semaphore for writing operation. Error: ");
+                                                    /*
+                                                        CORREGGERE: terminiamo la simulazione??
+                                                        È la soluzione più sensata, perchè il rischio è quello di bloccare tutti gli altri processi
+                                                        in attesa su questa lista
+                                                    */
+                                                   endOfSimulation(-1);
                                                 }
                                                 else
                                                 {
@@ -1174,24 +1182,101 @@ int main(int argc, char *argv[])
                                         else
                                         {
                                             /* Reinserting the message that we have consumed from the global queue */
-                                            if (msgsnd(globalQueueId, &msg_from_user, sizeof(msg_from_user) - sizeof(long), 0) == -1)
+                                            if (msgsnd(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue), 0) == -1)
                                             {
-                                                unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated users. Error: ");
-                                                exit(EXIT_FAILURE); /* VA SOSTITUITA CON EndOfSimulation ??? */
                                                 /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
+                                                unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated users. Error: ");
+                                                endOfSimulation(-1);                                  
                                             }
                                         }
                                     }
 
                                     /* If errno is ENOMSG, no message of user termination on global queue, otherwise an error occured */
-                                    if (errno == ENOMSG)
-                                    {
-                                        if (!noUserTerminated)
-                                            printf("Master: no user process has terminated.\n");
-                                    }
-                                    else
-                                    {
+                                    if (errno != ENOMSG){
                                         unsafeErrorPrint("Master: failed to retrieve user termination messages from global queue. Error: ");
+                                        /* 
+                                    * DEVO FARE EXIT????? 
+                                    * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non 
+                                    * è necessario fare la exit, ma se si verifica un errore a tutti i cicli non è possibile 
+                                    * leggere messaggi dalla coda, quindi si finisce con il non creare un nuovo nodo, non processare
+                                    * alcune transazioni e si può riempire la coda globale, rischiando di mandare in wait tutti i 
+                                    * restanti processi nodi e utenti. Quindi sarebbe opportuno fare exit appena si verifica un errore
+                                    * oppure utilizzare un contatore (occorre stabilire una soglia di ripetizione dell'errore). Per 
+                                    * ora lo lasciamo.
+                                    */
+                                        endOfSimulation(-1);                                     
+                                    }
+
+                                    /**** END OF USER TERMINATION CHECK ****/
+                                    /***************************************/
+
+                                    /**** NODE TERMINATION CHECK ****/
+                                    /********************************/
+
+                                    /* Check if a node process has terminated to update the nodes list */
+                                    while (msgrcv(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue), masterPid, IPC_NOWAIT) != -1)
+                                    {
+                                        if (msg_from_node.msgContent == TERMINATEDNODE)
+                                        {
+                                            sops[0].sem_num = 1;
+                                            sops[0].sem_op = -1;
+                                            sops[1].sem_num = 2;
+                                            sops[1].sem_op = -1;
+                                            if (semop(nodeListSem, sops, 2) == -1)
+                                            {
+                                                safeErrorPrint("Master: failed to reserve nodesList semaphore for writing operation. Error: ");
+                                                endOfSimulation(-1);
+                                            }
+                                            else
+                                            {
+                                                for (i = 0; i < SO_NODES_NUM; i++)
+                                                {
+                                                    if (nodesList[i].procId == msg_from_node.userPid)
+                                                    {
+                                                        usersList[i].procState = TERMINATED;
+                                                        noTerminatedNodes++;
+                                                        noTerminatedNodes--;
+                                                        break;
+                                                    }
+                                                }
+
+                                                /* we exit the critical section for the usersList */
+                                                sops[0].sem_num = 2;
+                                                sops[0].sem_op = 1;
+                                                sops[1].sem_num = 1;
+                                                sops[1].sem_op = 1;
+                                                if (semop(nodeListSem, sops, 2) == -1)
+                                                {
+                                                    safeErrorPrint("Master: failed to release nodeslist semaphore for writing operation. Error: ");
+                                                    /*
+                                                        CORREGGERE: terminiamo la simulazione??
+                                                        È la soluzione più sensata, perchè il rischio è quello di bloccare tutti gli altri processi
+                                                        in attesa su questa lista
+                                                    */
+                                                    endOfSimulation(-1);
+                                                }
+                                                else
+                                                {
+                                                    printf("Master: the node process with pid %5d has terminated\n", msg_from_node.userPid);
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            /* Reinserting the message that we have consumed from the global queue */
+                                            if (msgsnd(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue), 0) == -1)
+                                            {
+                                                /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
+                                                unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated nodes. Error: ");
+                                                endOfSimulation(-1);
+                                            }
+                                        }
+                                    }
+
+                                    /* If errno is ENOMSG, no message of user termination on global queue, otherwise an error occured */
+                                    if (errno != ENOMSG)
+                                    {
+                                        unsafeErrorPrint("Master: failed to retrieve node termination messages from global queue. Error: ");
                                         /* 
                                     * DEVO FARE EXIT????? 
                                     * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non 
@@ -1205,8 +1290,9 @@ int main(int argc, char *argv[])
                                         endOfSimulation(-1);
                                     }
 
-                                    /**** END OF USER TERMINATION CHECK ****/
+                                    /**** END OF NODE TERMINATION CHECK ****/
                                     /***************************************/
+
                                     printf("--------------- END OF CYCLE ---------------\n"); /* for debug purpose */
                                     
                                     /* now sleep for 1 second */
@@ -1727,7 +1813,7 @@ void endOfSimulation(int sig)
         Bisogna fare solo la wait senza mandare il segnale
         In ogni caso, se non si riescono a terminare i processi dopo n tentativi deallocare comunque le facilities
     */
-    printf("Master: PID %ld\nMaster: parent PID %ld\n", (long int)getpid(), (long)getppid());
+    //printf("Master: PID %ld\nMaster: parent PID %ld\n", (long int)getpid(), (long)getppid());
     if (terminationMessage == NULL || aus == NULL)
         safeErrorPrint("Master: failed to alloacate memory. Error: ");
     else
@@ -1737,7 +1823,7 @@ void endOfSimulation(int sig)
               strlen("Master: trying to terminate simulation...\n"));
         /* error check*/
         fflush(stdout);
-        if (noTerminatedUsers < noEffectiveNodes + noEffectiveUsers)
+        if (noTerminatedUsers + noTerminatedNodes < noEffectiveNodes + noEffectiveUsers)
         {
             /*
                 There are still active children that need
@@ -2305,6 +2391,7 @@ void checkNodeCreationRequests(){
     ProcListElem newNode;
     budgetlist new_el;
     struct sembuf sops[3];
+    long childPid = -1;
 
     if (msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue), currPid, IPC_NOWAIT) == -1)
     {
@@ -2330,7 +2417,8 @@ void checkNodeCreationRequests(){
                     3) Assegnazione amici: Ok
                     4) Eseguire codice nodo (opportunamente modificato): Ok
                     */
-                    newNode.procId = getpid();
+                    childPid = getpid();
+                    newNode.procId = childPid;
                     newNode.procState = ACTIVE;
                 
                     sops[0].sem_flg = 0;
@@ -2361,7 +2449,7 @@ void checkNodeCreationRequests(){
 
                     /* Adding new node to budgetlist */
                     new_el = malloc(sizeof(*new_el));
-                    new_el->proc_pid = getpid();
+                    new_el->proc_pid = childPid;
                     new_el->budget = 0;
                     new_el->p_type = 1;
                     insert_ordered(new_el);
@@ -2375,7 +2463,7 @@ void checkNodeCreationRequests(){
                         tplLength++;
                         tpList = (TPElement *)realloc(tpList, sizeof(TPElement) * tplLength);
                         /* Initialize messages queue for transactions pools */
-                        tpList[tplLength - 1].procId = getpid();
+                        tpList[tplLength - 1].procId = childPid;
                         tpList[tplLength - 1].msgQId = tpId;
 
                         if (tpList[tplLength - 1].msgQId == -1)
@@ -2389,7 +2477,7 @@ void checkNodeCreationRequests(){
                             MsgTP è inutile
                             Toglierlo
                         */
-                        firstTrans.mType = getpid();
+                        firstTrans.mType = childPid;
                         firstTrans.transaction = aus.transaction;
 
                         if (msgsnd(tpId, &(aus.transaction), sizeof(MsgTP), 0) == -1)
@@ -2398,7 +2486,7 @@ void checkNodeCreationRequests(){
                         }
                         else
                         {
-                            aus.mType = getpid();
+                            aus.mType = childPid;
                             aus.msgContent = FRIENDINIT;
                             estrai(noAllTimesNodes - 1);
                             for (j = 0; j < SO_FRIENDS_NUM; j++)
