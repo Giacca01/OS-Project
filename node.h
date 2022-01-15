@@ -1,6 +1,6 @@
 #ifndef NODE_H
     #define NODE_H
-    #include "../info.h"
+    #include "info.h"
     /*
         Interval between one dispatch of a transaction
         to a friend and the other, expressed in seconds
