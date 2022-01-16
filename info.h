@@ -52,6 +52,9 @@ i figli lo preleveranno dalla lista dei nodi*/
         exit(EXIT_FAILURE);                  \
     }
 
+/*
+    MOsificarle in modo che segnalino il modulo in cui si è verificato un erorre
+*/
 #define FTOK_TEST_ERROR(key)                                                         \
     if (key == -1)                                                                   \
     {                                                                                \

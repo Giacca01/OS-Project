@@ -8,6 +8,9 @@ master: master.c info.h
 	${CC} -c ${CFLAGS} master.c -o master.o
 	${CC} master.o error.o -o master.out
 
+masterDebug: master.c info.h
+	gcc -g -o0  master.c error.o -o master.out
+
 node: node.c info.h
 	${CC} -c ${CFLAGS} node.c -o node.o
 	${CC} node.o error.o -o node.out

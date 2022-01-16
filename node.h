@@ -9,11 +9,11 @@
     
     /* Macro that rappresents the sender with id -1 in Transactions */
     #define NO_SENDER -1
-
+    /*
     #define TEST_ERROR_PARAM                                                       \
     if (errno)                                                                     \
     {                                                                              \
         unsafeErrorPrint("User: failed to read configuration parameter. Error: "); \
         return FALSE;                                                              \
-    }
+    }*/
 #endif

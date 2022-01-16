@@ -488,25 +488,30 @@ boolean initializeFacilities()
     SHM_TEST_ERROR(regPartsIds[2]);
 
     regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
-    SHMAT_TEST_ERROR(regPtrs[0], "User");
+    /*SHMAT_TEST_ERROR(regPtrs[0], "User");*/
+    TEST_SHMAT_ERROR(regPtrs[0]);
     regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
-    SHMAT_TEST_ERROR(regPtrs[1], "User");
+    /*SHMAT_TEST_ERROR(regPtrs[1], "User");*/
+    TEST_SHMAT_ERROR(regPtrs[1]);
     regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
-    SHMAT_TEST_ERROR(regPtrs[2], "User");
+    /*SHMAT_TEST_ERROR(regPtrs[2], "User");*/
+    TEST_SHMAT_ERROR(regPtrs[2]);
 
     key = ftok(SHMFILEPATH, USERLISTSEED);
     FTOK_TEST_ERROR(key);
     usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), 0600);
     SHM_TEST_ERROR(usersListId);
     usersList = (ProcListElem *)shmat(usersListId, NULL, SHM_RDONLY);
-    SHMAT_TEST_ERROR(usersList, "User");
+    /*SHMAT_TEST_ERROR(usersList, "User");*/
+    TEST_SHMAT_ERROR(usersList)
 
     key = ftok(SHMFILEPATH, NODESLISTSEED);
     FTOK_TEST_ERROR(key);
     nodesListId = shmget(key, SO_NODES_NUM * sizeof(ProcListElem), 0600);
     SHM_TEST_ERROR(nodesListId);
     nodesList = (ProcListElem *)shmat(nodesListId, NULL, SHM_RDONLY);
-    SHMAT_TEST_ERROR(nodesList, "User");
+    /*SHMAT_TEST_ERROR(nodesList, "User");*/
+    TEST_SHMAT_ERROR(nodesList);
 
     /* Aggancio segmenti per variabili condivise*/
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
@@ -514,31 +519,36 @@ boolean initializeFacilities()
     noReadersPartitions[0] = shmget(key, sizeof(SO_USERS_NUM), 0600);
     SHM_TEST_ERROR(nodesListId);
     noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, 0);
-    SHMAT_TEST_ERROR(noReadersPartitionsPtrs[0], "User");
+    /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[0], "User");*/
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0]);
 
     key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
     FTOK_TEST_ERROR(key);
     noReadersPartitions[1] = shmget(key, sizeof(SO_USERS_NUM), 0600);
     noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, 0);
-    SHMAT_TEST_ERROR(noReadersPartitionsPtrs[1], "User");
+    /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[1], "User");*/
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1]);
 
     key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
     FTOK_TEST_ERROR(key);
     noReadersPartitions[2] = shmget(key, sizeof(SO_USERS_NUM), 0600);
     noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, 0);
-    SHMAT_TEST_ERROR(noReadersPartitionsPtrs[2], "User");
+    /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[2], "User");*/
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2]);
 
     key = ftok(SHMFILEPATH, NOUSRSEGRDERSSEED);
     FTOK_TEST_ERROR(key);
     noUserSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
     noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
-    SHMAT_TEST_ERROR(noUserSegReadersPtr, "User");
+    /*SHMAT_TEST_ERROR(noUserSegReadersPtr, "User");*/
+    TEST_SHMAT_ERROR(noUserSegReadersPtr);
 
     key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
     FTOK_TEST_ERROR(key);
     noNodeSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
-    SHMAT_TEST_ERROR(noNodeSegReadersPtr, "User");
+    /*SHMAT_TEST_ERROR(noNodeSegReadersPtr, "User");*/
+    TEST_SHMAT_ERROR(noNodeSegReadersPtr);
 
     return TRUE;
 }
@@ -584,63 +594,64 @@ double computeBalance(TransList *transSent)
                 safeErrorPrint("Node: failed to reserve register partition mutex semaphore. Error: ");
             else {
                 *(noReadersPartitionsPtrs[i])++;
-            if (*(noReadersPartitionsPtrs[i]) == 1)
+                if (*(noReadersPartitionsPtrs[i]) == 1){
 
-                if (semop(wrPartSem, &op, 1) == -1)
-                    safeErrorPrint("Node: failed to reserve register partition writing semaphore. Error:");
-                else {
-                    op.sem_num = i;
-                    op.sem_op = 1;
-                    op.sem_flg = 0;
-
-                    if (semop(mutexPartSem, &op, 1) == -1)
-                        safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
+                    if (semop(wrPartSem, &op, 1) == -1)
+                        safeErrorPrint("Node: failed to reserve register partition writing semaphore. Error:");
                     else {
-                        if (semop(rdPartSem, &op, 1) == -1)
-                            safeErrorPrint("Node: failed to release register partition reading semaphore. Error: ");
-                        else {
-                            ptr = regPtrs[i];
-                            balance = SO_BUDGET_INIT;
-                            while (ptr != NULL)
-                            {
-                                for (j = 0; j < ptr->nBlocks; j++)
-                                {
-                                    for (k = 0; k < SO_BLOCK_SIZE; k++)
-                                    {
-                                        if (ptr->blockList[j].transList[k].receiver == procPid)
-                                        {
-                                            balance += ptr->blockList[j].transList[k].amountSend;
-                                        }
-                                        else if (ptr->blockList[j].transList[k].sender == procPid)
-                                        {
-                                            /*
-                                                Togliamo le transazioni già presenti nel master
-                                                dalla lista di quelle inviate
-                                            */
-                                            balance -= (ptr->blockList[j].transList[k].amountSend) + 
-                                                        (ptr->blockList[j].transList[k].reward);
-                                            removeTransaction(transSent, &(ptr->blockList[j].transList[k]));
-                                        }
-                                    }
-                                }
-                                ptr++;
-                            }
+                        op.sem_num = i;
+                        op.sem_op = 1;
+                        op.sem_flg = 0;
 
-                            if (semop(mutexPartSem, &op, 1) == -1){
-                                balance = 0;
-                                safeErrorPrint("Node: failed to reserve register partition mutex semaphore. Error: ");
-                            }else {
-                                *(noReadersPartitionsPtrs[i])--;
-                                if (*(noReadersPartitionsPtrs[i]) == 0){
-                                    if (semop(wrPartSem, &op, 1) == -1){
-                                        balance = 0;
-                                        safeErrorPrint("Node: failed to release register partition writing semaphore. Error: ");
+                        if (semop(mutexPartSem, &op, 1) == -1)
+                            safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
+                        else {
+                            if (semop(rdPartSem, &op, 1) == -1)
+                                safeErrorPrint("Node: failed to release register partition reading semaphore. Error: ");
+                            else {
+                                ptr = regPtrs[i];
+                                balance = SO_BUDGET_INIT;
+                                while (ptr != NULL)
+                                {
+                                    for (j = 0; j < ptr->nBlocks; j++)
+                                    {
+                                        for (k = 0; k < SO_BLOCK_SIZE; k++)
+                                        {
+                                            if (ptr->blockList[j].transList[k].receiver == procPid)
+                                            {
+                                                balance += ptr->blockList[j].transList[k].amountSend;
+                                            }
+                                            else if (ptr->blockList[j].transList[k].sender == procPid)
+                                            {
+                                                /*
+                                                    Togliamo le transazioni già presenti nel master
+                                                    dalla lista di quelle inviate
+                                                */
+                                                balance -= (ptr->blockList[j].transList[k].amountSend) + 
+                                                            (ptr->blockList[j].transList[k].reward);
+                                                removeTransaction(transSent, &(ptr->blockList[j].transList[k]));
+                                            }
+                                        }
                                     }
+                                    ptr++;
                                 }
 
                                 if (semop(mutexPartSem, &op, 1) == -1){
                                     balance = 0;
-                                    safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
+                                    safeErrorPrint("Node: failed to reserve register partition mutex semaphore. Error: ");
+                                }else {
+                                    *(noReadersPartitionsPtrs[i])--;
+                                    if (*(noReadersPartitionsPtrs[i]) == 0){
+                                        if (semop(wrPartSem, &op, 1) == -1){
+                                            balance = 0;
+                                            safeErrorPrint("Node: failed to release register partition writing semaphore. Error: ");
+                                        }
+                                    }
+
+                                    if (semop(mutexPartSem, &op, 1) == -1){
+                                        balance = 0;
+                                        safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
+                                    }
                                 }
                             }
                         }
@@ -880,7 +891,7 @@ void transactionGeneration(int sig)
     
     sops.sem_flg = 0;
 
-    bilancio = computeBudget(transactionsSent); /* calcolo del bilancio */
+    bilancio = computeBalance(transactionsSent); /* calcolo del bilancio */
     srand(getpid());
 
     if(bilancio > 2)
@@ -908,7 +919,7 @@ void transactionGeneration(int sig)
             new_trans.receiver = receiver_user;
             new_trans.amountSend = (rand()%bilancio)+2; /* calcolo del budget fra 2 e il budget (così lo fa solo intero) */
             new_trans.reward = new_trans.amountSend*SO_REWARD; /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 0 e 1 */
-            /*new_trans.reward = (new_trans.amountSend/100)*SO_REWARD; /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 1 e 100 */
+            /*new_trans.reward = (new_trans.amountSend/100)*SO_REWARD;*/ /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 1 e 100 */
             if(new_trans.reward < 1)
                 new_trans.reward = 1;
 
@@ -956,7 +967,7 @@ void transactionGeneration(int sig)
                                 msgOnGQueue.mType = receiver_node;
                                 msgOnGQueue.msgContent = TRANSTPFULL;
                                 msgOnGQueue.transaction = new_trans;
-                                msgOnGQueue.hops = 0;
+                                msgOnGQueue.hoops = 0;
                                 if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
                                     safeErrorPrint("User: failed to send transaction on global queue. Error: ");
                             }
@@ -1019,6 +1030,8 @@ void transactionGeneration(int sig)
  */
 TransList * addTransaction(TransList * transSent, Transaction *t)
 {
+    TransList * new_el = NULL;
+
     if(t == NULL) {
         write(STDERR_FILENO, 
             "User: transaction passed to function is a NULL pointer.\n",
@@ -1027,7 +1040,7 @@ TransList * addTransaction(TransList * transSent, Transaction *t)
     }
 
     /* insertion of new transaction to list */
-    TransList * new_el = (TransList*) malloc(sizeof(TransList));
+    new_el = (TransList*) malloc(sizeof(TransList));
     new_el->currTrans = *t;
     new_el->nextTrans = transSent;
     transSent = new_el;

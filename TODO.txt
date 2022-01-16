@@ -1,0 +1,59 @@
+1) Creare un file .h per ogni processo e metterci le macro per segnalare gli errori
+(Oppure modificare le macro in modo che accettino il tipo di modulo)
+
+boolean readConfigParameters()
+{
+    char *filename = "params.txt";
+    FILE *fp = fopen(filename, "r");
+    /* Reading line by line, max 128 bytes*/
+    /* 
+        Array that will contain the lines read from the file:
+        each "row" of the "matrix" will contain a different file line
+    */
+    char line[CONF_MAX_LINE_NO][CONF_MAX_LINE_SIZE];
+    /* Counter of the number of lines in the file*/
+    int k = 0;
+    char *aus = NULL;
+    int i = 0;
+    boolean ret = TRUE;
+
+    printf("Master: reading configuration parameters...\n");
+
+    aus = (char *)calloc(35, sizeof(char));
+    if (aus == NULL)
+        unsafeErrorPrint("Master: failed to allocate memory. Error: ");
+    else
+    {
+        /* Handles any error in opening the file*/
+        if (fp == NULL)
+        {
+            sprintf(aus, "Master: could not open file %s", filename);
+            unsafeErrorPrint(aus);
+            ret = FALSE;
+        }
+        else
+        {
+            /* Inserts the lines read from the file into the array*/
+            /* It also inserts the parameters read into environment variables*/
+            while (fgets(line[k], CONF_MAX_LINE_SIZE, fp) != NULL)
+            {
+                putenv(line[k]);
+                k++;
+            }
+
+            if (line[k] == NULL && errno)
+            {
+                unsafeErrorPrint("Master: failed to read cofiguration parameters. Error: ");
+                ret = FALSE;
+            }
+            else {
+                ret = assignEnvironmentVariables();
+            }
+
+            /* Close the file*/
+            fclose(fp);
+        }
+    }
+
+    return ret;
+}

@@ -235,7 +235,7 @@ int main(int argc, char *argv[], char* envp[])
                         {
                             if(friendFromList.msgContent == FRIENDINIT)
                             {
-                                friends_node[contMex] = friendFromList.friend.procId;
+                                friends_node[contMex] = friendFromList.friend;
                                 contMex++;
                             }
                             else
@@ -806,6 +806,7 @@ boolean sembufInit(struct sembuf *sops, int op)
 void reinsertTransactions(Block failedTrs)
 {
     char *aus = NULL;
+    MsgGlobalQueue temp;
 
     aus = (char *)calloc(sizeof(char), 50);
     while (failedTrs.bIndex == 0)
@@ -817,7 +818,9 @@ void reinsertTransactions(Block failedTrs)
             safeErrorPrint(aus);
             
             /* Inform the sender the transaction's processing failed */
-            if(!sendOnGlobalQueue(&(failedTrs.transList[failedTrs.bIndex]), failedTrs.transList[failedTrs.bIndex].sender, FAILEDTRANS, 0))
+            temp.transaction = failedTrs.transList[failedTrs.bIndex];
+            temp.msgContent = FAILEDTRANS;
+            if(!sendOnGlobalQueue(&temp, failedTrs.transList[failedTrs.bIndex].sender, FAILEDTRANS, 0))
             {
                 /* Che facciamo in questo caso ???*/
                 safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ");
@@ -964,6 +967,7 @@ void sendTransaction()
     MsgTP aus;
     pid_t * listPtr = NULL;
     pid_t * prevPtr = NULL;
+    boolean found = FALSE;
 
     /*
         Fare ciclo per tutte le transazioni ???
@@ -989,7 +993,7 @@ void sendTransaction()
             /*
                 trans contiene la transazione da mandare ad un amico/master se non sta nella pool del nodo attuale o se hops == 0
             */
-            if (trans.hops == 0)
+            if (trans.hoops == 0)
             {
                 /* Invio al master */
                 if (sendOnGlobalQueue(&trans, getppid(), NEWNODE, 0))
@@ -1119,29 +1123,25 @@ void sendTransaction()
             /*
                 Aggiunta amico su richiesta master
             */
-            if (friends_node == NULL)
+            for (i = 0; i < SO_FRIENDS_NUM && !found; i++)
+            {
+                if (friends_node[i] == 0)
+                    found = TRUE;
+            }
+
+            if (found)
+                friends_node[i] = trans.friend;
+            else
             {
                 /*
-                    È improbabile che la lista degli amici sia vuota
-                    ma il testo non lo esclude, quindi meglio prevenire
-                */
-                friends_node = trans.friend.procId;
-            } else {
-                listPtr = friends_node;
-                prevPtr = NULL;
-                while (listPtr != NULL)
-                {
-                    prevPtr = listPtr;
-                    listPtr++;
-                }
-                /*
-                    POSTCONDIZIONE: prevPtr contiene l'ultimo nodo della lista
-                */
-                prevPtr = trans.friend.procId;
-                /*
+                        CORREGGERE: Come gestiamo questo caso?
+                        Estendiamo il vettore degli amici oppure segnaliamo un errore??
+                    */
+                unsafeErrorPrint("Node: maximun number of friends reached. New friend is discarded.\n");
+            }
+            /*
                     CORREGGERE: dovremmo testare lo stato??
                 */
-            }
         }
         else
         {
@@ -1173,7 +1173,7 @@ boolean sendOnGlobalQueue(MsgGlobalQueue * trans, pid_t pid, GlobalMsgContent cn
 
     trans->mType = pid;
     trans->msgContent = cnt;
-    trans->hops += hp;
+    trans->hoops += hp;
     if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
     {
         ret = FALSE;
