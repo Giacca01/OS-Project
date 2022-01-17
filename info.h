@@ -13,27 +13,31 @@
 #include <sys/sem.h>
 /*#include <sys/ipc.h> VEDERE SE SERVA*/
 #include "error.h"
-#define SEMFILEPATH "../semfile.txt"
+#define SEMFILEPATH "semfile.txt"
 #define FAIRSTARTSEED 1
 #define WRPARTSEED 2
 #define RDPARTSEED 3
 #define USERLISTSEED 4
 #define PARTMUTEXSEED 5
 
-#define SHMFILEPATH "../shmfile.txt"
-#define REGPARTONESEED 1
-#define REGPARTTWOSEED 2
-#define REGPARTTHREESEED 3
-#define USERSLISTSEED 4
-#define NODESLISTSEED 5
-#define NOREADERSONESEED 6
-#define NOREADERSTWOSEED 7
-#define NOREADERSTHREESEED 8
-#define NOUSRSEGRDERSSEED 9
-#define NONODESEGRDERSSEED 10
+/*
+    A quanto pare i seeds non possono essere uguali, nemmeno
+    se il file usato nella generazione della chiave è diverso
+*/
+#define SHMFILEPATH "shmfile.txt"
+#define REGPARTONESEED 6
+#define REGPARTTWOSEED 7
+#define REGPARTTHREESEED 8
+#define USERSLISTSEED 9
+#define NODESLISTSEED 10
+#define NOREADERSONESEED 11
+#define NOREADERSTWOSEED 12
+#define NOREADERSTHREESEED 13
+#define NOUSRSEGRDERSSEED 14
+#define NONODESEGRDERSSEED 15
 
-#define MSGFILEPATH "../msgfile.txt"
-#define GLOBALMSGSEED 1
+#define MSGFILEPATH "msgfile.txt"
+#define GLOBALMSGSEED 16
 /* il seed è il pid del proprietario
 i figli lo preleveranno dalla lista dei nodi*/
 
@@ -54,53 +58,54 @@ i figli lo preleveranno dalla lista dei nodi*/
 
 /*
     MOsificarle in modo che segnalino il modulo in cui si è verificato un erorre
+    Segnalare anche il nome del semafor/segmento
 */
-#define FTOK_TEST_ERROR(key)                                                         \
+#define FTOK_TEST_ERROR(key,msg)                                                    \
     if (key == -1)                                                                   \
     {                                                                                \
-        unsafeErrorPrint("Master: ftok failed during semaphores creation. Error: "); \
+        unsafeErrorPrint(msg);                                                      \
         return FALSE;                                                                \
     }
 
-#define SEM_TEST_ERROR(id)                                                            \
+#define SEM_TEST_ERROR(id,msg)                                                         \
     if (id == -1)                                                                     \
     {                                                                                 \
-        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: "); \
+        unsafeErrorPrint(msg); \
         return FALSE;                                                                 \
     }
 
-#define SEMCTL_TEST_ERROR(id)                                                         \
+#define SEMCTL_TEST_ERROR(id,msg)                                                         \
     if (id == -1)                                                                     \
     {                                                                                 \
-        unsafeErrorPrint("Master: semget failed during semaphore creation. Error: "); \
+        unsafeErrorPrint(msg); \
         return FALSE;                                                                 \
     }
 
-#define SHM_TEST_ERROR(id)                                                                        \
+#define SHM_TEST_ERROR(id,msg)                                                                     \
     if (id == -1)                                                                                 \
     {                                                                                             \
-        unsafeErrorPrint("Master: shmget failed during shared memory segment creation. Error: "); \
+        unsafeErrorPrint(msg);                                                                      \
         return FALSE;                                                                             \
     }
 
-#define MSG_TEST_ERROR(id)                                                                 \
+#define MSG_TEST_ERROR(id,msg)                                                                 \
     if (id == -1)                                                                          \
     {                                                                                      \
-        unsafeErrorPrint("Master: msgget failed during messages queue creation. Error: "); \
+        unsafeErrorPrint(msg); \
         return FALSE;                                                                      \
     }
 
-#define TEST_MALLOC_ERROR(ptr)                                          \
+#define TEST_MALLOC_ERROR(ptr,msg)                                          \
     if (ptr == NULL)                                                    \
     {                                                                   \
-        unsafeErrorPrint("Master: failed to allocate memory. Error: "); \
+        unsafeErrorPrint(msg);                                          \
         return FALSE;                                                   \
     }
 
-#define TEST_SHMAT_ERROR(ptr)                                                           \
+#define TEST_SHMAT_ERROR(ptr,msg)                                                           \
     if (ptr == NULL)                                                                    \
     {                                                                                   \
-        unsafeErrorPrint("Master: failed to attach to shared memory segment. Error: "); \
+        unsafeErrorPrint(msg); \
         return FALSE;                                                                   \
     }
 

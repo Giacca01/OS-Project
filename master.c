@@ -140,6 +140,7 @@ long SO_USERS_NUM,
     SO_HOPS;
 /***** End of Configuration parameters ***********/
 long maxNumNode = 0;
+char line[CONF_MAX_LINE_NO][CONF_MAX_LINE_SIZE];
 
 /*****  Momentary functions created for testing purposes  *****/
 /**************************************************************/
@@ -450,25 +451,24 @@ int main(int argc, char *argv[])
                                     /*
                                             For test's sake
                                         */
-                                    /*
+
                                             signal(SIGALRM, SIG_IGN);
-                                            signal(SIGUSR1, tmpHandler);
-                                            */
-                                    /*
+                                            signal(SIGUSR1, SIG_IGN);
+                                            /*
                                         sops[0].sem_op = -1;
                                         semop(fairStartSem, &sops[0], 1);*/
 
-                                    printf("User %d is waiting for simulation to start....\n", i);
-                                    sops[0].sem_op = 0;
-                                    sops[0].sem_num = 0;
-                                    sops[0].sem_flg = 0;
-                                    if (semop(fairStartSem, &sops[0], 1) == -1)
-                                    {
-                                        /*
+                                            printf("User %d is waiting for simulation to start....\n", i);
+                                            sops[0].sem_op = 0;
+                                            sops[0].sem_num = 0;
+                                            sops[0].sem_flg = 0;
+                                            if (semop(fairStartSem, &sops[0], 1) == -1)
+                                            {
+                                                /*
                                                     See comment above (**)
                                                 */
-                                        unsafeErrorPrint("User: failed to wait for zero on start semaphore. Error ");
-                                        endOfSimulation(-1);
+                                                unsafeErrorPrint("User: failed to wait for zero on start semaphore. Error ");
+                                                endOfSimulation(-1);
                                     }
                                     else
                                     {
@@ -563,9 +563,9 @@ int main(int argc, char *argv[])
                                     printf("Node of PID %ld starts its execution....\n", (long)getpid());
                                     /*sops[0].sem_op = -1;
                                         semop(fairStartSem, &sops[0], 1);*/
-                                    /*
+                                    
                                             signal(SIGALRM, SIG_IGN);
-                                            signal(SIGUSR1, tmpHandler);*/
+                                            signal(SIGUSR1, tmpHandler);
 
                                     /* Temporary part to get the process to do something*/
                                     if (execle("node.out", "node", NULL, environ) == -1)
@@ -600,7 +600,7 @@ int main(int argc, char *argv[])
                                         endOfSimulation(-1);
                                     }
 
-                                    tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL);
+                                    tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
                                     if (tpList[i].msgQId == -1)
                                     {
                                         unsafeErrorPrint("Master: failed to initialize process' transaction pool. Error: ");
@@ -617,7 +617,7 @@ int main(int argc, char *argv[])
                                     if (semop(nodeListSem, sops, 2) == -1)
                                     {
                                         unsafeErrorPrint("Master: failed to reserve nodes list semaphore for writing operation. Error ");
-                                        unsafeErrorPrint(-1);
+                                        endOfSimulation(-1);
                                     }
 
                                     nodesList[i].procId = child_pid;
@@ -630,7 +630,7 @@ int main(int argc, char *argv[])
                                     if (semop(nodeListSem, sops, 2) == -1)
                                     {
                                         unsafeErrorPrint("Master: failed to release nodes list semaphore for writing operation. Error ");
-                                        unsafeErrorPrint(-1);
+                                        endOfSimulation(-1);
                                     }
 
                                     break;
@@ -1396,7 +1396,6 @@ boolean readConfigParameters()
         Array that will contain the lines read from the file:
         each "row" of the "matrix" will contain a different file line
     */
-    char line[CONF_MAX_LINE_NO][CONF_MAX_LINE_SIZE];
     /* Counter of the number of lines in the file*/
     int k = 0;
     char *aus = NULL;
@@ -1452,19 +1451,19 @@ boolean readConfigParameters()
 boolean allocateGlobalStructures()
 {
     regPtrs = (Register **)calloc(REG_PARTITION_COUNT, sizeof(Register *));
-    TEST_MALLOC_ERROR(regPtrs);
+    TEST_MALLOC_ERROR(regPtrs, "Master: failed to allocate register paritions' pointers array. Error: ");
 
     regPartsIds = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(regPartsIds);
+    TEST_MALLOC_ERROR(regPartsIds, "Master: failed to allocate register paritions' ids array. Error: ");
 
     tpList = (TPElement *)calloc(SO_NODES_NUM, sizeof(TPElement));
-    TEST_MALLOC_ERROR(tpList);
+    TEST_MALLOC_ERROR(tpList, "Master: failed to allocate transaction pools list. Error: ");
 
     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(noReadersPartitions);
+    TEST_MALLOC_ERROR(noReadersPartitions, "Master: failed to allocate registers partitions' shared variables ids. Error: ");
 
     noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
-    TEST_MALLOC_ERROR(noReadersPartitionsPtrs);
+    TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "Master: failed to allocate registers partitions' shared variables pointers. Error: ");
 
     return TRUE;
 }
@@ -1484,46 +1483,46 @@ boolean initializeIPCFacilities()
     int res = -1;
     /* Initialization of semaphores*/
     key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during fair start semaphore creation. Error: ");
 
     fairStartSem = semget(key, 1, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(fairStartSem);
+    SEM_TEST_ERROR(fairStartSem, "Master: semget failed during fair start semaphore creation. Error: ");
 
     key = ftok(SEMFILEPATH, WRPARTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during partitions writing semaphores creation. Error: ");
     wrPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(wrPartSem);
+    SEM_TEST_ERROR(wrPartSem, "Master: semget failed during partitions writing semaphores creation. Error: ");
 
     key = ftok(SEMFILEPATH, RDPARTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during partitions reading semaphores creation. Error: ");
     rdPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(rdPartSem);
+    SEM_TEST_ERROR(rdPartSem, "Master: semget failed during partitions reading semaphores creation. Error: ");
 
     key = ftok(SEMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during user list semaphore creation. Error: ");
     userListSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(userListSem);
+    SEM_TEST_ERROR(userListSem, "Master: semget failed during user list semaphore creation. Error: ");
 
     key = ftok(SEMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during nodes list semaphore creation. Error: ");
     nodeListSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(nodeListSem);
+    SEM_TEST_ERROR(nodeListSem, "Master: semget failed during nodes list semaphore creation. Error: ");
 
     key = ftok(SEMFILEPATH, PARTMUTEXSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during partitions mutex semaphores creation. Error: ");
     mutexPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(mutexPartSem);
+    SEM_TEST_ERROR(mutexPartSem, "Master: semget failed during partitions mutex semaphores creation. Error: ");
 
     /*
         Each process will subtract one by waiting on the sempahore
     */
     arg.val = SO_USERS_NUM + SO_NODES_NUM + 1;
     semctl(fairStartSem, 0, SETVAL, arg);
-    SEM_TEST_ERROR(fairStartSem);
+    SEMCTL_TEST_ERROR(fairStartSem, "Master: semctl failed while initializing fair start semaphore. Error: ");
 
     arg.array = aux;
     res = semctl(wrPartSem, 0, SETALL, arg);
-    SEMCTL_TEST_ERROR(res);
+    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing register partitions writing semaphores. Error: ");
 
     /*
     aux[0] = SO_USERS_NUM + SO_NODES_NUM + 1;
@@ -1531,100 +1530,100 @@ boolean initializeIPCFacilities()
     aux[2] = SO_USERS_NUM + SO_NODES_NUM + 1;
     arg.array = aux;*/
     res = semctl(rdPartSem, 0, SETALL, arg);
-    SEMCTL_TEST_ERROR(res);
+    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing register partitions reading semaphores. Error: ");
 
     res = semctl(mutexPartSem, 0, SETALL, arg);
-    SEMCTL_TEST_ERROR(res);
+    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing register partitions mutex semaphores. Error: ");
 
     /*CORREGGERE mettendolo nel master, prima della sleep su fairStart*/
     arg.array = aux;
     res = semctl(userListSem, 0, SETALL, arg); /* mutex, read, write*/
-    SEMCTL_TEST_ERROR(res)
+    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing users list semaphore. Error: ");
 
     /*CORREGGERE*/
     /*arg.val = 1;*/
     res = semctl(nodeListSem, 0, SETALL, arg); /* mutex, read, write*/
-    SEMCTL_TEST_ERROR(res);
+    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing nodes list semaphore. Error: ");
 
     /* Creation of the global queue*/
     key = ftok(MSGFILEPATH, GLOBALMSGSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during global queue creation. Error: ");
     globalQueueId = msgget(key, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    MSG_TEST_ERROR(globalQueueId);
+    MSG_TEST_ERROR(globalQueueId, "Master: msgget failed during global queue creation. Error: ");
 
     /* Creation of register's partitions */
     key = ftok(SHMFILEPATH, REGPARTONESEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during register parition one creation. Error: ");
     regPartsIds[0] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(regPartsIds[0]);
+    SHM_TEST_ERROR(regPartsIds[0], "Master: shmget failed during partition one creation. Error: ");
 
     key = ftok(SHMFILEPATH, REGPARTTWOSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during register parition two creation. Error: ");
     regPartsIds[1] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(regPartsIds[1]);
+    SHM_TEST_ERROR(regPartsIds[1], "Master: shmget failed during partition two creation. Error: ");
 
     key = ftok(SHMFILEPATH, REGPARTTHREESEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during register parition three creation. Error: ");
     regPartsIds[2] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(regPartsIds[2]);
+    SHM_TEST_ERROR(regPartsIds[2], "Master: shmget failed during partition three creation. Error: ");
 
     regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(regPtrs[0]);
+    TEST_SHMAT_ERROR(regPtrs[0], "Master: failed to attach to partition one's memory segment. Error: ");
     regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(regPtrs[1]);
+    TEST_SHMAT_ERROR(regPtrs[1], "Master: failed to attach to partition two's memory segment. Error: ");
     regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(regPtrs[2]);
+    TEST_SHMAT_ERROR(regPtrs[2], "Master: failed to attach to partition three's memory segment. Error: ");
     regPtrs[0]->nBlocks = 0;
     regPtrs[1]->nBlocks = 0;
     regPtrs[2]->nBlocks = 0;
 
     key = ftok(SHMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during users list creation. Error: ");
     usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(usersListId);
+    SHM_TEST_ERROR(usersListId, "Master: shmget failed during users list creation. Error: ");
     usersList = (ProcListElem *)shmat(usersListId, NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(usersList);
+    TEST_SHMAT_ERROR(usersList, "Master: failed to attach to users list's memory segment. Error: ");
 
     key = ftok(SHMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during nodes list creation. Error: ");
     nodesListId = shmget(key, maxNumNode * sizeof(ProcListElem), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(nodesListId);
+    SHM_TEST_ERROR(nodesListId, "Master: shmget failed during nodes list creation. Error: ");
     nodesList = (ProcListElem *)shmat(nodesListId, NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(nodesList);
+    TEST_SHMAT_ERROR(nodesList, "Master: failed to attach to nodes list's memory segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during parition one's shared variable creation. Error: ");
     noReadersPartitions[0] = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(noReadersPartitions[0]);
+    SHM_TEST_ERROR(noReadersPartitions[0], "Master: shmget failed during parition one's shared variable creation. Error: ");
     noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0]);
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "Master: failed to attach to parition one's shared variable segment. Error: ");
     /*
         At the beginning we have no processes reading from the register's paritions
     */
     *(noReadersPartitionsPtrs[0]) = 0;
 
     key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during parition two's shared variable creation. Error: ");
     noReadersPartitions[1] = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(noReadersPartitions[1]);
+    SHM_TEST_ERROR(noReadersPartitions[1], "Master: shmget failed during parition two's shared variable creation. Error: ");
     noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1]);
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "Master: failed to attach to parition rwo's shared variable segment. Error: ");
     *(noReadersPartitionsPtrs[1]) = 0;
 
     key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during parition three's shared variable creation. Error: ");
     noReadersPartitions[2] = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(noReadersPartitions[2]);
+    SHM_TEST_ERROR(noReadersPartitions[2], "Master: shmget failed during parition three's shared variable creation. Error: ");
     noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2]);
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "Master: failed to attach to parition three's shared variable segment. Error: ");
     *(noReadersPartitionsPtrs[2]) = 0;
 
     key = ftok(SHMFILEPATH, NOUSRSEGRDERSSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during users list's shared variable creation. Error: ");
     noUserSegReaders = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(key);
+    SHM_TEST_ERROR(key, "Master: shmget failed during users list's shared variable creation. Error: ");
     noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
-    TEST_SHMAT_ERROR(noUserSegReadersPtr);
+    TEST_SHMAT_ERROR(noUserSegReadersPtr, "Master: failed to attach to users list's shared variable segment. Error: ");
     /*
         At the beginning of the simulation there's no one
         reading from the user's list
@@ -1633,11 +1632,11 @@ boolean initializeIPCFacilities()
 
     /* AGGIUNTO DA STEFANO */
     key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "Master: ftok failed during nodes list's shared variable creation. Error: ");
     noNodeSegReaders = shmget(key, sizeof(SO_NODES_NUM), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(noNodeSegReaders);
+    SHM_TEST_ERROR(noNodeSegReaders, "Master: shmget failed during nodes list's shared variable creation. Error: ");
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
-    TEST_SHMAT_ERROR(noNodeSegReadersPtr);
+    TEST_SHMAT_ERROR(noNodeSegReadersPtr, "Master: failed to attach to nodes list's shared variable segment. Error: ");
     *noNodeSegReadersPtr = 0;
     /* END */
 

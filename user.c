@@ -396,10 +396,10 @@ boolean readParams()
 boolean allocateMemory()
 {
     regPtrs = (Register **)calloc(REG_PARTITION_COUNT, sizeof(Register *));
-    TEST_MALLOC_ERROR(regPtrs);
+    TEST_MALLOC_ERROR(regPtrs, "User: failed to allocate register paritions' pointers array. Error: ");
 
     regPartsIds = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(regPartsIds);
+    TEST_MALLOC_ERROR(regPartsIds, "User: failed to allocate register paritions' ids array. Error: ");
 
     /*
         noReadersPartitions e noReadersPartitionsPtrs vanno allocati
@@ -407,14 +407,14 @@ boolean allocateMemory()
         abbastanza grande da contenere REG_PARTITION_COUNT interi/puntatori ad interi
     */
     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(noReadersPartitions);
+    TEST_MALLOC_ERROR(noReadersPartitions, "User: failed to allocate registers partitions' shared variables ids. Error: ");
 
     /*
     Non allochiamo il noReadersPartitionsPtrs[i] perchè esso dovrà
     contenere un puntatore alla shared memory
     */
     noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
-    TEST_MALLOC_ERROR(noReadersPartitionsPtrs);
+    TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "USer: failed to allocate registers partitions' shared variables pointers. Error: ");
 
     return TRUE;
 }
@@ -431,124 +431,128 @@ boolean initializeFacilities()
         testare errori shmat
     */
     key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during fair start semaphore creation. Error: ")
     fairStartSem = semget(key, 1, 0600);
-    SEM_TEST_ERROR(fairStartSem);
+    SEM_TEST_ERROR(fairStartSem, "User: semget failed during fair start semaphore creation. Error: ");
 
     key = ftok(SEMFILEPATH, WRPARTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during partitions writing semaphores creation. Error: ");
     wrPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(wrPartSem);
+    SEM_TEST_ERROR(wrPartSem, "User: semget failed during partitions writing semaphores creation. Error: ");
 
     key = ftok(SEMFILEPATH, RDPARTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during partitions reading semaphores creation. Error: ");
     rdPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(rdPartSem);
+    SEM_TEST_ERROR(rdPartSem, "User: semget failed during partitions reading semaphores creation. Error: ");
 
     key = ftok(SEMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during user list semaphore creation. Error: ");
     userListSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(userListSem);
+    SEM_TEST_ERROR(userListSem, "User: semget failed during user list semaphore creation. Error: ");
 
     key = ftok(SEMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during nodes list semaphore creation. Error: ");
     nodeListSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(nodeListSem);
+    SEM_TEST_ERROR(nodeListSem, "User: semget failed during nodes list semaphore creation. Error: ");
 
     key = ftok(SEMFILEPATH, PARTMUTEXSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during partitions mutex semaphores creation. Error: ");
     mutexPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(mutexPartSem);
+    SEM_TEST_ERROR(mutexPartSem, "User: semget failed during partitions mutex semaphores creation. Error: ");
 
     /*****  Creates and initialize the messages queues  *****/
     /********************************************************/
     /* Creates the global queue*/
     key = ftok(MSGFILEPATH, GLOBALMSGSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during global queue creation. Error: ");
     globalQueueId = msgget(key, 0600);
-    MSG_TEST_ERROR(globalQueueId);
+    MSG_TEST_ERROR(globalQueueId, "User: msgget failed during global queue creation. Error: ");
     /********************************************************/
     /********************************************************/
 
     /*****  Initialization of shared memory segments    *****/
     /********************************************************/
     key = ftok(SHMFILEPATH, REGPARTONESEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during register parition one creation. Error: ");
     regPartsIds[0] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[0]);
+    SHM_TEST_ERROR(regPartsIds[0], "User: shmget failed during partition one creation. Error: ");
 
     key = ftok(SHMFILEPATH, REGPARTTWOSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during register parition two creation. Error: ");
     regPartsIds[1] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[1]);
+    SHM_TEST_ERROR(regPartsIds[1], "User: shmget failed during partition two creation. Error: ");
 
     key = ftok(SHMFILEPATH, REGPARTTHREESEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during register parition three creation. Error: ");
     regPartsIds[2] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[2]);
+    SHM_TEST_ERROR(regPartsIds[2], "User: shmget failed during partition three creation. Error: ");
 
     regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
     /*SHMAT_TEST_ERROR(regPtrs[0], "User");*/
-    TEST_SHMAT_ERROR(regPtrs[0]);
+    TEST_SHMAT_ERROR(regPtrs[0], "User: failed to attach to partition one's memory segment. Error: ");
     regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
     /*SHMAT_TEST_ERROR(regPtrs[1], "User");*/
-    TEST_SHMAT_ERROR(regPtrs[1]);
+    TEST_SHMAT_ERROR(regPtrs[1], "User: failed to attach to partition two's memory segment. Error: ");
     regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
     /*SHMAT_TEST_ERROR(regPtrs[2], "User");*/
-    TEST_SHMAT_ERROR(regPtrs[2]);
+    TEST_SHMAT_ERROR(regPtrs[2], "User: failed to attach to partition three's memory segment. Error: ");
 
     key = ftok(SHMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during users list creation. Error: ");
     usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), 0600);
-    SHM_TEST_ERROR(usersListId);
+    SHM_TEST_ERROR(usersListId, "User: shmget failed during users list creation. Error: ");
     usersList = (ProcListElem *)shmat(usersListId, NULL, SHM_RDONLY);
     /*SHMAT_TEST_ERROR(usersList, "User");*/
-    TEST_SHMAT_ERROR(usersList)
+    TEST_SHMAT_ERROR(usersList, "User: failed to attach to users list's memory segment. Error: ")
 
     key = ftok(SHMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during nodes list creation. Error: ");
     nodesListId = shmget(key, SO_NODES_NUM * sizeof(ProcListElem), 0600);
-    SHM_TEST_ERROR(nodesListId);
+    SHM_TEST_ERROR(nodesListId, "User: shmget failed during nodes list creation. Error: ");
     nodesList = (ProcListElem *)shmat(nodesListId, NULL, SHM_RDONLY);
     /*SHMAT_TEST_ERROR(nodesList, "User");*/
-    TEST_SHMAT_ERROR(nodesList);
+    TEST_SHMAT_ERROR(nodesList, "User: failed to attach to nodes list's memory segment. Error: ");
 
     /* Aggancio segmenti per variabili condivise*/
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during parition one's shared variable creation. Error: ");
     noReadersPartitions[0] = shmget(key, sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(nodesListId);
+    SHM_TEST_ERROR(nodesListId, "User: shmget failed during parition one's shared variable creation. Error: ");
     noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[0], "User");*/
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0]);
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "User: failed to attach to parition one's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during parition two's shared variable creation. Error: ");
     noReadersPartitions[1] = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    SHM_TEST_ERROR(noReadersPartitions[1], "User: shmget failed during parition two's shared variable creation. Error: ")
     noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[1], "User");*/
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1]);
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "User: failed to attach to parition rwo's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during parition three's shared variable creation. Error: ");
     noReadersPartitions[2] = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    SHM_TEST_ERROR(noReadersPartitions[2], "User: shmget failed during parition three's shared variable creation. Error: ")
     noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[2], "User");*/
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2]);
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "User: failed to attach to parition three's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOUSRSEGRDERSSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during users list's shared variable creation. Error: ");
     noUserSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    SHM_TEST_ERROR(noUserSegReaders, "User: shmget failed during users list's shared variable creation. Error: ")
     noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
     /*SHMAT_TEST_ERROR(noUserSegReadersPtr, "User");*/
-    TEST_SHMAT_ERROR(noUserSegReadersPtr);
+    TEST_SHMAT_ERROR(noUserSegReadersPtr, "User: failed to attach to users list's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
-    FTOK_TEST_ERROR(key);
+    FTOK_TEST_ERROR(key, "User: ftok failed during nodes list's shared variable creation. Error: ");
     noNodeSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    SHM_TEST_ERROR(noNodeSegReaders, "User: shmget failed during nodes list's shared variable creation. Error: ")
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
     /*SHMAT_TEST_ERROR(noNodeSegReadersPtr, "User");*/
-    TEST_SHMAT_ERROR(noNodeSegReadersPtr);
+    TEST_SHMAT_ERROR(noNodeSegReadersPtr, "User: failed to attach to nodes list's shared variable segment. Error: ");
 
     return TRUE;
 }
