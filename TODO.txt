@@ -59,3 +59,5 @@ boolean readConfigParameters()
 }
 
 2) Persistenza associazione segnali
+3) alrm vs settimer
+4) Handler per graceful termintation con SIGNT E SIGTERM

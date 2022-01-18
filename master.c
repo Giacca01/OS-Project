@@ -386,6 +386,9 @@ int main(int argc, char *argv[])
     printf("Master: setting up simulation timer...\n");
     printf("Master simulation lasts %ld seconds\n", SO_SIM_SEC);
     /* No previous alarms were set, so it must return 0*/
+    /*
+        Usando alarm i figli non ricevono nessuno di questi timer
+    */
     if (alarm(SO_SIM_SEC) != 0)
         unsafeErrorPrint("Master: failed to set up simulation timer. ");
     else
@@ -454,6 +457,11 @@ int main(int argc, char *argv[])
                                         */
 
                                             signal(SIGALRM, SIG_IGN);
+                                            /*
+                                                (Almeno) questa serve davvero
+                                                perchè il segnale di fine simulazione potrebe arrivare
+                                                prima che i figli inizino la loro computazione
+                                            */
                                             signal(SIGUSR1, tmpHandler);
                                             /*
                                         sops[0].sem_op = -1;
@@ -566,6 +574,11 @@ int main(int argc, char *argv[])
                                         semop(fairStartSem, &sops[0], 1);*/
                                     
                                             signal(SIGALRM, SIG_IGN);
+                                            /*
+                                                (Almeno) questa serve davvero
+                                                perchè il segnale di fine simulazione potrebe arrivare
+                                                prima che i figli inizino la loro computazione
+                                            */
                                             signal(SIGUSR1, tmpHandler);
 
                                     /* Temporary part to get the process to do something*/
@@ -611,8 +624,8 @@ int main(int argc, char *argv[])
                                     tplLength++; /* updating tpList length */
 
                                     /* Save users processes pid and state into usersList*/
-                                    sops[1].sem_op = -1;
-                                    sops[1].sem_num = 1;
+                                    sops[0].sem_op = -1;
+                                    sops[0].sem_num = 1;
                                     sops[1].sem_op = -1;
                                     sops[1].sem_num = 2;
                                     if (semop(nodeListSem, sops, 2) == -1)
@@ -624,8 +637,8 @@ int main(int argc, char *argv[])
                                     nodesList[i].procId = child_pid;
                                     nodesList[i].procState = ACTIVE;
 
-                                    sops[1].sem_op = 1;
-                                    sops[1].sem_num = 1;
+                                    sops[0].sem_op = 1;
+                                    sops[0].sem_num = 1;
                                     sops[1].sem_op = 1;
                                     sops[1].sem_num = 2;
                                     if (semop(nodeListSem, sops, 2) == -1)
@@ -676,8 +689,8 @@ int main(int argc, char *argv[])
                             /* we exit the critical section for the noUserSegReadersPtr variabile */
                             sops[0].sem_num = 0;
                             sops[0].sem_op = 1;
-                            sops[0].sem_num = 1;
-                            sops[0].sem_op = 1;
+                            sops[1].sem_num = 1;
+                            sops[1].sem_op = 1;
                             if (semop(userListSem, sops, 2) == -1)
                             {
                                 safeErrorPrint("Master: failed to release usersList semaphore after reading operation. Error: ");
@@ -1838,8 +1851,9 @@ void endOfSimulation(int sig)
     else
     {
         /*  
-            CORREGGERE: evitare che la kill mandi il segnale anche al padre
+            CORREGGERE: reimpostare maschera ed associazione segnaliip
         */
+        signal(SIGUSR1, SIG_IGN);
         printf("Master: segnale ricevuto %d\n", sig);
         printf("Master: pid %ld", (long)getpid());
         write(STDOUT_FILENO,
