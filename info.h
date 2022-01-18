@@ -243,7 +243,7 @@ typedef struct
     */
     pid_t friend;            /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
     Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
-    long hoops;              /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    long hops;              /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
     pid_t userPid;           /* pid of terminated user, garbage if msgContent != TERMINATEDUSER || msgContent != TERMINATEDNODE */
 } MsgGlobalQueue;
 

@@ -18,11 +18,6 @@
  */
 int *regPartsIds = NULL;
 
-/*
-    User e Nodes list sono inutili
-*/
-int usersListId = -1;
-ProcListElem *usersList = NULL;
 /* Pointer to the array that contains the pointers to the the register's partitions.
  * regPtrs[0]: pointer to the first partition segment
  * regPtrs[1]: pointer to the second partition segment
@@ -261,12 +256,21 @@ int main(int argc, char *argv[], char* envp[])
                     /* If an error occurred (error == TRUE) while initializing friends' list, the node terminates. */
                     if (!error)
                     {
-                        /* Wait all processes are ready to start the simulation */
-                        printf("Node %ld is waiting for simulation to start....\n", (long)getpid());
-                        sops[0].sem_op = 0;
-                        sops[0].sem_num = 0;
-                        sops[0].sem_flg = 0;
-                        if (semop(fairStartSem, &sops[0], 1) == -1)
+                        /* 
+                         * argv[1] is the type of node, if NODE it has to wait for simulation to start, 
+                         * so we set the sops varriabile to access to the fairStartSem semaphore
+                         */
+                        if(argv[1] == NORMAL) 
+                        {
+                            /* Wait all processes are ready to start the simulation */
+                            printf("Node %ld is waiting for simulation to start....\n", (long)getpid());
+                            sops[0].sem_op = 0;
+                            sops[0].sem_num = 0;
+                            sops[0].sem_flg = 0;
+                        }
+
+                        /* if node is of type NORMAL, it has to wait the simulation to start, otherwise no */
+                        if (argv[1] == NORMAL && semop(fairStartSem, &sops[0], 1) == -1)
                             safeErrorPrint("Node: failed to wait for simulation to start. Error: ");
                         else {
                             printf("Sono il nodo %d -> Eseguo!\n", getpid());
@@ -994,7 +998,7 @@ void sendTransaction()
             /*
                 trans contiene la transazione da mandare ad un amico/master se non sta nella pool del nodo attuale o se hops == 0
             */
-            if (trans.hoops == 0)
+            if (trans.hops == 0)
             {
                 /* Invio al master */
                 if (sendOnGlobalQueue(&trans, getppid(), NEWNODE, 0))
@@ -1174,7 +1178,7 @@ boolean sendOnGlobalQueue(MsgGlobalQueue * trans, pid_t pid, GlobalMsgContent cn
 
     trans->mType = pid;
     trans->msgContent = cnt;
-    trans->hoops += hp;
+    trans->hops += hp;
     if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
     {
         ret = FALSE;
@@ -1328,7 +1332,7 @@ void deallocateIPCFacilities()
     
     if (shmdt(nodesList) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != EAGAIN)
             safeErrorPrint("Node: failed to detach from nodes list. Error: ");
     }
 
@@ -1338,7 +1342,7 @@ void deallocateIPCFacilities()
     
     if (shmdt(noNodeSegReadersPtr) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != EAGAIN)
             safeErrorPrint("Node: failed to detach from nodes list's number of readers shared variable. Error: ");
     }
 
