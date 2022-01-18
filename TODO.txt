@@ -57,3 +57,5 @@ boolean readConfigParameters()
 
     return ret;
 }
+
+2) Persistenza associazione segnali

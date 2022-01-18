@@ -277,6 +277,7 @@ int update_budget(pid_t, int);
 budgetlist bud_list_head = NULL;
 /* initialization of the budgetlist tail - array to maintain budgets read from ledger */
 budgetlist bud_list_tail = NULL;
+long masterPid = -1;
 
 /**/
 
@@ -351,7 +352,7 @@ int main(int argc, char *argv[])
     /*char *envVec[] = {NULL};*/
 
     char *aus = NULL;
-    long masterPid = -1;
+    
 
     /* Set common semaphore options*/
     sops[0].sem_num = 0;
@@ -453,7 +454,7 @@ int main(int argc, char *argv[])
                                         */
 
                                             signal(SIGALRM, SIG_IGN);
-                                            signal(SIGUSR1, SIG_IGN);
+                                            signal(SIGUSR1, tmpHandler);
                                             /*
                                         sops[0].sem_op = -1;
                                         semop(fairStartSem, &sops[0], 1);*/
@@ -1832,10 +1833,15 @@ void endOfSimulation(int sig)
         In ogni caso, se non si riescono a terminare i processi dopo n tentativi deallocare comunque le facilities
     */
     /*printf("Master: PID %ld\nMaster: parent PID %ld\n", (long int)getpid(), (long)getppid());*/
-    if (terminationMessage == NULL || aus == NULL)
+    if (terminationMessage == NULL || aus == NULL || getpid() != masterPid)
         safeErrorPrint("Master: failed to alloacate memory. Error: ");
     else
     {
+        /*  
+            CORREGGERE: evitare che la kill mandi il segnale anche al padre
+        */
+        printf("Master: segnale ricevuto %d\n", sig);
+        printf("Master: pid %ld", (long)getpid());
         write(STDOUT_FILENO,
               "Master: trying to terminate simulation...\n",
               strlen("Master: trying to terminate simulation...\n"));
