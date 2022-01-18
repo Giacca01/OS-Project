@@ -582,7 +582,7 @@ int main(int argc, char *argv[])
                                             signal(SIGUSR1, tmpHandler);
 
                                     /* Temporary part to get the process to do something*/
-                                    if (execle("node.out", "node", NULL, environ) == -1)
+                                    if (execle("node.out", "node", NORMAL, NULL, environ) == -1)
                                         unsafeErrorPrint("Node: failed to load node's code. Error: ");
                                     /*
                                             do_stuff(2);
@@ -2556,7 +2556,7 @@ void checkNodeCreationRequests()
                                 }
                             }
 
-                            if (execle("./node.o", "ADDITIONAL", NULL, environ) == -1)
+                            if (execle("node.out", "node", ADDITIONAL, NULL, environ) == -1)
                                 safeErrorPrint("Master: failed to load node's code. Error: ");
                         }
                     }
