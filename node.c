@@ -213,7 +213,7 @@ int main(int argc, char *argv[], char* envp[])
     if (assignEnvironmentVariables())
     {
         /* Allocate the array that will contain friends pid */
-        friends_node = calloc(SO_FRIENDS_NUM, sizeof(pid_t));
+        friends_node = (pid_t *)calloc(SO_FRIENDS_NUM, sizeof(pid_t));
         if (friends_node != NULL)
         {
             printf("Node %ld: hooking up of IPC facilitites...\n", (long)getpid());
@@ -222,6 +222,7 @@ int main(int argc, char *argv[], char* envp[])
             {
                 if (initializeIPCFacilities() == TRUE)
                 {
+                    printf("Node: reading friends from global queue...\n");
                     /* Receives all friends pid from global message queue and stores them in the array */
                     while (contMex < SO_FRIENDS_NUM && !error)
                     {
@@ -261,6 +262,9 @@ int main(int argc, char *argv[], char* envp[])
                     /* If an error occurred (error == TRUE) while initializing friends' list, the node terminates. */
                     if (!error)
                     {
+                        /*
+                            CORREGGERE: ma è giusto metterla qui??
+                        */
                         /* Wait all processes are ready to start the simulation */
                         printf("Node %ld is waiting for simulation to start....\n", (long)getpid());
                         sops[0].sem_op = 0;

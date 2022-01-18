@@ -640,6 +640,9 @@ double computeBalance(TransList *transSent)
                                     ptr++;
                                 }
 
+                                op.sem_num = i;
+                                op.sem_op = -1;
+                                op.sem_flg = 0;
                                 if (semop(mutexPartSem, &op, 1) == -1){
                                     balance = 0;
                                     safeErrorPrint("Node: failed to reserve register partition mutex semaphore. Error: ");
@@ -652,6 +655,9 @@ double computeBalance(TransList *transSent)
                                         }
                                     }
 
+                                    op.sem_num = i;
+                                    op.sem_op = 1;
+                                    op.sem_flg = 0;
                                     if (semop(mutexPartSem, &op, 1) == -1){
                                         balance = 0;
                                         safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
