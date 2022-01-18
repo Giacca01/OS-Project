@@ -39,15 +39,15 @@ in funzione removeTransaction
     Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
 */
 
+in funzione transactionGeneration dopo nanosleep
+/* 
+    qui in caso di fallimento non serve incrementare il counter del numero di fallimenti perché 
+    la transazione l'abbiamo comunque creata
+*/
+
 in funzione deallocateFacilities
 /*
     CORREGGERE CON NUOVO MECCANISMO DI RILEVAZIONE ERRORI
 */
 in ciclo deallocazione regPtrs
 /* serve riprovare per un certo numero di tentativi? */
-
-in funzione extractReceiver
-/* do we need to end execution ? */
-
-in funzione extractNode
-/* do we need to end execution ? */

@@ -187,6 +187,12 @@ void endOfExecution(int);
 void deallocateIPCFacilities();
 
 /**
+ * @brief Function that increases by one the number of failure counter of the user while attempting
+ * to create a transaction and if the counter is equal to SO_RETRY, the simulation must terminate.
+ */
+void userFailure();
+
+/**
  * @brief Function that adds the transaction passed as second argument to the list of sent transactions
  * passed as first argument.
  * @param transSent a pointer to the list of sent transactions
@@ -559,6 +565,7 @@ double computeBalance(TransList *transSent)
     int k;
     pid_t procPid = getpid();
     struct sembuf op;
+    boolean errBeforeComputing = FALSE, errAfterComputing = FALSE;
 
     /*
         Soluzione equa al problema dei lettori scrittori
@@ -567,7 +574,7 @@ double computeBalance(TransList *transSent)
         se vi saranno più cicli di lettura o di scrittura e per evitare 
         la starvation degli scrittori o dei lettori.
     */
-    for (i = 0; i < REG_PARTITION_COUNT; i++)
+    for (i = 0; i < REG_PARTITION_COUNT && !errBeforeComputing && !errAfterComputing; i++)
     {
         op.sem_num = i;
         op.sem_op = -1;
@@ -576,71 +583,144 @@ double computeBalance(TransList *transSent)
         /*
             In caso di errore l'idea è quella di restituire 0
             in modo che l'utente non invii alcuna transazione
+            Inoltre si interrompe il ciclo in caso di verifichi 
+            un errore con i semafori (prima o dopo la computazione)
+            e si termina la funzione
         */
         if (semop(rdPartSem, &op, 1) == -1)
+        {
             safeErrorPrint("Node: failed to reserve register partition reading semaphore. Error: ");
-        else {
+            errBeforeComputing = TRUE;
+        }
+        else 
+        {
             if (semop(mutexPartSem, &op, 1) == -1)
+            {
                 safeErrorPrint("Node: failed to reserve register partition mutex semaphore. Error: ");
-            else {
+                errBeforeComputing = TRUE;
+            }
+            else 
+            {
                 *(noReadersPartitionsPtrs[i])++;
-            if (*(noReadersPartitionsPtrs[i]) == 1)
+                if (*(noReadersPartitionsPtrs[i]) == 1)
+                {
+                    if (semop(wrPartSem, &op, 1) == -1)
+                    {
+                        safeErrorPrint("Node: failed to reserve register partition writing semaphore. Error:");
+                        errBeforeComputing = TRUE;
+                    }
+                }
 
-                if (semop(wrPartSem, &op, 1) == -1)
-                    safeErrorPrint("Node: failed to reserve register partition writing semaphore. Error:");
-                else {
-                    op.sem_num = i;
-                    op.sem_op = 1;
-                    op.sem_flg = 0;
+                op.sem_num = i;
+                op.sem_op = 1;
+                op.sem_flg = 0;
 
-                    if (semop(mutexPartSem, &op, 1) == -1)
-                        safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
-                    else {
-                        if (semop(rdPartSem, &op, 1) == -1)
-                            safeErrorPrint("Node: failed to release register partition reading semaphore. Error: ");
-                        else {
-                            ptr = regPtrs[i];
-                            balance = SO_BUDGET_INIT;
-                            while (ptr != NULL)
+                if (semop(mutexPartSem, &op, 1) == -1)
+                {
+                    safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
+                    errBeforeComputing = TRUE;
+                }
+                else 
+                {
+                    if (semop(rdPartSem, &op, 1) == -1)
+                    {
+                        safeErrorPrint("Node: failed to release register partition reading semaphore. Error: ");
+                        errBeforeComputing = TRUE;
+                    }
+                    else 
+                    {
+                        /* if we arrive here and errBeforeComputing is true, an error occurred only reserving wrPartSem */
+                        if(errBeforeComputing)
+                            break; /* we stop the cycle and end balance computation */
+
+                        ptr = regPtrs[i];
+                        balance = SO_BUDGET_INIT;
+                        while (ptr != NULL)
+                        {
+                            for (j = 0; j < ptr->nBlocks; j++)
                             {
-                                for (j = 0; j < ptr->nBlocks; j++)
+                                for (k = 0; k < SO_BLOCK_SIZE; k++)
                                 {
-                                    for (k = 0; k < SO_BLOCK_SIZE; k++)
+                                    if (ptr->blockList[j].transList[k].receiver == procPid)
                                     {
-                                        if (ptr->blockList[j].transList[k].receiver == procPid)
-                                        {
-                                            balance += ptr->blockList[j].transList[k].amountSend;
-                                        }
-                                        else if (ptr->blockList[j].transList[k].sender == procPid)
-                                        {
-                                            /*
-                                                Togliamo le transazioni già presenti nel master
-                                                dalla lista di quelle inviate
-                                            */
-                                            balance -= (ptr->blockList[j].transList[k].amountSend) + 
-                                                        (ptr->blockList[j].transList[k].reward);
-                                            removeTransaction(transSent, &(ptr->blockList[j].transList[k]));
-                                        }
+                                        balance += ptr->blockList[j].transList[k].amountSend;
+                                    }
+                                    else if (ptr->blockList[j].transList[k].sender == procPid)
+                                    {
+                                        /*
+                                            Togliamo le transazioni già presenti nel master
+                                            dalla lista di quelle inviate
+                                        */
+                                        balance -= (ptr->blockList[j].transList[k].amountSend) + 
+                                                    (ptr->blockList[j].transList[k].reward);
+                                        removeTransaction(transSent, &(ptr->blockList[j].transList[k]));
                                     }
                                 }
-                                ptr++;
+                            }
+                            ptr++;
+                        }
+
+                        op.sem_num = i;
+                        op.sem_op = -1;
+                        op.sem_flg = 0;
+
+                        if (semop(mutexPartSem, &op, 1) == -1)
+                        {
+                            balance = 0;
+                            safeErrorPrint("Node: failed to reserve register partition mutex semaphore. Error: ");
+                            userFailure();
+                            errAfterComputing = TRUE;
+                        }
+                        else 
+                        {
+                            *(noReadersPartitionsPtrs[i])--;
+                            if (*(noReadersPartitionsPtrs[i]) == 0)
+                            {
+                                op.sem_num = i;
+                                op.sem_op = 1;
+                                op.sem_flg = 0;
+
+                                if (semop(wrPartSem, &op, 1) == -1)
+                                {
+                                    balance = 0;
+                                    safeErrorPrint("Node: failed to release register partition writing semaphore. Error: ");
+                                    errAfterComputing = TRUE;
+                                }
                             }
 
-                            if (semop(mutexPartSem, &op, 1) == -1){
+                            op.sem_num = i;
+                            op.sem_op = 1;
+                            op.sem_flg = 0;
+
+                            if (semop(mutexPartSem, &op, 1) == -1)
+                            {
                                 balance = 0;
-                                safeErrorPrint("Node: failed to reserve register partition mutex semaphore. Error: ");
-                            }else {
-                                *(noReadersPartitionsPtrs[i])--;
-                                if (*(noReadersPartitionsPtrs[i]) == 0){
-                                    if (semop(wrPartSem, &op, 1) == -1){
-                                        balance = 0;
-                                        safeErrorPrint("Node: failed to release register partition writing semaphore. Error: ");
-                                    }
+                                safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
+                                userFailure();
+                                errAfterComputing = TRUE;
+                            }
+                            else
+                            {
+                                /* if we arrive here and errAfterComputing is true, an error occurred only releasing wrPartSem */
+                                if(errAfterComputing)
+                                {
+                                    userFailure(); /* metto questo qui e non nel ramo then dell'if di wrPartSem perché se 
+                                                    * si verifica un errore sia in wrPartSem che in mutexPartSem il numero 
+                                                    * di fallimenti verrebbe decrementato due volte */
+                                    break; /* we stop the cycle and end balance computation */
                                 }
 
-                                if (semop(mutexPartSem, &op, 1) == -1){
-                                    balance = 0;
-                                    safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
+
+                                /* l'ho spostato qui perché va fatto solo se tutto viene eseguito correttamente */
+                                /*
+                                    Precondizione: da transSent sono state eliminate le transazioni
+                                    già registrate nel master
+                                */
+                                while (transSent != NULL)
+                                {
+                                    balance -= (transSent->currTrans.amountSend) + 
+                                                (transSent->currTrans.reward);
+                                    transSent++;
                                 }
                             }
                         }
@@ -648,17 +728,13 @@ double computeBalance(TransList *transSent)
                 }
             }
         }
+    }
 
-        /*
-            Precondizione: da transSent sono state eliminate le transazioni
-            già registrate nel master
-        */
-        while (transSent != NULL)
-        {
-            balance -= (transSent->currTrans.amountSend) + 
-                        (transSent->currTrans.reward);
-            transSent++;
-        }
+    if(errBeforeComputing)
+    {
+        /* an error occurred with wrPartSem or rdPartSem or mutexPartSem before balance computing */
+        userFailure();
+        balance = 0;
     }
 
     return balance;
@@ -891,7 +967,10 @@ void transactionGeneration(int sig)
         /* Extracts the receiving user randomly */
         receiver_user = extractReceiver(getpid());
         if(receiver_user == -1)
+        {
             safeErrorPrint("User: failed to extract user receiver. Error: ");
+            userFailure();
+        }
         else 
         {
             if(sig == 0)
@@ -917,7 +996,10 @@ void transactionGeneration(int sig)
             /* extracting node which to send the transaction */
             receiver_node = extractNode();
             if(receiver_node == -1)
+            {
                 safeErrorPrint("User: failed to extract node which to send transaction on TP. Error: ");
+                userFailure();
+            }
             else
             {
                 /* preparing message to send on node's queue */
@@ -927,13 +1009,19 @@ void transactionGeneration(int sig)
                 /* generating key to retrieve node's queue */
                 key = ftok(MSGFILEPATH, receiver_node);
                 if(key == -1)
+                {
                     safeErrorPrint("User: ftok failed during node's queue retrieving. Error: ");
+                    userFailure();
+                }
                 else
                 {
                     /* retrieving the message queue connection */
                     queueId = msgget(key, 0600);
                     if(queueId == -1)
+                    {
                         safeErrorPrint("User: failed to connect to node's transaction pool. Error: ");
+                        userFailure();
+                    }
                     else
                     {
                         /* Inserting new transaction on list of transaction sent */
@@ -958,7 +1046,10 @@ void transactionGeneration(int sig)
                                 msgOnGQueue.transaction = new_trans;
                                 msgOnGQueue.hops = 0;
                                 if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
+                                {
                                     safeErrorPrint("User: failed to send transaction on global queue. Error: ");
+                                    userFailure();
+                                }
                             }
                             else
                             {
@@ -966,6 +1057,8 @@ void transactionGeneration(int sig)
                                     safeErrorPrint("User: failed to send transaction to node. Error: ");
                                 else
                                     safeErrorPrint("User: failed to send transaction generated on event to node. Error: ");
+                                
+                                userFailure();
                             }
                         }
                         else
@@ -989,6 +1082,11 @@ void transactionGeneration(int sig)
                             
                             if (nanosleep(&request, &remaining) == -1)
                                 safeErrorPrint("User: failed to simulate wait for processing the transaction. Error: ");
+                            
+                            /* 
+                                qui in caso di fallimento non serve incrementare il counter del numero di fallimenti perché 
+                                la transazione l'abbiamo comunque creata
+                            */
                         }
                     }
                 }
@@ -1001,12 +1099,25 @@ void transactionGeneration(int sig)
             "User: not enough money to make a transaction...\n",
             strlen("User: not enough money to make a transaction...\n"));
         
-        num_failure++; /* incremento il numero consecutivo di volte che non riesco a mandare una transazione */
-        if(num_failure == SO_RETRY)
-        {
-            /* non sono riuscito a mandare la transazione per SO_RETRY volte, devo terminare */
-            endOfExecution(1);
-        }
+        userFailure();
+    }
+}
+
+/**
+ * @brief Function that increases by one the number of failure counter of the user while attempting
+ * to create a transaction and if the counter is equal to SO_RETRY, the simulation must terminate.
+ */
+void userFailure()
+{
+    write(STDOUT_FILENO, 
+            "User: failed to create a transaction, increasing number of failure counter.\n",
+            strlen("User: failed to create a transaction, increasing number of failure counter.\n"));
+        
+    num_failure++; /* incremento il numero consecutivo di volte che non riesco a mandare una transazione */
+    if(num_failure == SO_RETRY)
+    {
+        /* non sono riuscito a mandare la transazione per SO_RETRY volte, devo terminare */
+        endOfExecution(1);
     }
 }
 
@@ -1073,7 +1184,8 @@ pid_t extractReceiver(pid_t pid)
             if (semop(userListSem, &sops, 1) == -1)
             {
                 safeErrorPrint("User: failed to reserve write usersList semaphore. Error: ");
-                /* do we need to end execution ? */
+                /* restituiamo -1 e contiamo come fallimento di invio di transazione */
+                return (pid_t)-1;
             }
         }
 
@@ -1105,7 +1217,8 @@ pid_t extractReceiver(pid_t pid)
                     if (semop(userListSem, &sops, 1) == -1)
                     {
                         safeErrorPrint("User: failed to release write usersList semaphore. Error: ");
-                        /* do we need to end execution ? */
+                        /* restituiamo -1 e contiamo come fallimento di invio di transazione */
+                        return (pid_t)-1;
                     }
                 }
 
@@ -1118,25 +1231,25 @@ pid_t extractReceiver(pid_t pid)
                 else
                 {
                     safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ");
-                    /* do we need to end execution ? */
+                    /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                 }
             }
             else
             {
                 safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ");
-                /* do we need to end execution ? */
+                /* restituiamo -1 e contiamo come fallimento di invio di transazione */
             }
         }
         else
         {
             safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ");
-            /* do we need to end execution ? */
+            /* restituiamo -1 e contiamo come fallimento di invio di transazione */
         }
     }
     else
     {
         safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ");
-        /* do we need to end execution ? */
+        /* restituiamo -1 e contiamo come fallimento di invio di transazione */
     }
 
     return (pid_t)-1;
@@ -1165,7 +1278,8 @@ pid_t extractNode()
             if(semop(nodeListSem, &sops, 1) == -1)
             {
                 safeErrorPrint("User: failed to reserve write nodesList semaphore. Error: ");
-                /* do we need to end execution ? */
+                /* restituiamo -1 e contiamo come fallimento di invio di transazione */
+                return (pid_t)-1;
             }
         }
 
@@ -1194,7 +1308,8 @@ pid_t extractNode()
                     if(semop(nodeListSem, &sops, 1) == -1)
                     {
                         safeErrorPrint("User: failed to release write nodesList semaphore. Error: ");
-                        /* do we need to end execution ? */
+                        /* restituiamo -1 e contiamo come fallimento di invio di transazione */
+                        return (pid_t)-1;
                     }
                 }
 
@@ -1207,25 +1322,25 @@ pid_t extractNode()
                 else
                 {
                     safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ");
-                    /* do we need to end execution ? */
+                    /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                 }
             }
             else
             {
                 safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ");
-                /* do we need to end execution ? */
+                /* restituiamo -1 e contiamo come fallimento di invio di transazione */
             }
         }
         else
         {
             safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ");
-            /* do we need to end execution ? */
+            /* restituiamo -1 e contiamo come fallimento di invio di transazione */
         }
     }
     else
     {
         safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ");
-        /* do we need to end execution ? */
+        /* restituiamo -1 e contiamo come fallimento di invio di transazione */
     }
 
     return (pid_t)-1;
