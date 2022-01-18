@@ -208,7 +208,7 @@ int main(int argc, char *argv[], char* envp[])
     if (assignEnvironmentVariables())
     {
         /* Allocate the array that will contain friends pid */
-        friends_node = calloc(SO_FRIENDS_NUM, sizeof(pid_t));
+        friends_node = (pid_t *)calloc(SO_FRIENDS_NUM, sizeof(pid_t));
         if (friends_node != NULL)
         {
             printf("Node %ld: hooking up of IPC facilitites...\n", (long)getpid());
@@ -217,6 +217,7 @@ int main(int argc, char *argv[], char* envp[])
             {
                 if (initializeIPCFacilities() == TRUE)
                 {
+                    printf("Node: reading friends from global queue...\n");
                     /* Receives all friends pid from global message queue and stores them in the array */
                     while (contMex < SO_FRIENDS_NUM && !error)
                     {
@@ -256,6 +257,9 @@ int main(int argc, char *argv[], char* envp[])
                     /* If an error occurred (error == TRUE) while initializing friends' list, the node terminates. */
                     if (!error)
                     {
+                        /*
+                            CORREGGERE: ma è giusto metterla qui??
+                        */
                         /* 
                          * argv[1] is the type of node, if NODE it has to wait for simulation to start, 
                          * so we set the sops varriabile to access to the fairStartSem semaphore

@@ -478,22 +478,22 @@ int main(int argc, char *argv[])
                                                 */
                                                 unsafeErrorPrint("User: failed to wait for zero on start semaphore. Error ");
                                                 endOfSimulation(-1);
-                                    }
-                                    else
-                                    {
-                                        /* Temporary part to get the process to do something*/
-                                        if (execle("user.out", "user", NULL, environ) == -1)
-                                        {
-                                            unsafeErrorPrint("User: failed to load user's code. Error: ");
-                                            endOfSimulation(-1);
-                                        }
-                                        /*
-                                                do_stuff(1);
-                                                printf("Eseguo user...\n");
-                                                printf("User done! PID:%d\n", getpid());
-                                                busy_cpu(1);
-                                                exit(i);*/
-                                    }
+                                            }
+                                            else
+                                            {
+                                                /* Temporary part to get the process to do something*/
+                                                if (execle("user.out", "user", NULL, environ) == -1)
+                                                {
+                                                    unsafeErrorPrint("User: failed to load user's code. Error: ");
+                                                    endOfSimulation(-1);
+                                                }
+                                                /*
+                                                        do_stuff(1);
+                                                        printf("Eseguo user...\n");
+                                                        printf("User done! PID:%d\n", getpid());
+                                                        busy_cpu(1);
+                                                        exit(i);*/
+                                            }
                                     break;
 
                                 default:
@@ -653,7 +653,10 @@ int main(int argc, char *argv[])
 
                             /********************************************/
                             /********************************************/
-
+              
+                            /*
+                                CORREGGERE: Mettere più stampe per segnalare cosa stia succedendo
+                            */
                             /************** INITIALIZATION OF BUDGETLIST **************/
                             /**********************************************************/
 
@@ -698,6 +701,9 @@ int main(int argc, char *argv[])
                             }
 
                             /* initializing budget for users processes */
+                            printf("Master: initializing budget users processes...\n");
+                            bud_list_head = NULL;
+                            bud_list_tail = NULL;
                             for (i = 0; i < SO_USERS_NUM; i++)
                             {
                                 new_el = malloc(sizeof(*new_el));
@@ -742,6 +748,7 @@ int main(int argc, char *argv[])
                             }
 
                             /**** Initializing budget for nodes processes ****/
+                            printf("Master: initializing budget nodes processes...\n");
                             /* we enter the critical section for the noNodeSegReadersPtr variabile */
                             sops[0].sem_num = 0;
                             sops[0].sem_op = -1;
@@ -824,6 +831,7 @@ int main(int argc, char *argv[])
                             /*****************************************************************/
 
                             /**** Friends estraction ***/
+                            printf("Master: extracting friends for nodes...\n");
                             for (i = 0; i < SO_NODES_NUM; i++)
                             {
                                 estrai(i);
@@ -833,7 +841,7 @@ int main(int argc, char *argv[])
                                 for (j = 0; j < SO_FRIENDS_NUM; j++)
                                 {
                                     msg_to_node.friend = nodesList[extractedFriendsIndex[j]].procId;
-                                    if (msgsnd(globalQueueId, &tmpFriend, sizeof(msg_to_node), 0) == -1)
+                                    if (msgsnd(globalQueueId, &tmpFriend, sizeof(msg_to_node) - sizeof(long), 0) == -1)
                                     {
                                         unsafeErrorPrint("Master: failed to initialize node friends. Error: ");
                                         endOfSimulation(-1);
@@ -890,6 +898,7 @@ int main(int argc, char *argv[])
 
                                 /* cycle that updates the budget list before printing it */
                                 /* at every cycle we do the count of budgets in blocks of the i-th partition */
+                                printf("Master: updating budget list before printing...\n");
                                 for (i = 0; i < REG_PARTITION_COUNT; i++)
                                 {
                                     /* setting options for getting access to i-th partition of register */
@@ -1153,7 +1162,7 @@ int main(int argc, char *argv[])
                                 /* Check if a user process has terminated to update the usersList */
                                 /*noUserTerminated = 0;*/ /* resetting user terminated counter */
 
-                                while (msgrcv(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue), masterPid, IPC_NOWAIT) != -1)
+                                while (msgrcv(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                 {
                                     /* come dimensione specifichiamo sizeof(msg_from_user)-sizeof(long) perché bisogna specificare la dimensione del testo, non dell'intera struttura */
                                     /* come mType prendiamo i messaggi destinati al Master, cioè il suo pid (prende il primo messaggio con quel mType) */
@@ -1213,7 +1222,7 @@ int main(int argc, char *argv[])
                                     else
                                     {
                                         /* Reinserting the message that we have consumed from the global queue */
-                                        if (msgsnd(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue), 0) == -1)
+                                        if (msgsnd(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
                                         {
                                             /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
                                             unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated users. Error: ");
@@ -1246,7 +1255,7 @@ int main(int argc, char *argv[])
                                 /********************************/
 
                                 /* Check if a node process has terminated to update the nodes list */
-                                while (msgrcv(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue), masterPid, IPC_NOWAIT) != -1)
+                                while (msgrcv(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                 {
                                     if (msg_from_node.msgContent == TERMINATEDNODE)
                                     {
@@ -1296,7 +1305,7 @@ int main(int argc, char *argv[])
                                     else
                                     {
                                         /* Reinserting the message that we have consumed from the global queue */
-                                        if (msgsnd(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue), 0) == -1)
+                                        if (msgsnd(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
                                         {
                                             /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
                                             unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated nodes. Error: ");
@@ -1330,7 +1339,7 @@ int main(int argc, char *argv[])
                                 /* now sleep for 1 second */
                                 nanosleep(&onesec, &tim);
 
-                                printf("Starting a new cycle...\n");
+                                printf("**** Master: starting a new lifecycle ****\n");
                             }
                         }
                     }
@@ -2437,7 +2446,7 @@ void checkNodeCreationRequests()
     struct sembuf sops[3];
     long childPid = -1;
 
-    if (msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue), currPid, IPC_NOWAIT) == -1)
+    if (msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), currPid, IPC_NOWAIT) == -1)
     {
         /*
             Su questa coda l'unico tipo di messaggio per il master è NEWNODE
@@ -2526,7 +2535,7 @@ void checkNodeCreationRequests()
                         firstTrans.mType = childPid;
                         firstTrans.transaction = aus.transaction;
 
-                        if (msgsnd(tpId, &(aus.transaction), sizeof(MsgTP), 0) == -1)
+                        if (msgsnd(tpId, &(aus.transaction), sizeof(MsgTP) - sizeof(long), 0) == -1)
                         {
                             safeErrorPrint("Master: failed to initialize additional node's transaction pool. Error: ");
                         }
@@ -2538,7 +2547,7 @@ void checkNodeCreationRequests()
                             for (j = 0; j < SO_FRIENDS_NUM; j++)
                             {
                                 aus.friend = nodesList[extractedFriendsIndex[j]].procId;
-                                if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue), 0) == -1)
+                                if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
                                 {
                                     /*
                                         CORREGGERE: segnalazione fallimento trasazione a sender
@@ -2607,7 +2616,7 @@ void checkNodeCreationRequests()
                     for (j = 0; j < SO_FRIENDS_NUM; j++)
                     {
                         aus.mType = nodesList[extractedFriendsIndex[j]].procId;
-                        if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue), 0) == -1)
+                        if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
                         {
                             /*
                                         CORREGGERE: possiamo semplicemente segnalare l'errore senza fare nulla?

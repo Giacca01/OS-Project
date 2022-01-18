@@ -15,9 +15,15 @@ node: node.c info.h
 	${CC} -c ${CFLAGS} node.c -o node.o
 	${CC} node.o error.o -o node.out
 
+nodeDebug: node.c info.h
+	gcc -g -o0  node.c error.o -o node.out
+
 user: user.c info.h
 	${CC} -c ${CFLAGS} user.c -o user.o
 	${CC} user.o error.o -o user.out
+
+userDebug: user.c info.h
+	gcc -g -o0  user.c error.o -o user.out
 
 rm:
 	rm *.o
