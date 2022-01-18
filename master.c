@@ -1461,6 +1461,9 @@ boolean readConfigParameters()
             /* Close the file*/
             fclose(fp);
         }
+        
+        /* frees the auxiliary char array */
+        free(aus);
     }
 
     return ret;
@@ -2337,28 +2340,6 @@ boolean deallocateFacilities(int *exitCode)
         write(STDOUT_FILENO,
               "Master: register's paritions mutex semaphores successfully removed.\n",
               strlen("Master: register's paritions mutex semaphores successfully removed.\n"));
-    }
-
-    /*
-        Correggere: per il momento l'eliminazione di questo semaforo fallisce
-    */
-    write(STDOUT_FILENO,
-          "Master: deallocating user list's semaphores...\n",
-          strlen("Master: deallocating user list's semaphores...\n"));
-    if (semctl(userListSem, 0, IPC_RMID) == -1)
-    {
-        if (errno != EINVAL)
-        {
-            sprintf(aus, "Master: failed to remove user list's semaphores\n");
-            write(STDERR_FILENO, aus, msgLength);
-            *exitCode = EXIT_FAILURE;
-        }
-    }
-    else
-    {
-        write(STDOUT_FILENO,
-              "Master: user list's semaphores successfully removed.\n",
-              strlen("Master: user list's semaphores successfully removed.\n"));
     }
 
     write(STDOUT_FILENO,
