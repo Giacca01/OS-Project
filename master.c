@@ -374,6 +374,8 @@ int main(int argc, char *argv[])
 
     masterPid = (long)getpid();
 
+    signal(SIGINT, endOfSimulation);
+
     /* Read configuration parameters from
                     // file and save them as environment variables*/
     printf("PID MASTER: %ld\n", masterPid);
@@ -1599,9 +1601,12 @@ boolean initializeIPCFacilities()
     TEST_SHMAT_ERROR(regPtrs[1], "Master: failed to attach to partition two's memory segment. Error: ");
     regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(regPtrs[2], "Master: failed to attach to partition three's memory segment. Error: ");
+    printf("Master: initializing blocks...\n");
     regPtrs[0]->nBlocks = 0;
     regPtrs[1]->nBlocks = 0;
     regPtrs[2]->nBlocks = 0;
+    printf("Blocks: %d %d %d\n", regPtrs[0]->nBlocks, regPtrs[1]->nBlocks, regPtrs[2]->nBlocks);
+    sleep(5);
 
     key = ftok(SHMFILEPATH, USERLISTSEED);
     FTOK_TEST_ERROR(key, "Master: ftok failed during users list creation. Error: ");

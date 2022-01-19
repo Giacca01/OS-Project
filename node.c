@@ -430,7 +430,19 @@ int main(int argc, char *argv[], char* envp[])
                                                                 */
                                                                                                                                
                                                                 printf("Node: trying to write transactions on register...\n");
-                                                                if (semop(rdPartSem, reservation, REG_PARTITION_COUNT) == -1)
+                                                                sops[0].sem_flg = 0;
+                                                                sops[0].sem_num = 0;
+                                                                sops[0].sem_op = -1;
+
+                                                                sops[1].sem_flg = 0;
+                                                                sops[1].sem_num = 1;
+                                                                sops[1].sem_op = -1;
+
+                                                                sops[2].sem_flg = 0;
+                                                                sops[2].sem_num = 2;
+                                                                sops[2].sem_op = -1;
+
+                                                                if (semop(rdPartSem, sops, REG_PARTITION_COUNT) == -1)
                                                                     unsafeErrorPrint("Node: failed to reserve register partitions' reading semaphore. Error: ");
                                                                 else{
                                                                     if (semop(wrPartSem, reservation, REG_PARTITION_COUNT) == -1)
@@ -499,6 +511,17 @@ int main(int argc, char *argv[], char* envp[])
                                                                             /*
                                                                             Exit section
                                                                         */
+                                                                            sops[0].sem_flg = 0;
+                                                                            sops[0].sem_num = 0;
+                                                                            sops[0].sem_op = 1;
+
+                                                                            sops[1].sem_flg = 0;
+                                                                            sops[1].sem_num = 1;
+                                                                            sops[1].sem_op = 1;
+
+                                                                            sops[2].sem_flg = 0;
+                                                                            sops[2].sem_num = 2;
+                                                                            sops[2].sem_op = 1;
                                                                             printf("Node: releasing register's partition...\n");
                                                                             if (semop(wrPartSem, release, REG_PARTITION_COUNT) == -1)
                                                                                 unsafeErrorPrint("Node: failed to release register partitions' writing semaphore. Error: ");

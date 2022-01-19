@@ -256,6 +256,8 @@ int main(int argc, char *argv[], char *envp[])
     MsgGlobalQueue msgCheckFailedTrans;
     struct timespec remaining, request;
 
+    
+
     if (readParams())
     {
         if (allocateMemory())
@@ -294,17 +296,21 @@ int main(int argc, char *argv[], char *envp[])
                             */
                             while(TRUE)
                             {
+                                printf("User: checking if there are failed transactions...\n");
                                 /* check on global queue if a sent transaction failed */
                                 if(msgrcv(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans)-sizeof(long), getpid(), IPC_NOWAIT) != -1)
                                 {
+                                    
                                     /* got a message for this user from global queue */
                                     if(msgCheckFailedTrans.msgContent == FAILEDTRANS)
                                     {
+                                        printf("User: failed transaction found. Removing it from list...\n");
                                         /* the transaction failed, so we remove it from the list of sent transactions */
                                         removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
                                     }
                                     else
                                     {
+                                        printf("User: no failed transactions found.\n");
                                         /* the message wasn't the one we were looking for, reinserting it on the global queue */
                                         if(msgsnd(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans)-sizeof(long), 0) == -1)
                                             unsafeErrorPrint("User: failed to reinsert the message read from global queue while checking for failed transactions. Error: ");
@@ -503,6 +509,7 @@ boolean initializeFacilities()
     /*SHMAT_TEST_ERROR(regPtrs[2], "User");*/
     TEST_SHMAT_ERROR(regPtrs[2], "User: failed to attach to partition three's memory segment. Error: ");
 
+
     key = ftok(SHMFILEPATH, USERLISTSEED);
     FTOK_TEST_ERROR(key, "User: ftok failed during users list creation. Error: ");
     usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), 0600);
@@ -588,6 +595,7 @@ double computeBalance(TransList *transSent)
         se vi saranno più cicli di lettura o di scrittura e per evitare 
         la starvation degli scrittori o dei lettori.
     */
+   printf("User: computing balance...\n");
     for (i = 0; i < REG_PARTITION_COUNT && !errBeforeComputing && !errAfterComputing; i++)
     {
         op.sem_num = i;
@@ -603,14 +611,14 @@ double computeBalance(TransList *transSent)
         */
         if (semop(rdPartSem, &op, 1) == -1)
         {
-            safeErrorPrint("Node: failed to reserve register partition reading semaphore. Error: ");
+            safeErrorPrint("User: failed to reserve register partition reading semaphore. Error: ");
             errBeforeComputing = TRUE;
         }
         else 
         {
             if (semop(mutexPartSem, &op, 1) == -1)
             {
-                safeErrorPrint("Node: failed to reserve register partition mutex semaphore. Error: ");
+                safeErrorPrint("User: failed to reserve register partition mutex semaphore. Error: ");
                 errBeforeComputing = TRUE;
             }
             else 
@@ -620,7 +628,7 @@ double computeBalance(TransList *transSent)
                 {
                     if (semop(wrPartSem, &op, 1) == -1)
                     {
-                        safeErrorPrint("Node: failed to reserve register partition writing semaphore. Error:");
+                        safeErrorPrint("User: failed to reserve register partition writing semaphore. Error:");
                         errBeforeComputing = TRUE;
                     }
                 }
@@ -631,14 +639,14 @@ double computeBalance(TransList *transSent)
 
                 if (semop(mutexPartSem, &op, 1) == -1)
                 {
-                    safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
+                    safeErrorPrint("User: failed to release register partition mutex semaphore. Error: ");
                     errBeforeComputing = TRUE;
                 }
                 else 
                 {
                     if (semop(rdPartSem, &op, 1) == -1)
                     {
-                        safeErrorPrint("Node: failed to release register partition reading semaphore. Error: ");
+                        safeErrorPrint("User: failed to release register partition reading semaphore. Error: ");
                         errBeforeComputing = TRUE;
                     }
                     else 
@@ -655,6 +663,7 @@ double computeBalance(TransList *transSent)
                             {
                                 for (k = 0; k < SO_BLOCK_SIZE; k++)
                                 {
+                                    printf("USer valore j %d\n", ptr->nBlocks);
                                     if (ptr->blockList[j].transList[k].receiver == procPid)
                                     {
                                         balance += ptr->blockList[j].transList[k].amountSend;
@@ -681,7 +690,7 @@ double computeBalance(TransList *transSent)
                         if (semop(mutexPartSem, &op, 1) == -1)
                         {
                             balance = 0;
-                            safeErrorPrint("Node: failed to reserve register partition mutex semaphore. Error: ");
+                            safeErrorPrint("User: failed to reserve register partition mutex semaphore. Error: ");
                             userFailure();
                             errAfterComputing = TRUE;
                         }
@@ -697,7 +706,7 @@ double computeBalance(TransList *transSent)
                                 if (semop(wrPartSem, &op, 1) == -1)
                                 {
                                     balance = 0;
-                                    safeErrorPrint("Node: failed to release register partition writing semaphore. Error: ");
+                                    safeErrorPrint("User: failed to release register partition writing semaphore. Error: ");
                                     errAfterComputing = TRUE;
                                 }
                             }
@@ -709,7 +718,7 @@ double computeBalance(TransList *transSent)
                             if (semop(mutexPartSem, &op, 1) == -1)
                             {
                                 balance = 0;
-                                safeErrorPrint("Node: failed to release register partition mutex semaphore. Error: ");
+                                safeErrorPrint("User: failed to release register partition mutex semaphore. Error: ");
                                 userFailure();
                                 errAfterComputing = TRUE;
                             }
@@ -736,6 +745,8 @@ double computeBalance(TransList *transSent)
                                                 (transSent->currTrans.reward);
                                     transSent++;
                                 }
+
+                                printf("User: current balance is %lf\n", balance);
                             }
                         }
                     }
