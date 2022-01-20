@@ -220,35 +220,6 @@ int main(int argc, char *argv[], char* envp[])
                 printf("Node: initializing IPC facilities...\n");
                 if (initializeIPCFacilities() == TRUE)
                 {
-                    printf("Node: reading friends from global queue...\n");
-                    /* Receives all friends pid from global message queue and stores them in the array */
-                    while (contMex < SO_FRIENDS_NUM && !error)
-                    {
-                        num_bytes = msgrcv(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue)-sizeof(long), getpid(), 0);
-                        if (num_bytes == -1)
-                        {
-                            unsafeErrorPrint("Node: failed to initialize friends' list. Error: ");
-                            error = TRUE;
-                        } 
-                        else 
-                        {
-                            if(friendFromList.msgContent == FRIENDINIT)
-                            {
-                                friends_node[contMex] = friendFromList.friend;
-                                contMex++;
-                            }
-                            else
-                            {
-                                /* the message wasn't the one we were looking for, so we reinsert it on the global queue */
-                                if(msgsnd(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
-                                {
-                                    unsafeErrorPrint("Node: failed to initialize friends' list. Error: ");
-                                    error = TRUE;
-                                }
-                            }
-                        }
-                    }
-
                     /*
                         PROVVISORIO, CORREGGERE
                     */
@@ -257,31 +228,63 @@ int main(int argc, char *argv[], char* envp[])
                         printf("Nodo %d -> Amico: %d\n", getpid(), friends_node[i]);
                     }*/
 
-                    /* If an error occurred (error == TRUE) while initializing friends' list, the node terminates. */
-                    if (!error)
+                    /*
+                        CORREGGERE: ma è giusto metterla qui??
+                    */
+                    /* 
+                     * argv[1] is the type of node, if NODE it has to wait for simulation to start, 
+                     * so we set the sops varriabile to access to the fairStartSem semaphore
+                     */
+                    if(strcmp(argv[1],"NORMAL") == 0)
                     {
-                        /*
-                            CORREGGERE: ma è giusto metterla qui??
-                        */
-                        /* 
-                         * argv[1] is the type of node, if NODE it has to wait for simulation to start, 
-                         * so we set the sops varriabile to access to the fairStartSem semaphore
-                         */
-                        if(argv[1] == NORMAL) 
+                        /* Wait all processes are ready to start the simulation */
+                        printf("Node %ld is waiting for simulation to start....\n", (long)getpid());
+                        sops[0].sem_op = 0;
+                        sops[0].sem_num = 0;
+                        sops[0].sem_flg = 0;
+                    }
+
+                    /* if node is of type NORMAL, it has to wait the simulation to start, otherwise no */
+                    if (strcmp(argv[1],"NORMAL") == 0 && semop(fairStartSem, &sops[0], 1) == -1)
+                        safeErrorPrint("Node: failed to wait for simulation to start. Error: ");
+                    else 
+                    {
+                        printf("Node: reading friends from global queue...\n");
+                    
+                        /* Receives all friends pid from global message queue and stores them in the array */
+                        while (contMex < SO_FRIENDS_NUM && !error)
                         {
-                            /* Wait all processes are ready to start the simulation */
-                            printf("Node %ld is waiting for simulation to start....\n", (long)getpid());
-                            sops[0].sem_op = 0;
-                            sops[0].sem_num = 0;
-                            sops[0].sem_flg = 0;
+                            num_bytes = msgrcv(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue)-sizeof(long), getpid(), IPC_NOWAIT);
+                            if (num_bytes == -1)
+                            {
+                                unsafeErrorPrint("Node: failed to initialize friends' list. Error: ");
+                                error = TRUE;
+                            }
+                            else 
+                            {
+                                if(friendFromList.msgContent == FRIENDINIT)
+                                {
+                                    friends_node[contMex] = friendFromList.friend;
+                                    contMex++;
+                                }
+                                else
+                                {
+                                    /* the message wasn't the one we were looking for, so we reinsert it on the global queue */
+                                    if(msgsnd(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
+                                    {
+                                        unsafeErrorPrint("Node: failed to initialize friends' list. Error: ");
+                                        error = TRUE;
+                                    }
+                                }
+                            }
                         }
 
-                        /* if node is of type NORMAL, it has to wait the simulation to start, otherwise no */
-                        if (argv[1] == NORMAL && semop(fairStartSem, &sops[0], 1) == -1)
-                            safeErrorPrint("Node: failed to wait for simulation to start. Error: ");
-                        else {
-                            printf("Sono il nodo %d -> Eseguo!\n", getpid());
-                            printf("Node done %d!\n", getpid());
+                        /* If an error occurred (error == TRUE) while initializing friends' list, the node terminates. */
+                        if (!error)
+                        {
+
+                            /*printf("Sono il nodo %d -> Eseguo!\n", getpid());
+                            printf("Node done %d!\n", getpid()); */
 
                             printf("Node: setting up signal mask...\n");
                             if (sigfillset(&mask) == -1)
@@ -643,7 +646,7 @@ int main(int argc, char *argv[], char* envp[])
     printf("Node: about to terminate execution...\n");
     
     /* notify master that user process terminated before expected */
-    msgOnGQueue.mType = getppid();
+    msgOnGQueue.mtype = getppid();
     msgOnGQueue.msgContent = TERMINATEDNODE;
     msgOnGQueue.terminatedPid = getpid();
     if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
@@ -945,7 +948,7 @@ void dispatchToFriend()
                 }
                 else
                 {
-                    aus.mType = *(friends_node + i);
+                    aus.mtype = *(friends_node + i);
                     if (msgsnd(friendTp, &aus, sizeof(Transaction), 0600) == -1)
                     {
                         safeErrorPrint("Node: failed to dispatch transaction to friend. Error: ");
@@ -1122,7 +1125,7 @@ void sendTransaction()
                     {
                         /* Create a copy of the message read */
                         aus.transaction = trans.transaction;
-                        aus.mType = *(friends_node + i);
+                        aus.mtype = *(friends_node + i);
                         if (msgsnd(friendTp, &aus, sizeof(Transaction), IPC_NOWAIT) == -1)
                         {
                             /*
@@ -1212,7 +1215,7 @@ boolean sendOnGlobalQueue(MsgGlobalQueue * trans, pid_t pid, GlobalMsgContent cn
 {
     boolean ret = TRUE;
 
-    trans->mType = pid;
+    trans->mtype = pid;
     trans->msgContent = cnt;
     trans->hops += hp;
     if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)

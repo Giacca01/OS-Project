@@ -224,7 +224,7 @@ typedef enum
  non si può allocare staticamente perchè la sua dimensione è letta a runtime */
 typedef struct
 {
-    long int mType; /* Pid of the receiver, taken with getppid (children) or from dedicated arrays (parent) */
+    long int mtype; /* Pid of the receiver, taken with getppid (children) or from dedicated arrays (parent) */
     GlobalMsgContent msgContent;
     /* ProcListElem * friends;*/  /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
     /*
@@ -249,7 +249,7 @@ typedef struct
 
 /*
  * Fields:
- * mType = pid of node which the transaction is sent
+ * mtype = pid of node which the transaction is sent
  * transaction = transaction sent to the node
  */
 
@@ -261,12 +261,12 @@ typedef enum
 
 /*
  * Fields:
- * mType = pid of node which the transaction is sent
+ * mtype = pid of node which the transaction is sent
  * transaction = transaction sent to the node
  */
 typedef struct msgtp
 {
-    long int mType; /* pid of node - not that important, the transaction pool is private to the node */
+    long int mtype; /* pid of node - not that important, the transaction pool is private to the node */
     Transaction transaction;
 } MsgTP;
 
