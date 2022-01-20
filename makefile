@@ -1,6 +1,9 @@
 CC=gcc
 CFLAGS=-ansi -pedantic-errors -Wall
 
+all: error master node user
+allDebug: error masterDebug nodeDebug userDebug
+
 error: error.c error.h
 	${CC} -c error.c -o error.o
 

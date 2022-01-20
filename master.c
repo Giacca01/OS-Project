@@ -583,16 +583,16 @@ int main(int argc, char *argv[])
                                             */
                                             signal(SIGUSR1, tmpHandler);
 
-                                    /* Temporary part to get the process to do something*/
-                                    if (execle("node.out", "node", NORMAL, NULL, environ) == -1)
-                                        unsafeErrorPrint("Node: failed to load node's code. Error: ");
-                                    /*
-                                            do_stuff(2);
-                                            printf("Eseguo nodo...\n");
-                                            printf("Node done! PID:%d\n", getpid());
-                                            busy_cpu(1);
-                                            exit(i);*/
-                                    break;
+                                            /* Temporary part to get the process to do something*/
+                                            if (execle("node.out", "node", NORMAL, NULL, environ) == -1)
+                                                unsafeErrorPrint("Node: failed to load node's code. Error: ");
+                                            /*
+                                                        do_stuff(2);
+                                                        printf("Eseguo nodo...\n");
+                                                        printf("Node done! PID:%d\n", getpid());
+                                                        busy_cpu(1);
+                                                        exit(i);*/
+                                            break;
 
                                 default:
                                     noEffectiveNodes++;

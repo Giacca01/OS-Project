@@ -296,6 +296,7 @@ int main(int argc, char *argv[], char *envp[])
                             */
                             while(TRUE)
                             {
+                                sleep(20);
                                 printf("User: checking if there are failed transactions...\n");
                                 /* check on global queue if a sent transaction failed */
                                 if(msgrcv(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans)-sizeof(long), getpid(), IPC_NOWAIT) != -1)
@@ -666,7 +667,6 @@ double computeBalance(TransList *transSent)
                             {
                                 for (k = 0; k < SO_BLOCK_SIZE; k++)
                                 {
-                                    printf("USer valore j %d\n", ptr->nBlocks);
                                     if (ptr->blockList[j].transList[k].receiver == procPid)
                                     {
                                         balance += ptr->blockList[j].transList[k].amountSend;

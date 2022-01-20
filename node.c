@@ -206,6 +206,7 @@ int main(int argc, char *argv[], char* envp[])
     */
 
     /* Assigns the values ​​of the environment variables to the global variables */
+    printf("Node: reading configuration parameters...\n");
     if (assignEnvironmentVariables())
     {
         /* Allocate the array that will contain friends pid */
@@ -216,6 +217,7 @@ int main(int argc, char *argv[], char* envp[])
 
             if (createIPCFacilties() == TRUE)
             {
+                printf("Node: initializing IPC facilities...\n");
                 if (initializeIPCFacilities() == TRUE)
                 {
                     printf("Node: reading friends from global queue...\n");
@@ -1335,16 +1337,16 @@ void deallocateIPCFacilities()
     */
     Register **aus = regPtrs;
     int **ausPtr = NULL;
+    int i = 0;
 
     write(STDOUT_FILENO,
           "Node: deatching from register's partitions...\n",
           strlen("Node: deatching from register's partitions...\n"));
     
-    while (regPtrs != NULL)
-    {
-        if (shmdt(*regPtrs) == -1)
+    for (i = 0; i < REG_PARTITION_COUNT; i++){
+        if (shmdt(regPtrs[i]) == -1)
         {
-            if (errno != EINVAL) 
+            if (errno != EINVAL)
             {
                 /*
                     Implementare un meccanismo di retry??
@@ -1355,8 +1357,8 @@ void deallocateIPCFacilities()
                 safeErrorPrint("Node: failed to detach from register's partition. Error: ");
             }
         }
-        regPtrs++;
     }
+    
     if (regPtrs != NULL)
         free(regPtrs);
 
