@@ -851,7 +851,7 @@ void endOfExecution(int sig)
     else
     {
         /* notify master that user process terminated before expected */
-        msgOnGQueue.mType = getppid();
+        msgOnGQueue.mtype = getppid();
         msgOnGQueue.msgContent = TERMINATEDUSER;
         msgOnGQueue.terminatedPid = getpid();
         if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
@@ -1035,7 +1035,7 @@ void transactionGeneration(int sig)
             else
             {
                 /* preparing message to send on node's queue */
-                msg_to_node.mType = receiver_node;
+                msg_to_node.mtype = receiver_node;
                 msg_to_node.transaction = new_trans;
 
                 /* generating key to retrieve node's queue */
@@ -1073,7 +1073,7 @@ void transactionGeneration(int sig)
                                     "User: transaction pool of selected node was full. Sending transaction on global queue...\n",
                                     strlen("User: transaction pool of selected node was full. Sending transaction on global queue...\n"));
                                 
-                                msgOnGQueue.mType = receiver_node;
+                                msgOnGQueue.mtype = receiver_node;
                                 msgOnGQueue.msgContent = TRANSTPFULL;
                                 msgOnGQueue.transaction = new_trans;
                                 msgOnGQueue.hops = 0;

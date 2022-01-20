@@ -584,7 +584,7 @@ int main(int argc, char *argv[])
                                             signal(SIGUSR1, tmpHandler);
 
                                     /* Temporary part to get the process to do something*/
-                                    if (execle("node.out", "node", NORMAL, NULL, environ) == -1)
+                                    if (execle("node.out", "node", "NORMAL", NULL, environ) == -1)
                                         unsafeErrorPrint("Node: failed to load node's code. Error: ");
                                     /*
                                             do_stuff(2);
@@ -798,6 +798,31 @@ int main(int argc, char *argv[])
                                 insert_ordered(new_el); /* insert node on budgetlist */
                             }
 
+                            /************** END OF INITIALIZATION OF BUDGETLIST **************/
+                            /*****************************************************************/
+
+                            /* Devo ancora lavorare su nodesList, faccio dopo la UNLOCK della zona critica */
+
+                            /**** Friends estraction ***/
+                            printf("Master: extracting friends for nodes...\n");
+                            for (i = 0; i < SO_NODES_NUM; i++)
+                            {
+                                estrai(i);
+                                msg_to_node.mtype = nodesList[i].procId;
+                                msg_to_node.msgContent = FRIENDINIT;
+                                /*tmpFriend.mtype = nodesList[i].procId;**/
+                                for (j = 0; j < SO_FRIENDS_NUM; j++)
+                                {
+                                    msg_to_node.friend = nodesList[extractedFriendsIndex[j]].procId;
+                                    printf("***Master: invio messaggio nuovo amico a nodo\n");
+                                    if (msgsnd(globalQueueId, &tmpFriend, sizeof(msg_to_node) - sizeof(long), 0) == -1)
+                                    {
+                                        unsafeErrorPrint("Master: failed to initialize node friends. Error: ");
+                                        endOfSimulation(-1);
+                                    }
+                                }
+                            }
+
                             /* we enter the critical section for the noNodeSegReadersPtr variabile */
                             sops[0].sem_num = 0;
                             sops[0].sem_op = -1;
@@ -827,28 +852,6 @@ int main(int argc, char *argv[])
                             {
                                 safeErrorPrint("Master: failed to release nodeList semaphore after reading operation. Error: ");
                                 endOfSimulation(-1);
-                            }
-
-                            /************** END OF INITIALIZATION OF BUDGETLIST **************/
-                            /*****************************************************************/
-
-                            /**** Friends estraction ***/
-                            printf("Master: extracting friends for nodes...\n");
-                            for (i = 0; i < SO_NODES_NUM; i++)
-                            {
-                                estrai(i);
-                                msg_to_node.mType = nodesList[i].procId;
-                                msg_to_node.msgContent = FRIENDINIT;
-                                /*tmpFriend.mtype = nodesList[i].procId;**/
-                                for (j = 0; j < SO_FRIENDS_NUM; j++)
-                                {
-                                    msg_to_node.friend = nodesList[extractedFriendsIndex[j]].procId;
-                                    if (msgsnd(globalQueueId, &tmpFriend, sizeof(msg_to_node) - sizeof(long), 0) == -1)
-                                    {
-                                        unsafeErrorPrint("Master: failed to initialize node friends. Error: ");
-                                        endOfSimulation(-1);
-                                    }
-                                }
                             }
 
                             /*sops[0].sem_op = -1;
@@ -1167,7 +1170,7 @@ int main(int argc, char *argv[])
                                 while (msgrcv(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                 {
                                     /* come dimensione specifichiamo sizeof(msg_from_user)-sizeof(long) perché bisogna specificare la dimensione del testo, non dell'intera struttura */
-                                    /* come mType prendiamo i messaggi destinati al Master, cioè il suo pid (prende il primo messaggio con quel mType) */
+                                    /* come mtype prendiamo i messaggi destinati al Master, cioè il suo pid (prende il primo messaggio con quel mtype) */
 
                                     /* in questo caso cerchiamo i messaggi con msgContent TERMINATEDUSER */
                                     if (msg_from_user.msgContent == TERMINATEDUSER)
@@ -1259,6 +1262,7 @@ int main(int argc, char *argv[])
                                 /* Check if a node process has terminated to update the nodes list */
                                 while (msgrcv(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                 {
+                                    printf("***Master: checking if there are terminated nodes...\n");
                                     if (msg_from_node.msgContent == TERMINATEDNODE)
                                     {
                                         sops[0].sem_num = 1;
@@ -2536,7 +2540,7 @@ void checkNodeCreationRequests()
                             MsgTP è inutile
                             Toglierlo
                         */
-                        firstTrans.mType = childPid;
+                        firstTrans.mtype = childPid;
                         firstTrans.transaction = aus.transaction;
 
                         if (msgsnd(tpId, &(aus.transaction), sizeof(MsgTP) - sizeof(long), 0) == -1)
@@ -2545,7 +2549,7 @@ void checkNodeCreationRequests()
                         }
                         else
                         {
-                            aus.mType = childPid;
+                            aus.mtype = childPid;
                             aus.msgContent = FRIENDINIT;
                             estrai(noAllTimesNodes - 1);
                             for (j = 0; j < SO_FRIENDS_NUM; j++)
@@ -2560,7 +2564,7 @@ void checkNodeCreationRequests()
                                 }
                             }
 
-                            if (execle("node.out", "node", ADDITIONAL, NULL, environ) == -1)
+                            if (execle("node.out", "node", "ADDITIONAL", NULL, environ) == -1)
                                 safeErrorPrint("Master: failed to load node's code. Error: ");
                         }
                     }
@@ -2619,7 +2623,7 @@ void checkNodeCreationRequests()
                     estrai(noEffectiveNodes);
                     for (j = 0; j < SO_FRIENDS_NUM; j++)
                     {
-                        aus.mType = nodesList[extractedFriendsIndex[j]].procId;
+                        aus.mtype = nodesList[extractedFriendsIndex[j]].procId;
                         if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
                         {
                             /*
