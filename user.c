@@ -835,6 +835,7 @@ void removeTransaction(TransList *tList, Transaction *t)
 void endOfExecution(int sig)
 {
     int exitCode = EXIT_FAILURE;
+    MsgGlobalQueue msgOnGQueue;
 
     deallocateIPCFacilities();
         
@@ -850,7 +851,11 @@ void endOfExecution(int sig)
     else
     {
         /* notify master that user process terminated before expected */
-        kill(getppid(), SIGCHLD);
+        msgOnGQueue.mType = getppid();
+        msgOnGQueue.msgContent = TERMINATEDUSER;
+        msgOnGQueue.terminatedPid = getpid();
+        if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
+            safeErrorPrint("User: failed to inform master of my termination. Error: ");
     }
     
     exit(exitCode);

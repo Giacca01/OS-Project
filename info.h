@@ -241,10 +241,10 @@ typedef struct
     /*
         CORREGGERE: mettere solo il pid
     */
-    pid_t friend;            /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
-    Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
-    long hops;              /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
-    pid_t userPid;           /* pid of terminated user, garbage if msgContent != TERMINATEDUSER || msgContent != TERMINATEDNODE */
+    pid_t friend;               /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
+    Transaction transaction;    /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    long hops;                  /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    pid_t terminatedPid;        /* pid of terminated user/node, garbage if msgContent != TERMINATEDUSER || msgContent != TERMINATEDNODE */
 } MsgGlobalQueue;
 
 /*

@@ -1187,7 +1187,7 @@ int main(int argc, char *argv[])
                                             /* cycle to search for the user process */
                                             for (i = 0; i < SO_USERS_NUM; i++)
                                             {
-                                                if (usersList[i].procId == msg_from_user.userPid)
+                                                if (usersList[i].procId == msg_from_user.terminatedPid)
                                                 {
                                                     /* we found the user process terminated */
                                                     usersList[i].procState = TERMINATED;
@@ -1217,7 +1217,7 @@ int main(int argc, char *argv[])
                                             }
                                             else
                                             {
-                                                printf("Master: the user process with pid %5d has terminated\n", msg_from_user.userPid);
+                                                printf("Master: the user process with pid %5d has terminated\n", msg_from_user.terminatedPid);
                                             }
                                         }
                                     }
@@ -1274,11 +1274,11 @@ int main(int argc, char *argv[])
                                         {
                                             for (i = 0; i < SO_NODES_NUM; i++)
                                             {
-                                                if (nodesList[i].procId == msg_from_node.userPid)
+                                                if (nodesList[i].procId == msg_from_node.terminatedPid)
                                                 {
-                                                    usersList[i].procState = TERMINATED;
+                                                    nodesList[i].procState = TERMINATED;
                                                     noTerminatedNodes++;
-                                                    noTerminatedNodes--;
+                                                    noEffectiveNodes--;
                                                     break;
                                                 }
                                             }
@@ -1300,7 +1300,7 @@ int main(int argc, char *argv[])
                                             }
                                             else
                                             {
-                                                printf("Master: the node process with pid %5d has terminated\n", msg_from_node.userPid);
+                                                printf("Master: the node process with pid %5d has terminated\n", msg_from_node.terminatedPid);
                                             }
                                         }
                                     }

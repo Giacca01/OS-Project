@@ -189,6 +189,7 @@ int main(int argc, char *argv[], char* envp[])
     MsgTP new_trans;
     Transaction rew_tran;
     MsgGlobalQueue friendFromList;
+    MsgGlobalQueue msgOnGQueue;
     struct sembuf sops[3];
     int num_bytes = 0;
     int contMex = 0;
@@ -638,8 +639,14 @@ int main(int argc, char *argv[], char* envp[])
     }
 
     printf("Node: about to terminate execution...\n");
-    /* we signal master that the node terminated */
-    kill(getppid(), SIGCHLD);
+    
+    /* notify master that user process terminated before expected */
+    msgOnGQueue.mType = getppid();
+    msgOnGQueue.msgContent = TERMINATEDNODE;
+    msgOnGQueue.terminatedPid = getpid();
+    if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
+        safeErrorPrint("Node: failed to inform master of my termination. Error: ");
+
     exit(exitCode);
 }
 
