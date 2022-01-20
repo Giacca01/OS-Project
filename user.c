@@ -584,6 +584,7 @@ double computeBalance(TransList *transSent)
     Register *ptr;
     int j;
     int k;
+    int l;
     pid_t procPid = getpid();
     struct sembuf op;
     boolean errBeforeComputing = FALSE, errAfterComputing = FALSE;
@@ -657,7 +658,9 @@ double computeBalance(TransList *transSent)
 
                         ptr = regPtrs[i];
                         balance = SO_BUDGET_INIT;
-                        while (ptr != NULL)
+                        
+                        /* Il while portava alla generazione di segmentatio fault */
+                        for(l = 0; l < REG_PARTITION_COUNT; l++,ptr++)
                         {
                             for (j = 0; j < ptr->nBlocks; j++)
                             {
@@ -680,7 +683,6 @@ double computeBalance(TransList *transSent)
                                     }
                                 }
                             }
-                            ptr++;
                         }
 
                         op.sem_num = i;
@@ -743,7 +745,7 @@ double computeBalance(TransList *transSent)
                                 {
                                     balance -= (transSent->currTrans.amountSend) + 
                                                 (transSent->currTrans.reward);
-                                    transSent++;
+                                    transSent = transSent->nextTrans;
                                 }
 
                                 printf("User: current balance is %lf\n", balance);

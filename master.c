@@ -1606,7 +1606,6 @@ boolean initializeIPCFacilities()
     regPtrs[1]->nBlocks = 0;
     regPtrs[2]->nBlocks = 0;
     printf("Blocks: %d %d %d\n", regPtrs[0]->nBlocks, regPtrs[1]->nBlocks, regPtrs[2]->nBlocks);
-    sleep(5);
 
     key = ftok(SHMFILEPATH, USERLISTSEED);
     FTOK_TEST_ERROR(key, "Master: ftok failed during users list creation. Error: ");
