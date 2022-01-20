@@ -815,7 +815,7 @@ int main(int argc, char *argv[])
                                 {
                                     msg_to_node.friend = nodesList[extractedFriendsIndex[j]].procId;
                                     printf("***Master: invio messaggio nuovo amico a nodo\n");
-                                    if (msgsnd(globalQueueId, &tmpFriend, sizeof(msg_to_node) - sizeof(long), 0) == -1)
+                                    if (msgsnd(globalQueueId, &msg_to_node, sizeof(msg_to_node) - sizeof(long), 0) == -1)
                                     {
                                         unsafeErrorPrint("Master: failed to initialize node friends. Error: ");
                                         endOfSimulation(-1);

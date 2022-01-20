@@ -296,7 +296,6 @@ int main(int argc, char *argv[], char *envp[])
                             */
                             while(TRUE)
                             {
-                                sleep(20);
                                 printf("User: checking if there are failed transactions...\n");
                                 /* check on global queue if a sent transaction failed */
                                 if(msgrcv(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans)-sizeof(long), getpid(), IPC_NOWAIT) != -1)
@@ -748,7 +747,7 @@ double computeBalance(TransList *transSent)
                                     transSent = transSent->nextTrans;
                                 }
 
-                                printf("User: current balance is %lf\n", balance);
+                                printf("User %ld: current balance is %lf\n", (long)getpid(), balance);
                             }
                         }
                     }
