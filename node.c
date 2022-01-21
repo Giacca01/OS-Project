@@ -246,7 +246,7 @@ int main(int argc, char *argv[], char* envp[])
 
                     /* if node is of type NORMAL, it has to wait the simulation to start, otherwise no */
                     if (strcmp(argv[1],"NORMAL") == 0 && semop(fairStartSem, &sops[0], 1) == -1)
-                        safeErrorPrint("Node: failed to wait for simulation to start. Error: ");
+                        safeErrorPrint("Node: failed to wait for simulation to start. Error: ", __LINE__);
                     else 
                     {
                         printf("Node: reading friends from global queue...\n");
@@ -257,7 +257,7 @@ int main(int argc, char *argv[], char* envp[])
                             num_bytes = msgrcv(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue)-sizeof(long), getpid(), 0);
                             if (num_bytes == -1)
                             {
-                                unsafeErrorPrint("Node: failed to initialize friends' list. Error: ");
+                                unsafeErrorPrint("Node: failed to initialize friends' list. Error: ", __LINE__);
                                 error = TRUE;
                             }
                             else 
@@ -272,7 +272,7 @@ int main(int argc, char *argv[], char* envp[])
                                     /* the message wasn't the one we were looking for, so we reinsert it on the global queue */
                                     if(msgsnd(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
                                     {
-                                        unsafeErrorPrint("Node: failed to initialize friends' list. Error: ");
+                                        unsafeErrorPrint("Node: failed to initialize friends' list. Error: ", __LINE__);
                                         error = TRUE;
                                     }
                                 }
@@ -288,13 +288,13 @@ int main(int argc, char *argv[], char* envp[])
 
                             printf("Node: setting up signal mask...\n");
                             if (sigfillset(&mask) == -1)
-                                unsafeErrorPrint("Node: failed to initialize signal mask. Error: ");
+                                unsafeErrorPrint("Node: failed to initialize signal mask. Error: ", __LINE__);
                             else
                             {
                                 actEndOfSim.sa_handler = endOfExecution;
                                 actEndOfSim.sa_mask = mask;
                                 if (sigaction(SIGUSR1, &actEndOfSim, NULL) == -1)
-                                    unsafeErrorPrint("Node: failed to set up end of simulation handler. Error: ");
+                                    unsafeErrorPrint("Node: failed to set up end of simulation handler. Error: ", __LINE__);
                                 else
                                 {
                                     printf("Node: performing setup operations...\n");
@@ -302,14 +302,14 @@ int main(int argc, char *argv[], char* envp[])
 
                                     if (newBlockPos == NULL)
                                     {
-                                        unsafeErrorPrint("Node: failed to allocate memory for temporary variable. ");
+                                        unsafeErrorPrint("Node: failed to allocate memory for temporary variable. Error: ", __LINE__);
                                     }
                                     else
                                     {
                                         actSendTrans.sa_handler = dispatchToFriend;
                                         actSendTrans.sa_mask = mask;
                                         if (sigaction(SIGALRM, &actSendTrans, NULL) == -1)
-                                            unsafeErrorPrint("Node: failed to set transaction dispatch handler. Error: ");
+                                            unsafeErrorPrint("Node: failed to set transaction dispatch handler. Error: ", __LINE__);
                                         else
                                         {
                                             /*
@@ -321,7 +321,7 @@ int main(int argc, char *argv[], char* envp[])
 
                                             timeSinceEpoch = time(NULL);
                                             if (timeSinceEpoch == (time_t)-1)
-                                                unsafeErrorPrint("Node: failed to initialize random generator's seed. Error");
+                                                unsafeErrorPrint("Node: failed to initialize random generator's seed. Error: ", __LINE__);
                                             else
                                             {
                                                 if (sembufInit(reservation, -1) && sembufInit(release, 1))
@@ -371,7 +371,7 @@ int main(int argc, char *argv[], char* envp[])
                                                                         No, non cambierebbe nulla, ricordare che le transazioni nel TP
                                                                         non sono legate, quindi in un blocco possono esserci transazioni qualsiasi
                                                                     */
-                                                                unsafeErrorPrint("Node: failed to retrieve transaction from Transaction Pool. Error: ");
+                                                                unsafeErrorPrint("Node: failed to retrieve transaction from Transaction Pool. Error: ", __LINE__);
                                                             }
 
                                                             /*
@@ -444,7 +444,7 @@ int main(int argc, char *argv[], char* envp[])
                                                             sops[2].sem_op = -1;
 
                                                             if (semop(rdPartSem, sops, REG_PARTITION_COUNT) == -1)
-                                                                unsafeErrorPrint("Node: failed to reserve register partitions' reading semaphore. Error: ");
+                                                                unsafeErrorPrint("Node: failed to reserve register partitions' reading semaphore. Error: ", __LINE__);
                                                             else
                                                             {
                                                                 sops[0].sem_flg = 0;
@@ -459,7 +459,7 @@ int main(int argc, char *argv[], char* envp[])
                                                                 sops[2].sem_num = 2;
                                                                 sops[2].sem_op = -1;
                                                                 if (semop(wrPartSem, sops, REG_PARTITION_COUNT) == -1)
-                                                                    unsafeErrorPrint("Node: failed to reserve register partitions' writing semaphore. Error: ");
+                                                                    unsafeErrorPrint("Node: failed to reserve register partitions' writing semaphore. Error: ", __LINE__);
                                                                 else
                                                                 {
                                                                     /*
@@ -517,7 +517,7 @@ int main(int argc, char *argv[], char* envp[])
                                                                             /*
                                                                                 Registro pieno ==> invio segnale di fine simulazione
                                                                             */
-                                                                            safeErrorPrint("Node: failed to signal Master for the end of simulation. Error: ");
+                                                                            safeErrorPrint("Node: failed to signal Master for the end of simulation. Error: ", __LINE__);
 
                                                                             waitForTerm = TRUE;
                                                                         }                                                                      
@@ -539,7 +539,7 @@ int main(int argc, char *argv[], char* envp[])
                                                                     sops[2].sem_op = 1;
                                                                     printf("Node: releasing register's partition...\n");
                                                                     if (semop(wrPartSem, sops, REG_PARTITION_COUNT) == -1)
-                                                                        unsafeErrorPrint("Node: failed to release register partitions' writing semaphore. Error: ");
+                                                                        unsafeErrorPrint("Node: failed to release register partitions' writing semaphore. Error: ", __LINE__);
                                                                     else
                                                                     {
                                                                         sops[0].sem_flg = 0;
@@ -554,7 +554,7 @@ int main(int argc, char *argv[], char* envp[])
                                                                         sops[2].sem_num = 2;
                                                                         sops[2].sem_op = 1;
                                                                         if (semop(rdPartSem, sops, REG_PARTITION_COUNT) == -1)
-                                                                            unsafeErrorPrint("Node: failed to release register partitions' reading semaphore. Error: ");
+                                                                            unsafeErrorPrint("Node: failed to release register partitions' reading semaphore. Error: ", __LINE__);
                                                                     }
                                                                 }
                                                             }
@@ -565,7 +565,7 @@ int main(int argc, char *argv[], char* envp[])
                                                                     The wait of the node can be interrupted by the end of simulation signal
                                                                     or by the dispatch to friend signal
                                                                 */
-                                                            unsafeErrorPrint("Node: an unexpected event occured before the end of the computation.");
+                                                            unsafeErrorPrint("Node: an unexpected event occured before the end of the computation. Error: ", __LINE__);
                                                             if (errno != EINTR)
                                                             {
                                                                 /* Si è verificato un errore nella nanosleep (può succedere in caso di errore di settaggio di simTime) */
@@ -617,7 +617,7 @@ int main(int argc, char *argv[], char* envp[])
                                                      */
                                                 if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
                                                 {
-                                                    unsafeErrorPrint("Node: failed to set ignoring of SIGALRM signal before pause of process. Error: ");
+                                                    unsafeErrorPrint("Node: failed to set ignoring of SIGALRM signal before pause of process. Error: ", __LINE__);
                                                 }
 
                                                 printf("Node: waiting for end of simulation signal...\n");
@@ -631,7 +631,7 @@ int main(int argc, char *argv[], char* envp[])
                                             }
                                             else
                                             {
-                                                unsafeErrorPrint("Node: failed to set transaction's dispatch timer.");
+                                                unsafeErrorPrint("Node: failed to set transaction's dispatch timer.", __LINE__);
                                             }*/
                                         }
                                     }
@@ -662,7 +662,7 @@ int main(int argc, char *argv[], char* envp[])
         } 
         else 
         {
-            unsafeErrorPrint("Node: failed to allocate friends' array. Error: ");
+            unsafeErrorPrint("Node: failed to allocate friends' array. Error: ", __LINE__);
         }    
     }
     else
@@ -681,7 +681,7 @@ int main(int argc, char *argv[], char* envp[])
     msgOnGQueue.msgContent = TERMINATEDNODE;
     msgOnGQueue.terminatedPid = getpid();
     if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
-        safeErrorPrint("Node: failed to inform master of my termination. Error: ");
+        safeErrorPrint("Node: failed to inform master of my termination. Error: ", __LINE__);
 
     exit(exitCode);
 }
@@ -857,7 +857,7 @@ boolean sembufInit(struct sembuf *sops, int op)
 
     sops = (struct sembuf *)calloc(REG_PARTITION_COUNT, sizeof(struct sembuf));
     if (sops == NULL)
-        safeErrorPrint("Node: failed to allocate semaphores operations' array. ");
+        safeErrorPrint("Node: failed to allocate semaphores operations' array. ", __LINE__);
     else
     {
         for (i = 0; i < REG_PARTITION_COUNT; i++)
@@ -890,7 +890,7 @@ void reinsertTransactions(Block failedTrs)
         if (msgsnd(tpId, &(failedTrs.transList[failedTrs.bIndex]), sizeof(Transaction), 0) == -1)
         {
             sprintf(aus, "Node: failed to reinsert transaction number %d.", failedTrs.bIndex);
-            safeErrorPrint(aus);
+            safeErrorPrint(aus, __LINE__);
             
             /* Inform the sender the transaction's processing failed */
             temp.transaction = failedTrs.transList[failedTrs.bIndex];
@@ -898,7 +898,7 @@ void reinsertTransactions(Block failedTrs)
             if(!sendOnGlobalQueue(&temp, failedTrs.transList[failedTrs.bIndex].sender, FAILEDTRANS, 0))
             {
                 /* Che facciamo in questo caso ???*/
-                safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ");
+                safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ", __LINE__);
             }
         }
     }
@@ -935,7 +935,7 @@ void dispatchToFriend()
     if (msgrcv(tpId, &aus, sizeof(Transaction), getpid(), IPC_NOWAIT) == -1)
     {
         if (errno != ENOMSG)
-            safeErrorPrint("Node: failed to extract a transaction to send it to a friend. Error: ");
+            safeErrorPrint("Node: failed to extract a transaction to send it to a friend. Error: ", __LINE__);
         /*
             CORREGGERE: In caso di errore procediamo limitandoci a segnalarlo??
         */
@@ -950,7 +950,7 @@ void dispatchToFriend()
         i = extractFriendNode();
         if(i == -1)
         {
-            safeErrorPrint("Node: failed to extract a friend node which to send the transaction. Error: ");
+            safeErrorPrint("Node: failed to extract a friend node which to send the transaction. Error: ", __LINE__);
             temp.bIndex = 0;
             temp.transList[0] = aus.transaction;
             reinsertTransactions(temp);
@@ -960,7 +960,7 @@ void dispatchToFriend()
             key = ftok(MSGFILEPATH, *(friends_node + i));
             if (key == -1)
             {
-                safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
+                safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ", __LINE__);
                 /*
                     Reinserire transazione
                 */
@@ -973,7 +973,7 @@ void dispatchToFriend()
                 friendTp = msgget(key, 0600);
                 if (friendTp == -1)
                 {
-                    safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
+                    safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ", __LINE__);
                     temp.bIndex = 0;
                     temp.transList[0] = aus.transaction;
                     reinsertTransactions(temp);
@@ -983,7 +983,7 @@ void dispatchToFriend()
                     aus.mtype = *(friends_node + i);
                     if (msgsnd(friendTp, &aus, sizeof(Transaction), 0600) == -1)
                     {
-                        safeErrorPrint("Node: failed to dispatch transaction to friend. Error: ");
+                        safeErrorPrint("Node: failed to dispatch transaction to friend. Error: ", __LINE__);
                         temp.bIndex = 0;
                         temp.transList[0] = aus.transaction;
                         reinsertTransactions(temp);
@@ -1009,7 +1009,7 @@ void dispatchToFriend()
     
     if (sigfillset(&mask) == -1)
     {
-        safeErrorPrint("Node: failed to set up signal mask. Error: ");
+        safeErrorPrint("Node: failed to set up signal mask. Error: ", __LINE__);
     }
     else
     {
@@ -1017,13 +1017,13 @@ void dispatchToFriend()
         actSendTrans.sa_handler = dispatchToFriend;
         if (sigaction(SIGALRM, &actSendTrans, NULL) == -1)
         {
-            safeErrorPrint("Node: failed to set simulation's dispatch handler. Error: ");
+            safeErrorPrint("Node: failed to set simulation's dispatch handler. Error: ", __LINE__);
         }
         else
         {
             if (alarm(TRANS_FRIEND_INTERVAL) != 0)
             {
-                safeErrorPrint("Node: failed to set transaction's dispatch timer.");
+                safeErrorPrint("Node: failed to set transaction's dispatch timer.", __LINE__);
             }
         }
     }*/
@@ -1057,7 +1057,7 @@ void sendTransaction()
     {
         if (errno != ENOMSG)
         {
-            safeErrorPrint("Node: failed to check existence of transactions on global queue. Error: ");
+            safeErrorPrint("Node: failed to check existence of transactions on global queue. Error: ", __LINE__);
         }
     } 
     else 
@@ -1075,13 +1075,13 @@ void sendTransaction()
                 /* Invio al master */
                 if (sendOnGlobalQueue(&trans, getppid(), NEWNODE, 0))
                 {
-                    safeErrorPrint("Node: failed to dispatch transaction to master. Error: ");
+                    safeErrorPrint("Node: failed to dispatch transaction to master. Error: ", __LINE__);
                     
                     /* Inform the sender the transaction's processing failed */
                     if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                     {
                         /* Che facciamo in questo caso ???*/
-                        safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ");
+                        safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ", __LINE__);
                     }
                 }
                 else
@@ -1097,13 +1097,13 @@ void sendTransaction()
                 i = extractFriendNode();
                 if(i == -1)
                 {
-                    safeErrorPrint("Node: failed to extract a friend node which to send the transaction. Error: ");
+                    safeErrorPrint("Node: failed to extract a friend node which to send the transaction. Error: ", __LINE__);
                             
                     /* Inform the sender the transaction's processing failed */
                     if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                     {
                         /* Che facciamo in questo caso ??? */
-                        safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ");
+                        safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ", __LINE__);
                     }
                 }
                 else
@@ -1115,20 +1115,20 @@ void sendTransaction()
                     */
                     if (key == -1)
                     {
-                        safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
+                        safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ", __LINE__);
                         if (sendOnGlobalQueue(&trans, *(friends_node + i), TRANSTPFULL, -1))
                             write(STDOUT_FILENO,
                                 "Node: transaction successfully dispatched to friend via global queue.\n",
                                 strlen("Node: transaction successfully dispatched to friend via global queue.\n"));
                         else
                         {
-                            safeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
+                            safeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ", __LINE__);
                             
                             /* Inform the sender the transaction's processing failed */
                             if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                             {
                                 /* Che facciamo in questo caso ??? */
-                                safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ");
+                                safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ", __LINE__);
                             }
                         }
                     }
@@ -1137,20 +1137,20 @@ void sendTransaction()
                     friendTp = msgget(key, 0600);
                     if (friendTp == -1)
                     {
-                        safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ");
+                        safeErrorPrint("Node: failed to connect to friend's transaction pool. Error: ", __LINE__);
                         if (sendOnGlobalQueue(&trans, *(friends_node + i), TRANSTPFULL, -1))
                             write(STDOUT_FILENO,
                                   "Node: transaction successfully dispatched to friend via global queue.\n",
                                   strlen("Node: transaction successfully dispatched to friend via global queue.\n"));
                         else
                         {
-                            safeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
+                            safeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ", __LINE__);
 
                             /* Inform the sender the transaction's processing failed */
                             if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                             {
                                 /* Che facciamo in questo caso ??? */
-                                safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ");
+                                safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ", __LINE__);
                             }
                         }
                     }
@@ -1174,13 +1174,13 @@ void sendTransaction()
                                       strlen("Node: transaction successfully dispatched to friend via global queue.\n"));
                             else
                             {
-                                safeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ");
+                                safeErrorPrint("Node: failed to dispatch transaction to friend via global queue. Error: ", __LINE__);
 
                                 /* Inform the sender the transaction's processing failed */
                                 if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                                 {
                                     /* Che facciamo in questo caso ??? */
-                                    safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ");
+                                    safeErrorPrint("Node: failed to inform sender of transaction that the transaction wasn't processed. Error: ", __LINE__);
                                 }
                             }
                         }
@@ -1214,7 +1214,7 @@ void sendTransaction()
                         CORREGGERE: Come gestiamo questo caso?
                         Estendiamo il vettore degli amici oppure segnaliamo un errore??
                     */
-                unsafeErrorPrint("Node: maximun number of friends reached. New friend is discarded.\n");
+                unsafeErrorPrint("Node: maximun number of friends reached. New friend is discarded.\n", __LINE__);
             }
             /*
                     CORREGGERE: dovremmo testare lo stato??
@@ -1229,7 +1229,7 @@ void sendTransaction()
             /* the message wasn't the one we were looking for, so we reinsert it on the global queue */
             if(msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
             {
-                unsafeErrorPrint("Node: failed to reinsert on global queue a message read from it. Error: ");
+                unsafeErrorPrint("Node: failed to reinsert on global queue a message read from it. Error: ", __LINE__);
             }
         }
     }
@@ -1282,7 +1282,7 @@ int extractFriendNode()
             sops.sem_op = -1;
             if(semop(nodeListSem, &sops, 1) == -1)
             {
-                safeErrorPrint("Node: failed to reserve write nodesList semaphore. Error: ");
+                safeErrorPrint("Node: failed to reserve write nodesList semaphore. Error: ", __LINE__);
                 /* do we need to end execution ? */
             }
         }
@@ -1309,7 +1309,7 @@ int extractFriendNode()
                     sops.sem_op = 1;
                     if(semop(nodeListSem, &sops, 1) == -1)
                     {
-                        safeErrorPrint("Node: failed to release write nodesList semaphore. Error: ");
+                        safeErrorPrint("Node: failed to release write nodesList semaphore. Error: ", __LINE__);
                         /* do we need to end execution ? */
                     }
                 }
@@ -1322,25 +1322,25 @@ int extractFriendNode()
                 }
                 else
                 {
-                    safeErrorPrint("Node: failed to release mutex nodesList semaphore. Error: ");
+                    safeErrorPrint("Node: failed to release mutex nodesList semaphore. Error: ", __LINE__);
                     /* do we need to end execution ? */
                 }
             }
             else
             {
-                safeErrorPrint("Node: failed to reserve mutex nodesList semaphore. Error: ");
+                safeErrorPrint("Node: failed to reserve mutex nodesList semaphore. Error: ", __LINE__);
                 /* do we need to end execution ? */
             }
         }
         else
         {
-            safeErrorPrint("Node: failed to release mutex nodesList semaphore. Error: ");
+            safeErrorPrint("Node: failed to release mutex nodesList semaphore. Error: ", __LINE__);
             /* do we need to end execution ? */
         }
     }
     else
     {
-        safeErrorPrint("Node: failed to reserve mutex nodesList semaphore. Error: ");
+        safeErrorPrint("Node: failed to reserve mutex nodesList semaphore. Error: ", __LINE__);
         /* do we need to end execution ? */
     }
 
@@ -1390,7 +1390,7 @@ void deallocateIPCFacilities()
                     Non vale la pena, possiamo limitarci a proseguire la deallocazione
                     riducendo al minimo il memory leak
                 */
-                safeErrorPrint("Node: failed to detach from register's partition. Error: ");
+                safeErrorPrint("Node: failed to detach from register's partition. Error: ", __LINE__);
             }
         }
     }
@@ -1405,7 +1405,7 @@ void deallocateIPCFacilities()
     if (shmdt(nodesList) == -1)
     {
         if (errno != EAGAIN)
-            safeErrorPrint("Node: failed to detach from nodes list. Error: ");
+            safeErrorPrint("Node: failed to detach from nodes list. Error: ", __LINE__);
     }
 
     write(STDOUT_FILENO,
@@ -1415,7 +1415,7 @@ void deallocateIPCFacilities()
     if (shmdt(noNodeSegReadersPtr) == -1)
     {
         if (errno != EAGAIN)
-            safeErrorPrint("Node: failed to detach from nodes list's number of readers shared variable. Error: ");
+            safeErrorPrint("Node: failed to detach from nodes list's number of readers shared variable. Error: ", __LINE__);
     }
 
     if (friends_node != NULL)

@@ -7,5 +7,5 @@
 #include <string.h>
 #include <stdlib.h>
 
-void unsafeErrorPrint();
-void safeErrorPrint();
+void unsafeErrorPrint(char *msg, int line);
+void safeErrorPrint(char *msg, int line);

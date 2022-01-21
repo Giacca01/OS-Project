@@ -11,10 +11,10 @@
 
 /* Vedere come trattare eventuali errori in queste funzioni*/
 /* Liberamente ispirato a EXIT_ON_ERROR del prof Radicioni*/
-void unsafeErrorPrint(char *msg)
+void unsafeErrorPrint(char *msg, int line)
 {
-    fprintf(stderr, "An error occurred at line %d during the execution of process of PID: %ld. See following descrption.\n",
-            __LINE__, (long)getpid());
+    fprintf(stderr, "An error occurred at line %d during the execution of process of PID: %ld. See following description.\n",
+            line, (long)getpid());
 
     if (errno)
     {
@@ -29,13 +29,13 @@ void unsafeErrorPrint(char *msg)
     }
 }
 
-void safeErrorPrint(char *msg)
+void safeErrorPrint(char *msg, int line)
 {
     char *aus = NULL;
     int ret = -1;
 
-    ret = sprintf(aus, "An error occurred at line %d during the execution of process of PID: %ld. See following descrption.\n",
-                  __LINE__, (long)getpid());
+    ret = sprintf(aus, "An error occurred at line %d during the execution of process of PID: %ld. See following description.\n",
+                  line, (long)getpid());
     write(STDERR_FILENO, aus, ret);
 
     if (errno)

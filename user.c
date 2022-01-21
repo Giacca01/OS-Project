@@ -266,7 +266,7 @@ int main(int argc, char *argv[], char *envp[])
             {
                 if(sigfillset(&mask) == -1)
                 {
-                    unsafeErrorPrint("User: failed to initialize signal mask. Error: ");
+                    unsafeErrorPrint("User: failed to initialize signal mask. Error: ", __LINE__);
                     endOfExecution(1);
                 }
                 else
@@ -275,7 +275,7 @@ int main(int argc, char *argv[], char *envp[])
                     actEndOfExec.sa_mask = mask;
                     if(sigaction(SIGUSR1, &actEndOfExec, NULL) == -1)
                     {
-                        unsafeErrorPrint("User: failed to set up end of simulation handler. Error: ");
+                        unsafeErrorPrint("User: failed to set up end of simulation handler. Error: ", __LINE__);
                         endOfExecution(1);
                     }
                     else
@@ -284,7 +284,7 @@ int main(int argc, char *argv[], char *envp[])
                         actGenTrans.sa_mask = mask;
                         if(sigaction(SIGUSR2, &actGenTrans, NULL) == -1)
                         {
-                            unsafeErrorPrint("User: failed to set up transaction generation handler. Error: ");
+                            unsafeErrorPrint("User: failed to set up transaction generation handler. Error: ", __LINE__);
                             endOfExecution(1);
                         }
                         else
@@ -313,11 +313,11 @@ int main(int argc, char *argv[], char *envp[])
                                         printf("User: no failed transactions found.\n");
                                         /* the message wasn't the one we were looking for, reinserting it on the global queue */
                                         if(msgsnd(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans)-sizeof(long), 0) == -1)
-                                            unsafeErrorPrint("User: failed to reinsert the message read from global queue while checking for failed transactions. Error: ");
+                                            unsafeErrorPrint("User: failed to reinsert the message read from global queue while checking for failed transactions. Error: ", __LINE__);
                                     }
                                 }
                                 else if(errno != ENOMSG)
-                                    unsafeErrorPrint("User: failed to check for failed transaction messages on global queue. Error: ");
+                                    unsafeErrorPrint("User: failed to check for failed transaction messages on global queue. Error: ", __LINE__);
                                 /* else errno == ENOMSG, so no transaction has failed */
                                 
                                 /* generate a transaction */
@@ -612,14 +612,14 @@ double computeBalance(TransList *transSent)
         */
         if (semop(rdPartSem, &op, 1) == -1)
         {
-            safeErrorPrint("User: failed to reserve register partition reading semaphore. Error: ");
+            safeErrorPrint("User: failed to reserve register partition reading semaphore. Error: ", __LINE__);
             errBeforeComputing = TRUE;
         }
         else 
         {
             if (semop(mutexPartSem, &op, 1) == -1)
             {
-                safeErrorPrint("User: failed to reserve register partition mutex semaphore. Error: ");
+                safeErrorPrint("User: failed to reserve register partition mutex semaphore. Error: ", __LINE__);
                 errBeforeComputing = TRUE;
             }
             else 
@@ -629,7 +629,7 @@ double computeBalance(TransList *transSent)
                 {
                     if (semop(wrPartSem, &op, 1) == -1)
                     {
-                        safeErrorPrint("User: failed to reserve register partition writing semaphore. Error:");
+                        safeErrorPrint("User: failed to reserve register partition writing semaphore. Error:", __LINE__);
                         errBeforeComputing = TRUE;
                     }
                 }
@@ -640,14 +640,14 @@ double computeBalance(TransList *transSent)
 
                 if (semop(mutexPartSem, &op, 1) == -1)
                 {
-                    safeErrorPrint("User: failed to release register partition mutex semaphore. Error: ");
+                    safeErrorPrint("User: failed to release register partition mutex semaphore. Error: ", __LINE__);
                     errBeforeComputing = TRUE;
                 }
                 else 
                 {
                     if (semop(rdPartSem, &op, 1) == -1)
                     {
-                        safeErrorPrint("User: failed to release register partition reading semaphore. Error: ");
+                        safeErrorPrint("User: failed to release register partition reading semaphore. Error: ", __LINE__);
                         errBeforeComputing = TRUE;
                     }
                     else 
@@ -691,7 +691,7 @@ double computeBalance(TransList *transSent)
                         if (semop(mutexPartSem, &op, 1) == -1)
                         {
                             balance = 0;
-                            safeErrorPrint("User: failed to reserve register partition mutex semaphore. Error: ");
+                            safeErrorPrint("User: failed to reserve register partition mutex semaphore. Error: ", __LINE__);
                             userFailure();
                             errAfterComputing = TRUE;
                         }
@@ -707,7 +707,7 @@ double computeBalance(TransList *transSent)
                                 if (semop(wrPartSem, &op, 1) == -1)
                                 {
                                     balance = 0;
-                                    safeErrorPrint("User: failed to release register partition writing semaphore. Error: ");
+                                    safeErrorPrint("User: failed to release register partition writing semaphore. Error: ", __LINE__);
                                     errAfterComputing = TRUE;
                                 }
                             }
@@ -719,7 +719,7 @@ double computeBalance(TransList *transSent)
                             if (semop(mutexPartSem, &op, 1) == -1)
                             {
                                 balance = 0;
-                                safeErrorPrint("User: failed to release register partition mutex semaphore. Error: ");
+                                safeErrorPrint("User: failed to release register partition mutex semaphore. Error: ", __LINE__);
                                 userFailure();
                                 errAfterComputing = TRUE;
                             }
@@ -854,7 +854,7 @@ void endOfExecution(int sig)
         msgOnGQueue.msgContent = TERMINATEDUSER;
         msgOnGQueue.terminatedPid = getpid();
         if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
-            safeErrorPrint("User: failed to inform master of my termination. Error: ");
+            safeErrorPrint("User: failed to inform master of my termination. Error: ", __LINE__);
     }
     
     exit(exitCode);
@@ -892,7 +892,7 @@ void deallocateIPCFacilities()
                     Non vale la pena, possiamo limitarci a proseguire la deallocazione
                     riducendo al minimo il memory leak
                 */
-                safeErrorPrint("User: failed to detach from register's partition. Error: ");
+                safeErrorPrint("User: failed to detach from register's partition. Error: ", __LINE__);
             }
         }
     }
@@ -909,7 +909,7 @@ void deallocateIPCFacilities()
     if(shmdt(usersList) == -1)
     {
         if (errno != EINVAL)
-            safeErrorPrint("User: failed to detach from users list. Error: ");
+            safeErrorPrint("User: failed to detach from users list. Error: ", __LINE__);
     }
 
     write(STDOUT_FILENO, 
@@ -919,7 +919,7 @@ void deallocateIPCFacilities()
     if(shmdt(nodesList) == -1)
     {
         if (errno != EINVAL)
-            safeErrorPrint("User: failed to detach from nodes list. Error: ");
+            safeErrorPrint("User: failed to detach from nodes list. Error: ", __LINE__);
     }
 
     write(STDOUT_FILENO, 
@@ -931,7 +931,7 @@ void deallocateIPCFacilities()
         if(shmdt(noReadersPartitionsPtrs[i]) == -1)
         {
             if(errno != EINVAL)
-                safeErrorPrint("User: failed to detach from partitions' number of readers shared variable. Error: ");
+                safeErrorPrint("User: failed to detach from partitions' number of readers shared variable. Error: ", __LINE__);
         }
     }
     if(noReadersPartitions != NULL)
@@ -947,7 +947,7 @@ void deallocateIPCFacilities()
     if(shmdt(noUserSegReadersPtr) == -1)
     {
         if(errno != EINVAL)
-            safeErrorPrint("User: failed to detach from users list's number of readers shared variable. Error: ");
+            safeErrorPrint("User: failed to detach from users list's number of readers shared variable. Error: ", __LINE__);
     }
 
     write(STDOUT_FILENO, 
@@ -957,7 +957,7 @@ void deallocateIPCFacilities()
     if(shmdt(noNodeSegReadersPtr) == -1)
     {
         if(errno != EINVAL)
-            safeErrorPrint("User: failed to detach from nodes list's number of readers shared variable. Error: ");
+            safeErrorPrint("User: failed to detach from nodes list's number of readers shared variable. Error: ", __LINE__);
     }
 
     write(STDOUT_FILENO, 
@@ -998,7 +998,7 @@ void transactionGeneration(int sig)
         receiver_user = extractReceiver(getpid());
         if(receiver_user == -1)
         {
-            safeErrorPrint("User: failed to extract user receiver. Error: ");
+            safeErrorPrint("User: failed to extract user receiver. Error: ", __LINE__);
             userFailure();
         }
         else 
@@ -1030,7 +1030,7 @@ void transactionGeneration(int sig)
             receiver_node = extractNode();
             if(receiver_node == -1)
             {
-                safeErrorPrint("User: failed to extract node which to send transaction on TP. Error: ");
+                safeErrorPrint("User: failed to extract node which to send transaction on TP. Error: ", __LINE__);
                 userFailure();
             }
             else
@@ -1043,7 +1043,7 @@ void transactionGeneration(int sig)
                 key = ftok(MSGFILEPATH, receiver_node);
                 if(key == -1)
                 {
-                    safeErrorPrint("User: ftok failed during node's queue retrieving. Error: ");
+                    safeErrorPrint("User: ftok failed during node's queue retrieving. Error: ", __LINE__);
                     userFailure();
                 }
                 else
@@ -1052,7 +1052,7 @@ void transactionGeneration(int sig)
                     queueId = msgget(key, 0600);
                     if(queueId == -1)
                     {
-                        safeErrorPrint("User: failed to connect to node's transaction pool. Error: ");
+                        safeErrorPrint("User: failed to connect to node's transaction pool. Error: ", __LINE__);
                         userFailure();
                     }
                     else
@@ -1080,16 +1080,16 @@ void transactionGeneration(int sig)
                                 msgOnGQueue.hops = 0;
                                 if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
                                 {
-                                    safeErrorPrint("User: failed to send transaction on global queue. Error: ");
+                                    safeErrorPrint("User: failed to send transaction on global queue. Error: ", __LINE__);
                                     userFailure();
                                 }
                             }
                             else
                             {
                                 if(sig == 0)
-                                    safeErrorPrint("User: failed to send transaction to node. Error: ");
+                                    safeErrorPrint("User: failed to send transaction to node. Error: ", __LINE__);
                                 else
-                                    safeErrorPrint("User: failed to send transaction generated on event to node. Error: ");
+                                    safeErrorPrint("User: failed to send transaction generated on event to node. Error: ", __LINE__);
                                 
                                 userFailure();
                             }
@@ -1114,7 +1114,7 @@ void transactionGeneration(int sig)
                                 strlen("User: processing the transaction...\n"));
                             
                             if (nanosleep(&request, &remaining) == -1)
-                                safeErrorPrint("User: failed to simulate wait for processing the transaction. Error: ");
+                                safeErrorPrint("User: failed to simulate wait for processing the transaction. Error: ", __LINE__);
                             
                             /* 
                                 qui in caso di fallimento non serve incrementare il counter del numero di fallimenti perché 
@@ -1218,7 +1218,7 @@ pid_t extractReceiver(pid_t pid)
             sops.sem_op = -1;
             if (semop(userListSem, &sops, 1) == -1)
             {
-                safeErrorPrint("User: failed to reserve write usersList semaphore. Error: ");
+                safeErrorPrint("User: failed to reserve write usersList semaphore. Error: ", __LINE__);
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                 return (pid_t)-1;
             }
@@ -1251,7 +1251,7 @@ pid_t extractReceiver(pid_t pid)
                     sops.sem_op = 1;
                     if (semop(userListSem, &sops, 1) == -1)
                     {
-                        safeErrorPrint("User: failed to release write usersList semaphore. Error: ");
+                        safeErrorPrint("User: failed to release write usersList semaphore. Error: ", __LINE__);
                         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                         return (pid_t)-1;
                     }
@@ -1265,25 +1265,25 @@ pid_t extractReceiver(pid_t pid)
                 }
                 else
                 {
-                    safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ");
+                    safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ", __LINE__);
                     /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                 }
             }
             else
             {
-                safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ");
+                safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ", __LINE__);
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
             }
         }
         else
         {
-            safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ");
+            safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ", __LINE__);
             /* restituiamo -1 e contiamo come fallimento di invio di transazione */
         }
     }
     else
     {
-        safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ");
+        safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ", __LINE__);
         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
     }
 
@@ -1312,7 +1312,7 @@ pid_t extractNode()
             sops.sem_op = -1;
             if(semop(nodeListSem, &sops, 1) == -1)
             {
-                safeErrorPrint("User: failed to reserve write nodesList semaphore. Error: ");
+                safeErrorPrint("User: failed to reserve write nodesList semaphore. Error: ", __LINE__);
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                 return (pid_t)-1;
             }
@@ -1342,7 +1342,7 @@ pid_t extractNode()
                     sops.sem_op = 1;
                     if(semop(nodeListSem, &sops, 1) == -1)
                     {
-                        safeErrorPrint("User: failed to release write nodesList semaphore. Error: ");
+                        safeErrorPrint("User: failed to release write nodesList semaphore. Error: ", __LINE__);
                         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                         return (pid_t)-1;
                     }
@@ -1356,25 +1356,25 @@ pid_t extractNode()
                 }
                 else
                 {
-                    safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ");
+                    safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ", __LINE__);
                     /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                 }
             }
             else
             {
-                safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ");
+                safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ", __LINE__);
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
             }
         }
         else
         {
-            safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ");
+            safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ", __LINE__);
             /* restituiamo -1 e contiamo come fallimento di invio di transazione */
         }
     }
     else
     {
-        safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ");
+        safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ", __LINE__);
         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
     }
 
