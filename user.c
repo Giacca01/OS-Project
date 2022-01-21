@@ -981,14 +981,13 @@ void transactionGeneration(int sig)
     MsgTP msg_to_node;
     key_t key;
     pid_t receiver_node, receiver_user;
-    struct timespec request, remaining;
+    struct timespec request, remaining, randTime;
     MsgGlobalQueue msgOnGQueue;
     struct sembuf sops;
     
     sops.sem_flg = 0;
 
     bilancio = computeBalance(transactionsSent); /* calcolo del bilancio */
-    srand(getpid());
 
     if(bilancio > 2)
     {
@@ -1013,12 +1012,15 @@ void transactionGeneration(int sig)
                     "User: generating a new transaction on event request...\n",
                     strlen("User: generating a new transaction on event request...\n"));
 
+            /* getting nanoseconds to generate a random amount */
+            clock_gettime(CLOCK_REALTIME, &randTime);
+            
             /* Generating transaction */
             new_trans.sender = getpid();
             new_trans.receiver = receiver_user;
-            new_trans.amountSend = (rand()%bilancio)+2; /* calcolo del budget fra 2 e il budget (così lo fa solo intero) */
-            new_trans.reward = new_trans.amountSend*SO_REWARD; /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 0 e 1 */
-            /*new_trans.reward = (new_trans.amountSend/100)*SO_REWARD;*/ /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 1 e 100 */
+            new_trans.amountSend = (randTime.tv_nsec%bilancio)+2; /* calcolo del budget fra 2 e il budget (così lo fa solo intero) */
+            /*new_trans.reward = new_trans.amountSend*SO_REWARD;*/ /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 0 e 1 */
+            new_trans.reward = (new_trans.amountSend/100)*SO_REWARD; /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 1 e 100 */
             if(new_trans.reward < 1)
                 new_trans.reward = 1;
 
