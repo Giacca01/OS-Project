@@ -747,7 +747,6 @@ double computeBalance(TransList *transSent)
                                     transSent = transSent->nextTrans;
                                 }
 
-                                printf("User %ld: current balance is %lf\n", (long)getpid(), balance);
                             }
                         }
                     }
@@ -762,6 +761,8 @@ double computeBalance(TransList *transSent)
         userFailure();
         balance = 0;
     }
+    
+    printf("User %ld: current balance is %lf\n", (long)getpid(), balance);
 
     return balance;
 }
@@ -820,7 +821,7 @@ void removeTransaction(TransList *tList, Transaction *t)
             /*
                 Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
             */
-            free(prev);
+            /*free(prev);*/
         }
     }
 }
