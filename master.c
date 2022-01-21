@@ -119,7 +119,7 @@ long noAllTimesUsers = 0;  /* Historical number of users: it counts also the ter
 
 long tplLength = 0; /* keeps tpList length */
 
-extern char ** environ;
+extern char **environ;
 struct timespec now;
 int *extractedFriendsIndex;
 /***** End of Global structures *****/
@@ -192,7 +192,7 @@ void estrai(int k)
 
     int n;
 
-    /*  
+    /*
         CORREGGERE: controllare lo stato dell'amico
     */
     for (count = 0; count < SO_FRIENDS_NUM; count++)
@@ -247,7 +247,7 @@ typedef struct proc_budget
     L'idea è che il libro mastro sia immutabile e non sia quindi
     necessario scorrerlo tutto ogni volta.
     Per migliorare l'efficienza del calcolo del budget
-    possiamo limitarci ad aggiornare i budget sulla base 
+    possiamo limitarci ad aggiornare i budget sulla base
     delle sole transazioni inserite nel libro mastro
     tra un aggiornamento e l'altro
 */
@@ -257,7 +257,7 @@ typedef proc_budget *budgetlist;
 /* Function to free the space dedicated to the budget list p passed as argument */
 void budgetlist_free(budgetlist p);
 
-/* 
+/*
  * Function that inserts in the global list bud_list the node passed as
  * argument in an ordered way (the list is ordered in ascending order).
  * We want to keep the list sorted to implement a more efficient
@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
     int ind_block;           /* indice per scorrimento blocchi */
     int ind_tr_in_block = 0; /* indice per scorrimento transazioni in blocco */
 
-    /* variable that keeps track of the attempts to update a budget, 
+    /* variable that keeps track of the attempts to update a budget,
     if > NO_ATTEMPTS_UPDATE_BUDGET we switch to next block */
     int bud_update_attempts = 0;
 
@@ -332,11 +332,11 @@ int main(int argc, char *argv[])
 
     /* variables for new node creation */
     /*int *id_new_friends;*/ /* array to keep track of already chosen new friends */
-   /* int new;*/             /* flag */
+    /* int new;*/            /* flag */
     /*int index, tr_written;*/
 
     /* declaring of message for new transaction pool of new node */
-   /* MsgTP new_trans;*/
+    /* MsgTP new_trans;*/
 
     /* declaring of variable for sending transactions over TP of new node */
     /*int tp_new_node;*/
@@ -352,7 +352,6 @@ int main(int argc, char *argv[])
     /*char *envVec[] = {NULL};*/
 
     char *aus = NULL;
-    
 
     /* Set common semaphore options*/
     sops[0].sem_num = 0;
@@ -442,7 +441,7 @@ int main(int argc, char *argv[])
                                     /*
                                                 (**)
                                                 In case we failed to create a process we end
-                                                the simulation. 
+                                                the simulation.
                                                 This solution is extended to every operation required to create a node/user.
                                                 This solution is quite restrictive, but we have to consider
                                                 that loosing even one process before it even started
@@ -458,44 +457,44 @@ int main(int argc, char *argv[])
                                             For test's sake
                                         */
 
-                                            signal(SIGALRM, SIG_IGN);
-                                            /*
-                                                (Almeno) questa serve davvero
-                                                perchè il segnale di fine simulazione potrebe arrivare
-                                                prima che i figli inizino la loro computazione
-                                            */
-                                            signal(SIGUSR1, tmpHandler);
-                                            /*
-                                        sops[0].sem_op = -1;
-                                        semop(fairStartSem, &sops[0], 1);*/
+                                    signal(SIGALRM, SIG_IGN);
+                                    /*
+                                        (Almeno) questa serve davvero
+                                        perchè il segnale di fine simulazione potrebe arrivare
+                                        prima che i figli inizino la loro computazione
+                                    */
+                                    signal(SIGUSR1, tmpHandler);
+                                    /*
+                                sops[0].sem_op = -1;
+                                semop(fairStartSem, &sops[0], 1);*/
 
-                                            printf("User %d is waiting for simulation to start....\n", i);
-                                            sops[0].sem_op = 0;
-                                            sops[0].sem_num = 0;
-                                            sops[0].sem_flg = 0;
-                                            if (semop(fairStartSem, &sops[0], 1) == -1)
-                                            {
-                                                /*
-                                                    See comment above (**)
-                                                */
-                                                unsafeErrorPrint("User: failed to wait for zero on start semaphore. Error ");
-                                                endOfSimulation(-1);
-                                            }
-                                            else
-                                            {
-                                                /* Temporary part to get the process to do something*/
-                                                if (execle("user.out", "user", NULL, environ) == -1)
-                                                {
-                                                    unsafeErrorPrint("User: failed to load user's code. Error: ");
-                                                    endOfSimulation(-1);
-                                                }
-                                                /*
-                                                        do_stuff(1);
-                                                        printf("Eseguo user...\n");
-                                                        printf("User done! PID:%d\n", getpid());
-                                                        busy_cpu(1);
-                                                        exit(i);*/
-                                            }
+                                    printf("User %d is waiting for simulation to start....\n", i);
+                                    sops[0].sem_op = 0;
+                                    sops[0].sem_num = 0;
+                                    sops[0].sem_flg = 0;
+                                    if (semop(fairStartSem, &sops[0], 1) == -1)
+                                    {
+                                        /*
+                                            See comment above (**)
+                                        */
+                                        unsafeErrorPrint("User: failed to wait for zero on start semaphore. Error ");
+                                        endOfSimulation(-1);
+                                    }
+                                    else
+                                    {
+                                        /* Temporary part to get the process to do something*/
+                                        if (execle("user.out", "user", NULL, environ) == -1)
+                                        {
+                                            unsafeErrorPrint("User: failed to load user's code. Error: ");
+                                            endOfSimulation(-1);
+                                        }
+                                        /*
+                                                do_stuff(1);
+                                                printf("Eseguo user...\n");
+                                                printf("User done! PID:%d\n", getpid());
+                                                busy_cpu(1);
+                                                exit(i);*/
+                                    }
                                     break;
 
                                 default:
@@ -535,7 +534,7 @@ int main(int argc, char *argv[])
                                     usersList[i].procId = child_pid;
                                     usersList[i].procState = ACTIVE;
 
-                                    /*  
+                                    /*
                                                 Exit section
                                             */
                                     sops[0].sem_op = 1;
@@ -574,14 +573,14 @@ int main(int argc, char *argv[])
                                     printf("Node of PID %ld starts its execution....\n", (long)getpid());
                                     /*sops[0].sem_op = -1;
                                         semop(fairStartSem, &sops[0], 1);*/
-                                    
-                                            signal(SIGALRM, SIG_IGN);
-                                            /*
-                                                (Almeno) questa serve davvero
-                                                perchè il segnale di fine simulazione potrebe arrivare
-                                                prima che i figli inizino la loro computazione
-                                            */
-                                            signal(SIGUSR1, tmpHandler);
+
+                                    signal(SIGALRM, SIG_IGN);
+                                    /*
+                                        (Almeno) questa serve davvero
+                                        perchè il segnale di fine simulazione potrebe arrivare
+                                        prima che i figli inizino la loro computazione
+                                    */
+                                    signal(SIGUSR1, tmpHandler);
 
                                     /* Temporary part to get the process to do something*/
                                     if (execle("node.out", "node", "NORMAL", NULL, environ) == -1)
@@ -655,7 +654,7 @@ int main(int argc, char *argv[])
 
                             /********************************************/
                             /********************************************/
-              
+
                             /*
                                 CORREGGERE: Mettere più stampe per segnalare cosa stia succedendo
                             */
@@ -683,13 +682,13 @@ int main(int argc, char *argv[])
                                     safeErrorPrint("Master: failed to reserve write usersList semaphore. Error: ");
                                     endOfSimulation(-1);
                                 }
-                                /* 
-                                * se lo scrittore sta scrivendo, allora il primo lettore che entrerà in questo 
-                                * ramo si addormenterà su questo semaforo.
-                                * se lo scrittore non sta scrivendo, allora il primo lettore decrementerà di 1 il
-                                * valore semaforico, in modo tale se lo scrittore vuole scrivere, si addormenterà 
-                                * sul semaforo
-                                */
+                                /*
+                                 * se lo scrittore sta scrivendo, allora il primo lettore che entrerà in questo
+                                 * ramo si addormenterà su questo semaforo.
+                                 * se lo scrittore non sta scrivendo, allora il primo lettore decrementerà di 1 il
+                                 * valore semaforico, in modo tale se lo scrittore vuole scrivere, si addormenterà
+                                 * sul semaforo
+                                 */
                             }
                             /* we exit the critical section for the noUserSegReadersPtr variabile */
                             sops[0].sem_num = 0;
@@ -734,10 +733,10 @@ int main(int argc, char *argv[])
                                     safeErrorPrint("Master: failed to reserve write usersList semaphore. Error: ");
                                     endOfSimulation(-1);
                                 }
-                                /* 
-                                * se sono l'ultimo lettore e smetto di leggere, allora devo riportare a 0
-                                * il valore semaforico in modo che se lo scrittore vuole scrivere possa farlo.
-                                */
+                                /*
+                                 * se sono l'ultimo lettore e smetto di leggere, allora devo riportare a 0
+                                 * il valore semaforico in modo che se lo scrittore vuole scrivere possa farlo.
+                                 */
                             }
 
                             /* we exit the critical section for the noUserSegReadersPtr variabile */
@@ -990,20 +989,20 @@ int main(int argc, char *argv[])
                                                     if (trans.sender == -1)
                                                     {
                                                         ct_updates++;
-                                                        /* 
-                                                        * se il sender è -1, rappresenta transazione di pagamento reward del nodo,
-                                                        * quindi non bisogna aggiornare il budget del sender, ma solo del receiver.
-                                                        */
+                                                        /*
+                                                         * se il sender è -1, rappresenta transazione di pagamento reward del nodo,
+                                                         * quindi non bisogna aggiornare il budget del sender, ma solo del receiver.
+                                                         */
                                                     }
 
                                                     /* update budget of sender of transaction, the amount is negative */
                                                     /* error checking not needed, already done in function */
-                                                    if (update_budget(trans.sender, -(trans.amountSend)) == 0)
+                                                    else if (update_budget(trans.sender, -(trans.amountSend)) == 0)
                                                         ct_updates++;
 
                                                     /* update budget of receiver of transaction, the amount is positive */
                                                     /* error checking not needed, already done in function */
-                                                    if (update_budget(trans.sender, trans.amountSend) == 0)
+                                                    if (update_budget(trans.receiver, trans.amountSend) == 0)
                                                         ct_updates++;
 
 #if 0
@@ -1103,10 +1102,10 @@ int main(int argc, char *argv[])
                                     */
                                 if (noAllTimesNodes + noAllTimesUsers <= MAX_PRINT_PROCESSES)
                                 {
-                                    /* 
-                                    * the number of effective processes is lower or equal than the maximum we established, 
-                                    * so we print budget of all processes 
-                                    */
+                                    /*
+                                     * the number of effective processes is lower or equal than the maximum we established,
+                                     * so we print budget of all processes
+                                     */
                                     printf("Master: Printing budget of all the processes.\n");
 
                                     for (el_list = bud_list_head; el_list != NULL; el_list = el_list->next)
@@ -1119,10 +1118,10 @@ int main(int argc, char *argv[])
                                 }
                                 else
                                 {
-                                    /* 
-                                    * the number of effective processes is bigger than the maximum we established, so 
-                                    * we print only the maximum and minimum budget in the list 
-                                    */
+                                    /*
+                                     * the number of effective processes is bigger than the maximum we established, so
+                                     * we print only the maximum and minimum budget in the list
+                                     */
 
                                     printf("Master: There are too many processes. Printing only minimum and maximum budgets.\n");
 
@@ -1227,7 +1226,7 @@ int main(int argc, char *argv[])
                                     else
                                     {
                                         /* Reinserting the message that we have consumed from the global queue */
-                                        if (msgsnd(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
+                                        if (msgsnd(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
                                         {
                                             /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
                                             unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated users. Error: ");
@@ -1240,16 +1239,16 @@ int main(int argc, char *argv[])
                                 if (errno != ENOMSG)
                                 {
                                     unsafeErrorPrint("Master: failed to retrieve user termination messages from global queue. Error: ");
-                                    /* 
-                                    * DEVO FARE EXIT????? 
-                                    * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non 
-                                    * è necessario fare la exit, ma se si verifica un errore a tutti i cicli non è possibile 
-                                    * leggere messaggi dalla coda, quindi si finisce con il non creare un nuovo nodo, non processare
-                                    * alcune transazioni e si può riempire la coda globale, rischiando di mandare in wait tutti i 
-                                    * restanti processi nodi e utenti. Quindi sarebbe opportuno fare exit appena si verifica un errore
-                                    * oppure utilizzare un contatore (occorre stabilire una soglia di ripetizione dell'errore). Per 
-                                    * ora lo lasciamo.
-                                    */
+                                    /*
+                                     * DEVO FARE EXIT?????
+                                     * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
+                                     * è necessario fare la exit, ma se si verifica un errore a tutti i cicli non è possibile
+                                     * leggere messaggi dalla coda, quindi si finisce con il non creare un nuovo nodo, non processare
+                                     * alcune transazioni e si può riempire la coda globale, rischiando di mandare in wait tutti i
+                                     * restanti processi nodi e utenti. Quindi sarebbe opportuno fare exit appena si verifica un errore
+                                     * oppure utilizzare un contatore (occorre stabilire una soglia di ripetizione dell'errore). Per
+                                     * ora lo lasciamo.
+                                     */
                                     endOfSimulation(-1);
                                 }
 
@@ -1311,7 +1310,7 @@ int main(int argc, char *argv[])
                                     else
                                     {
                                         /* Reinserting the message that we have consumed from the global queue */
-                                        if (msgsnd(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
+                                        if (msgsnd(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
                                         {
                                             /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
                                             unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated nodes. Error: ");
@@ -1324,16 +1323,16 @@ int main(int argc, char *argv[])
                                 if (errno != ENOMSG)
                                 {
                                     unsafeErrorPrint("Master: failed to retrieve node termination messages from global queue. Error: ");
-                                    /* 
-                                    * DEVO FARE EXIT????? 
-                                    * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non 
-                                    * è necessario fare la exit, ma se si verifica un errore a tutti i cicli non è possibile 
-                                    * leggere messaggi dalla coda, quindi si finisce con il non creare un nuovo nodo, non processare
-                                    * alcune transazioni e si può riempire la coda globale, rischiando di mandare in wait tutti i 
-                                    * restanti processi nodi e utenti. Quindi sarebbe opportuno fare exit appena si verifica un errore
-                                    * oppure utilizzare un contatore (occorre stabilire una soglia di ripetizione dell'errore). Per 
-                                    * ora lo lasciamo.
-                                    */
+                                    /*
+                                     * DEVO FARE EXIT?????
+                                     * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
+                                     * è necessario fare la exit, ma se si verifica un errore a tutti i cicli non è possibile
+                                     * leggere messaggi dalla coda, quindi si finisce con il non creare un nuovo nodo, non processare
+                                     * alcune transazioni e si può riempire la coda globale, rischiando di mandare in wait tutti i
+                                     * restanti processi nodi e utenti. Quindi sarebbe opportuno fare exit appena si verifica un errore
+                                     * oppure utilizzare un contatore (occorre stabilire una soglia di ripetizione dell'errore). Per
+                                     * ora lo lasciamo.
+                                     */
                                     endOfSimulation(-1);
                                 }
 
@@ -1421,7 +1420,7 @@ boolean readConfigParameters()
     char *filename = "params.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
-    /* 
+    /*
         Array that will contain the lines read from the file:
         each "row" of the "matrix" will contain a different file line
     */
@@ -1460,14 +1459,15 @@ boolean readConfigParameters()
                 unsafeErrorPrint("Master: failed to read cofiguration parameters. Error: ");
                 ret = FALSE;
             }
-            else {
+            else
+            {
                 ret = assignEnvironmentVariables();
             }
 
             /* Close the file*/
             fclose(fp);
         }
-        
+
         /* frees the auxiliary char array */
         free(aus);
     }
@@ -1689,7 +1689,7 @@ void budgetlist_free(budgetlist p)
     free(p);
 }
 
-/* 
+/*
  * Function that inserts in the global list bud_list the node passed as
  * argument in an ordered way (the list is ordered in ascending order).
  */
@@ -1754,7 +1754,7 @@ void insert_ordered(budgetlist new_el)
 int update_budget(pid_t remove_pid, int amount_changing)
 {
     /*
-        Dobbiamo rimuovere il nodo e poi reinserirlo 
+        Dobbiamo rimuovere il nodo e poi reinserirlo
         per mantenere la lista dei budget ordinata
     */
     budgetlist new_el;
@@ -1773,7 +1773,7 @@ int update_budget(pid_t remove_pid, int amount_changing)
     if (bud_list_head->proc_pid == remove_pid)
     {
         /* se il nodo di cui aggiornare il budget è il primo della lista,
-		allora lo togliamo dalla lista (dopo lo reinseriremo) */
+        allora lo togliamo dalla lista (dopo lo reinseriremo) */
         new_el = bud_list_head;
         bud_list_head = bud_list_head->next;
         bud_list_head->prev = NULL;
@@ -1782,7 +1782,7 @@ int update_budget(pid_t remove_pid, int amount_changing)
     else if (bud_list_tail->proc_pid == remove_pid)
     {
         /* se il nodo di cui aggiornare il budget è l'ultimo della lista,
-		allora lo togliamo dalla lista (dopo lo reinseriremo) */
+        allora lo togliamo dalla lista (dopo lo reinseriremo) */
         new_el = bud_list_tail;
         bud_list_tail = bud_list_tail->prev;
         bud_list_tail->next = NULL;
@@ -1791,7 +1791,7 @@ int update_budget(pid_t remove_pid, int amount_changing)
     else
     {
         /* il nodo di cui aggiornare il budget si trova a metà della lista,
-		dobbiamo cercarlo e rimuoverlo dalla lista (dopo lo reinseriremo) */
+        dobbiamo cercarlo e rimuoverlo dalla lista (dopo lo reinseriremo) */
         prev = bud_list_head;
 
         for (el = bud_list_head->next; el != NULL && !found; el = el->next)
@@ -1870,7 +1870,7 @@ void endOfSimulation(int sig)
         safeErrorPrint("Master: failed to alloacate memory. Error: ");
     else
     {
-        /*  
+        /*
             CORREGGERE: reimpostare maschera ed associazione segnaliip
         */
         signal(SIGUSR1, SIG_IGN);
@@ -1909,15 +1909,15 @@ void endOfSimulation(int sig)
         else
             done = TRUE;
         /*
-			// wait for children
-			// dovremmo aspettare solo la ricezione del segnale di terminazione????
-			// mettere nell'handler
-			// dovremmo usare waitpid e teastare che i figli siano
-			// terminati correttamente ? Sarebbe complicato
-			// meglio inserire nel figlio un meccanismo che tenta più volte la stampa
-			// in caso di errore
-			// in teoria questo si sblocca solo dopo la terminazione di tutti i figli
-			// quindi ha senso fare così*/
+            // wait for children
+            // dovremmo aspettare solo la ricezione del segnale di terminazione????
+            // mettere nell'handler
+            // dovremmo usare waitpid e teastare che i figli siano
+            // terminati correttamente ? Sarebbe complicato
+            // meglio inserire nel figlio un meccanismo che tenta più volte la stampa
+            // in caso di errore
+            // in teoria questo si sblocca solo dopo la terminazione di tutti i figli
+            // quindi ha senso fare così*/
         if (done)
         {
             write(STDOUT_FILENO,
@@ -2439,7 +2439,7 @@ void checkNodeCreationRequests()
         CORREGGERE: vogliamo fare un ciclo??
         Anche in questo caso secondo me è meglio di no
         perchè così è possibile ripartire le chiamante in
-        modo uniforme tra le varie iterazioni del ciclo 
+        modo uniforme tra le varie iterazioni del ciclo
         di vita del master
     */
     MsgGlobalQueue aus;
