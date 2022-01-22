@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
     {
         printf("Master: setting up signal mask...\n");
         if (sigfillset(&set) == -1)
-            unsafeErrorPrint("Master: failed to initialize signals mask. Error: ", __LINE__);
+            unsafeErrorPrint("Master: failed to initialize signals mask. Error", __LINE__);
         else
         {
             /* We block all the signals during the execution of the handler*/
@@ -406,12 +406,12 @@ int main(int argc, char *argv[])
 
             printf("Master: setting end of timer disposition...\n");
             if (sigaction(SIGALRM, &act, NULL) == -1)
-                unsafeErrorPrint("Master: failed to set end of timer disposition. Error: ", __LINE__);
+                unsafeErrorPrint("Master: failed to set end of timer disposition. Error", __LINE__);
             else
             {
                 printf("Master: setting end of simulation disposition...\n");
                 if (sigaction(SIGUSR1, &act, NULL) == -1)
-                    unsafeErrorPrint("Master: failed to set end of simulation disposition. Error: ", __LINE__);
+                    unsafeErrorPrint("Master: failed to set end of simulation disposition. Error", __LINE__);
                 else
                 {
 
@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
                                 {
                                 case -1:
                                     /*Handle error*/
-                                    unsafeErrorPrint("Master: fork failed. Error: ", __LINE__);
+                                    unsafeErrorPrint("Master: fork failed. Error", __LINE__);
                                     /*
                                                 (**)
                                                 In case we failed to create a process we end
@@ -485,7 +485,7 @@ int main(int argc, char *argv[])
                                         /* Temporary part to get the process to do something*/
                                         if (execle("user.out", "user", NULL, environ) == -1)
                                         {
-                                            unsafeErrorPrint("User: failed to load user's code. Error: ", __LINE__);
+                                            unsafeErrorPrint("User: failed to load user's code. Error", __LINE__);
                                             endOfSimulation(-1);
                                         }
                                         /*
@@ -505,7 +505,7 @@ int main(int argc, char *argv[])
                                     sops[0].sem_flg = IPC_NOWAIT;
                                     if (semop(fairStartSem, &sops[0], 1) == -1)
                                     {
-                                        safeErrorPrint("Master: failed to decrement start semaphore. Error: ", __LINE__);
+                                        safeErrorPrint("Master: failed to decrement start semaphore. Error", __LINE__);
                                         endOfSimulation(-1);
                                     }
 
@@ -564,7 +564,7 @@ int main(int argc, char *argv[])
                                 {
                                 case -1:
                                     /* Handle error*/
-                                    unsafeErrorPrint("Master: fork failed. Error: ", __LINE__);
+                                    unsafeErrorPrint("Master: fork failed. Error", __LINE__);
                                     endOfSimulation(-1);
                                 case 0:
                                     /*
@@ -584,7 +584,7 @@ int main(int argc, char *argv[])
 
                                     /* Temporary part to get the process to do something*/
                                     if (execle("node.out", "node", "NORMAL", NULL, environ) == -1)
-                                        unsafeErrorPrint("Node: failed to load node's code. Error: ", __LINE__);
+                                        unsafeErrorPrint("Node: failed to load node's code. Error", __LINE__);
                                     /*
                                             do_stuff(2);
                                             printf("Eseguo nodo...\n");
@@ -611,14 +611,14 @@ int main(int argc, char *argv[])
                                     key = ftok(MSGFILEPATH, child_pid);
                                     if (key == -1)
                                     {
-                                        unsafeErrorPrint("Master: failed to initialize process' transaction pool. Error: ", __LINE__);
+                                        unsafeErrorPrint("Master: failed to initialize process' transaction pool. Error", __LINE__);
                                         endOfSimulation(-1);
                                     }
 
                                     tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
                                     if (tpList[i].msgQId == -1)
                                     {
-                                        unsafeErrorPrint("Master: failed to initialize process' transaction pool. Error: ", __LINE__);
+                                        unsafeErrorPrint("Master: failed to initialize process' transaction pool. Error", __LINE__);
                                         endOfSimulation(-1);
                                     }
 
@@ -668,7 +668,7 @@ int main(int argc, char *argv[])
                             sops[1].sem_num = 1;
                             if (semop(userListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("Master: failed to reserve usersList semaphore for reading operation. Error: ", __LINE__);
+                                safeErrorPrint("Master: failed to reserve usersList semaphore for reading operation. Error", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -679,7 +679,7 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = -1;
                                 if (semop(userListSem, &sops[0], 1) == -1)
                                 {
-                                    safeErrorPrint("Master: failed to reserve write usersList semaphore. Error: ", __LINE__);
+                                    safeErrorPrint("Master: failed to reserve write usersList semaphore. Error", __LINE__);
                                     endOfSimulation(-1);
                                 }
                                 /*
@@ -697,7 +697,7 @@ int main(int argc, char *argv[])
                             sops[1].sem_op = 1;
                             if (semop(userListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("Master: failed to release usersList semaphore after reading operation. Error: ", __LINE__);
+                                safeErrorPrint("Master: failed to release usersList semaphore after reading operation. Error", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -719,7 +719,7 @@ int main(int argc, char *argv[])
                             sops[0].sem_op = -1;
                             if (semop(userListSem, &sops[0], 1) == -1)
                             {
-                                safeErrorPrint("Master: failed to reserve mutex usersList semaphore. Error: ", __LINE__);
+                                safeErrorPrint("Master: failed to reserve mutex usersList semaphore. Error", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -730,7 +730,7 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = 1;
                                 if (semop(userListSem, &sops[0], 1) == -1)
                                 {
-                                    safeErrorPrint("Master: failed to reserve write usersList semaphore. Error: ", __LINE__);
+                                    safeErrorPrint("Master: failed to reserve write usersList semaphore. Error", __LINE__);
                                     endOfSimulation(-1);
                                 }
                                 /*
@@ -744,7 +744,7 @@ int main(int argc, char *argv[])
                             sops[0].sem_op = 1;
                             if (semop(userListSem, &sops[0], 1) == -1)
                             {
-                                safeErrorPrint("Master: failed to release mutex usersList semaphore. Error: ", __LINE__);
+                                safeErrorPrint("Master: failed to release mutex usersList semaphore. Error", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -757,7 +757,7 @@ int main(int argc, char *argv[])
                             sops[1].sem_op = -1;
                             if (semop(nodeListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("Master: failed to reserve nodeList semaphore for reading operation. Error: ", __LINE__);
+                                safeErrorPrint("Master: failed to reserve nodeList semaphore for reading operation. Error", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -768,7 +768,7 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = -1;
                                 if (semop(nodeListSem, &sops[0], 1) == -1)
                                 {
-                                    safeErrorPrint("Master: failed to reserve write nodeList semaphore. Error: ", __LINE__);
+                                    safeErrorPrint("Master: failed to reserve write nodeList semaphore. Error", __LINE__);
                                     endOfSimulation(-1);
                                 }
                             }
@@ -779,7 +779,7 @@ int main(int argc, char *argv[])
                             sops[1].sem_op = 1;
                             if (semop(nodeListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("Master: failed to release nodeList semaphore after reading operation. Error: ", __LINE__);
+                                safeErrorPrint("Master: failed to release nodeList semaphore after reading operation. Error", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -815,7 +815,7 @@ int main(int argc, char *argv[])
                                     msg_to_node.friend = nodesList[extractedFriendsIndex[j]].procId;
                                     if (msgsnd(globalQueueId, &msg_to_node, sizeof(msg_to_node) - sizeof(long), 0) == -1)
                                     {
-                                        unsafeErrorPrint("Master: failed to initialize node friends. Error: ", __LINE__);
+                                        unsafeErrorPrint("Master: failed to initialize node friends. Error", __LINE__);
                                         endOfSimulation(-1);
                                     }
                                 }
@@ -826,7 +826,7 @@ int main(int argc, char *argv[])
                             sops[0].sem_op = -1;
                             if (semop(nodeListSem, &sops[0], 1) == -1)
                             {
-                                safeErrorPrint("Master: failed to reserve mutex nodeList semaphore. Error: ", __LINE__);
+                                safeErrorPrint("Master: failed to reserve mutex nodeList semaphore. Error", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -837,7 +837,7 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = 1;
                                 if (semop(nodeListSem, &sops[0], 1) == -1)
                                 {
-                                    safeErrorPrint("Master: failed to reserve write nodeList semaphore. Error: ", __LINE__);
+                                    safeErrorPrint("Master: failed to reserve write nodeList semaphore. Error", __LINE__);
                                     endOfSimulation(-1);
                                 }
                             }
@@ -848,7 +848,7 @@ int main(int argc, char *argv[])
                             sops[1].sem_op = 1;
                             if (semop(nodeListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("Master: failed to release nodeList semaphore after reading operation. Error: ", __LINE__);
+                                safeErrorPrint("Master: failed to release nodeList semaphore after reading operation. Error", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -912,7 +912,7 @@ int main(int argc, char *argv[])
                                     sops[0].sem_op = -1;
                                     if (semop(rdPartSem, &sops[0], 1) == -1)
                                     {
-                                        sprintf(aus, "Master: failed to reserve read semaphore for %d-th partition. Error: ", i);
+                                        sprintf(aus, "Master: failed to reserve read semaphore for %d-th partition. Error", i);
                                         unsafeErrorPrint(aus, __LINE__);
                                         /*
                                                 Computing the budget is a critical operation, so we end the simulation
@@ -926,7 +926,7 @@ int main(int argc, char *argv[])
                                         sops[0].sem_op = -1;
                                         if (semop(mutexPartSem, &(sops[0]), 1) == -1)
                                         {
-                                            sprintf(aus, "Master: failed to reserve mutex semaphore for %d-th partition. Error: ", i);
+                                            sprintf(aus, "Master: failed to reserve mutex semaphore for %d-th partition. Error", i);
                                             unsafeErrorPrint(aus, __LINE__);
                                             endOfSimulation(-1);
                                         }
@@ -938,7 +938,7 @@ int main(int argc, char *argv[])
                                             sops[0].sem_op = -1;
                                             if (semop(wrPartSem, &sops[0], 1) == -1)
                                             {
-                                                sprintf(aus, "Master: failed to reserve write semaphore for %d-th partition. Error: ", i);
+                                                sprintf(aus, "Master: failed to reserve write semaphore for %d-th partition. Error", i);
                                                 unsafeErrorPrint(aus, __LINE__);
                                                 endOfSimulation(-1);
                                             }
@@ -949,7 +949,7 @@ int main(int argc, char *argv[])
                                         sops[0].sem_op = 1;
                                         if (semop(mutexPartSem, &sops[0], 1) == -1)
                                         {
-                                            sprintf(aus, "Master: failed to release mutex semaphore for %d-th partition. Error: ", i);
+                                            sprintf(aus, "Master: failed to release mutex semaphore for %d-th partition. Error", i);
                                             unsafeErrorPrint(aus, __LINE__);
                                             endOfSimulation(-1);
                                         }
@@ -959,7 +959,7 @@ int main(int argc, char *argv[])
                                             sops[0].sem_op = 1;
                                             if (semop(rdPartSem, &sops[0], 1) == -1)
                                             {
-                                                sprintf(aus, "Master: failed to release read semaphore for %d-th partition. Error: ", i);
+                                                sprintf(aus, "Master: failed to release read semaphore for %d-th partition. Error", i);
                                                 unsafeErrorPrint(aus, __LINE__);
                                                 endOfSimulation(-1);
                                             }
@@ -1058,7 +1058,7 @@ int main(int argc, char *argv[])
                                             sops[0].sem_op = -1;
                                             if (semop(mutexPartSem, &sops[0], 1) == -1)
                                             {
-                                                sprintf(aus, "Master: failed to reserve mutex semaphore for %d-th partition. Error: ", i);
+                                                sprintf(aus, "Master: failed to reserve mutex semaphore for %d-th partition. Error", i);
                                                 unsafeErrorPrint(aus, __LINE__);
                                                 endOfSimulation(-1);
                                             }
@@ -1071,7 +1071,7 @@ int main(int argc, char *argv[])
                                                     sops[0].sem_op = 1; /* controllare se giusto!!! */
                                                     if (semop(wrPartSem, &sops[0], 1) == -1)
                                                     {
-                                                        sprintf(aus, "Master: failed to reserve write semaphore for %d-th partition. Error: ", i);
+                                                        sprintf(aus, "Master: failed to reserve write semaphore for %d-th partition. Error", i);
                                                         unsafeErrorPrint(aus, __LINE__);
                                                         endOfSimulation(-1);
                                                     }
@@ -1081,7 +1081,7 @@ int main(int argc, char *argv[])
                                                 sops[0].sem_op = 1;
                                                 if (semop(mutexPartSem, &sops[0], 1) == -1)
                                                 {
-                                                    sprintf(aus, "Master: failed to release read semaphore for %d-th partition. Error: ", i);
+                                                    sprintf(aus, "Master: failed to release read semaphore for %d-th partition. Error", i);
                                                     unsafeErrorPrint(aus, __LINE__);
                                                     endOfSimulation(-1);
                                                 }
@@ -1183,7 +1183,7 @@ int main(int argc, char *argv[])
                                         sops[1].sem_op = -1;
                                         if (semop(userListSem, sops, 2) == -1)
                                         {
-                                            safeErrorPrint("Master: failed to reserve usersList semaphore for writing operation. Error: ", __LINE__);
+                                            safeErrorPrint("Master: failed to reserve usersList semaphore for writing operation. Error", __LINE__);
                                             endOfSimulation(-1);
                                         }
                                         else
@@ -1211,7 +1211,7 @@ int main(int argc, char *argv[])
                                             sops[1].sem_op = 1;
                                             if (semop(userListSem, sops, 2) == -1)
                                             {
-                                                safeErrorPrint("Master: failed to release usersList semaphore for writing operation. Error: ", __LINE__);
+                                                safeErrorPrint("Master: failed to release usersList semaphore for writing operation. Error", __LINE__);
                                                 /*
                                                         CORREGGERE: terminiamo la simulazione??
                                                         È la soluzione più sensata, perchè il rischio è quello di bloccare tutti gli altri processi
@@ -1231,7 +1231,7 @@ int main(int argc, char *argv[])
                                         if (msgsnd(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
                                         {
                                             /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
-                                            unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated users. Error: ", __LINE__);
+                                            unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated users. Error", __LINE__);
                                             endOfSimulation(-1);
                                         }
                                     }
@@ -1240,7 +1240,7 @@ int main(int argc, char *argv[])
                                 /* If errno is ENOMSG, no message of user termination on global queue, otherwise an error occured */
                                 if (errno != ENOMSG)
                                 {
-                                    unsafeErrorPrint("Master: failed to retrieve user termination messages from global queue. Error: ", __LINE__);
+                                    unsafeErrorPrint("Master: failed to retrieve user termination messages from global queue. Error", __LINE__);
                                     /*
                                      * DEVO FARE EXIT?????
                                      * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
@@ -1272,7 +1272,7 @@ int main(int argc, char *argv[])
                                         sops[1].sem_op = -1;
                                         if (semop(nodeListSem, sops, 2) == -1)
                                         {
-                                            safeErrorPrint("Master: failed to reserve nodesList semaphore for writing operation. Error: ", __LINE__);
+                                            safeErrorPrint("Master: failed to reserve nodesList semaphore for writing operation. Error", __LINE__);
                                             endOfSimulation(-1);
                                         }
                                         else
@@ -1295,7 +1295,7 @@ int main(int argc, char *argv[])
                                             sops[1].sem_op = 1;
                                             if (semop(nodeListSem, sops, 2) == -1)
                                             {
-                                                safeErrorPrint("Master: failed to release nodeslist semaphore for writing operation. Error: ", __LINE__);
+                                                safeErrorPrint("Master: failed to release nodeslist semaphore for writing operation. Error", __LINE__);
                                                 /*
                                                         CORREGGERE: terminiamo la simulazione??
                                                         È la soluzione più sensata, perchè il rischio è quello di bloccare tutti gli altri processi
@@ -1315,7 +1315,7 @@ int main(int argc, char *argv[])
                                         if (msgsnd(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
                                         {
                                             /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
-                                            unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated nodes. Error: ", __LINE__);
+                                            unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated nodes. Error", __LINE__);
                                             endOfSimulation(-1);
                                         }
                                     }
@@ -1324,7 +1324,7 @@ int main(int argc, char *argv[])
                                 /* If errno is ENOMSG, no message of user termination on global queue, otherwise an error occured */
                                 if (errno != ENOMSG)
                                 {
-                                    unsafeErrorPrint("Master: failed to retrieve node termination messages from global queue. Error: ", __LINE__);
+                                    unsafeErrorPrint("Master: failed to retrieve node termination messages from global queue. Error", __LINE__);
                                     /*
                                      * DEVO FARE EXIT?????
                                      * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
@@ -1436,7 +1436,7 @@ boolean readConfigParameters()
 
     aus = (char *)calloc(35, sizeof(char));
     if (aus == NULL)
-        unsafeErrorPrint("Master: failed to allocate memory. Error: ", __LINE__);
+        unsafeErrorPrint("Master: failed to allocate memory. Error", __LINE__);
     else
     {
         /* Handles any error in opening the file*/
@@ -1458,7 +1458,7 @@ boolean readConfigParameters()
 
             if (line[k] == NULL && errno)
             {
-                unsafeErrorPrint("Master: failed to read cofiguration parameters. Error: ", __LINE__);
+                unsafeErrorPrint("Master: failed to read cofiguration parameters. Error", __LINE__);
                 ret = FALSE;
             }
             else
@@ -1485,19 +1485,19 @@ boolean readConfigParameters()
 boolean allocateGlobalStructures()
 {
     regPtrs = (Register **)calloc(REG_PARTITION_COUNT, sizeof(Register *));
-    TEST_MALLOC_ERROR(regPtrs, "Master: failed to allocate register paritions' pointers array. Error: ");
+    TEST_MALLOC_ERROR(regPtrs, "Master: failed to allocate register paritions' pointers array. Error");
 
     regPartsIds = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(regPartsIds, "Master: failed to allocate register paritions' ids array. Error: ");
+    TEST_MALLOC_ERROR(regPartsIds, "Master: failed to allocate register paritions' ids array. Error");
 
     tpList = (TPElement *)calloc(SO_NODES_NUM, sizeof(TPElement));
-    TEST_MALLOC_ERROR(tpList, "Master: failed to allocate transaction pools list. Error: ");
+    TEST_MALLOC_ERROR(tpList, "Master: failed to allocate transaction pools list. Error");
 
     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(noReadersPartitions, "Master: failed to allocate registers partitions' shared variables ids. Error: ");
+    TEST_MALLOC_ERROR(noReadersPartitions, "Master: failed to allocate registers partitions' shared variables ids. Error");
 
     noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
-    TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "Master: failed to allocate registers partitions' shared variables pointers. Error: ");
+    TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "Master: failed to allocate registers partitions' shared variables pointers. Error");
 
     return TRUE;
 }
@@ -1517,46 +1517,46 @@ boolean initializeIPCFacilities()
     int res = -1;
     /* Initialization of semaphores*/
     key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during fair start semaphore creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during fair start semaphore creation. Error");
 
     fairStartSem = semget(key, 1, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(fairStartSem, "Master: semget failed during fair start semaphore creation. Error: ");
+    SEM_TEST_ERROR(fairStartSem, "Master: semget failed during fair start semaphore creation. Error");
 
     key = ftok(SEMFILEPATH, WRPARTSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during partitions writing semaphores creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during partitions writing semaphores creation. Error");
     wrPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(wrPartSem, "Master: semget failed during partitions writing semaphores creation. Error: ");
+    SEM_TEST_ERROR(wrPartSem, "Master: semget failed during partitions writing semaphores creation. Error");
 
     key = ftok(SEMFILEPATH, RDPARTSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during partitions reading semaphores creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during partitions reading semaphores creation. Error");
     rdPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(rdPartSem, "Master: semget failed during partitions reading semaphores creation. Error: ");
+    SEM_TEST_ERROR(rdPartSem, "Master: semget failed during partitions reading semaphores creation. Error");
 
     key = ftok(SEMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during user list semaphore creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during user list semaphore creation. Error");
     userListSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(userListSem, "Master: semget failed during user list semaphore creation. Error: ");
+    SEM_TEST_ERROR(userListSem, "Master: semget failed during user list semaphore creation. Error");
 
     key = ftok(SEMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during nodes list semaphore creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during nodes list semaphore creation. Error");
     nodeListSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(nodeListSem, "Master: semget failed during nodes list semaphore creation. Error: ");
+    SEM_TEST_ERROR(nodeListSem, "Master: semget failed during nodes list semaphore creation. Error");
 
     key = ftok(SEMFILEPATH, PARTMUTEXSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during partitions mutex semaphores creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during partitions mutex semaphores creation. Error");
     mutexPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    SEM_TEST_ERROR(mutexPartSem, "Master: semget failed during partitions mutex semaphores creation. Error: ");
+    SEM_TEST_ERROR(mutexPartSem, "Master: semget failed during partitions mutex semaphores creation. Error");
 
     /*
         Each process will subtract one by waiting on the sempahore
     */
     arg.val = SO_USERS_NUM + SO_NODES_NUM + 1;
     semctl(fairStartSem, 0, SETVAL, arg);
-    SEMCTL_TEST_ERROR(fairStartSem, "Master: semctl failed while initializing fair start semaphore. Error: ");
+    SEMCTL_TEST_ERROR(fairStartSem, "Master: semctl failed while initializing fair start semaphore. Error");
 
     arg.array = aux;
     res = semctl(wrPartSem, 0, SETALL, arg);
-    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing register partitions writing semaphores. Error: ");
+    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing register partitions writing semaphores. Error");
 
     /*
     aux[0] = SO_USERS_NUM + SO_NODES_NUM + 1;
@@ -1564,49 +1564,49 @@ boolean initializeIPCFacilities()
     aux[2] = SO_USERS_NUM + SO_NODES_NUM + 1;
     arg.array = aux;*/
     res = semctl(rdPartSem, 0, SETALL, arg);
-    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing register partitions reading semaphores. Error: ");
+    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing register partitions reading semaphores. Error");
 
     res = semctl(mutexPartSem, 0, SETALL, arg);
-    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing register partitions mutex semaphores. Error: ");
+    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing register partitions mutex semaphores. Error");
 
     /*CORREGGERE mettendolo nel master, prima della sleep su fairStart*/
     arg.array = aux;
     res = semctl(userListSem, 0, SETALL, arg); /* mutex, read, write*/
-    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing users list semaphore. Error: ");
+    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing users list semaphore. Error");
 
     /*CORREGGERE*/
     /*arg.val = 1;*/
     res = semctl(nodeListSem, 0, SETALL, arg); /* mutex, read, write*/
-    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing nodes list semaphore. Error: ");
+    SEMCTL_TEST_ERROR(res, "Master: semctl failed while initializing nodes list semaphore. Error");
 
     /* Creation of the global queue*/
     key = ftok(MSGFILEPATH, GLOBALMSGSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during global queue creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during global queue creation. Error");
     globalQueueId = msgget(key, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-    MSG_TEST_ERROR(globalQueueId, "Master: msgget failed during global queue creation. Error: ");
+    MSG_TEST_ERROR(globalQueueId, "Master: msgget failed during global queue creation. Error");
 
     /* Creation of register's partitions */
     key = ftok(SHMFILEPATH, REGPARTONESEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during register parition one creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during register parition one creation. Error");
     regPartsIds[0] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(regPartsIds[0], "Master: shmget failed during partition one creation. Error: ");
+    SHM_TEST_ERROR(regPartsIds[0], "Master: shmget failed during partition one creation. Error");
 
     key = ftok(SHMFILEPATH, REGPARTTWOSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during register parition two creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during register parition two creation. Error");
     regPartsIds[1] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(regPartsIds[1], "Master: shmget failed during partition two creation. Error: ");
+    SHM_TEST_ERROR(regPartsIds[1], "Master: shmget failed during partition two creation. Error");
 
     key = ftok(SHMFILEPATH, REGPARTTHREESEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during register parition three creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during register parition three creation. Error");
     regPartsIds[2] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(regPartsIds[2], "Master: shmget failed during partition three creation. Error: ");
+    SHM_TEST_ERROR(regPartsIds[2], "Master: shmget failed during partition three creation. Error");
 
     regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(regPtrs[0], "Master: failed to attach to partition one's memory segment. Error: ");
+    TEST_SHMAT_ERROR(regPtrs[0], "Master: failed to attach to partition one's memory segment. Error");
     regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(regPtrs[1], "Master: failed to attach to partition two's memory segment. Error: ");
+    TEST_SHMAT_ERROR(regPtrs[1], "Master: failed to attach to partition two's memory segment. Error");
     regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(regPtrs[2], "Master: failed to attach to partition three's memory segment. Error: ");
+    TEST_SHMAT_ERROR(regPtrs[2], "Master: failed to attach to partition three's memory segment. Error");
     printf("Master: initializing blocks...\n");
     regPtrs[0]->nBlocks = 0;
     regPtrs[1]->nBlocks = 0;
@@ -1614,52 +1614,52 @@ boolean initializeIPCFacilities()
     printf("Blocks: %d %d %d\n", regPtrs[0]->nBlocks, regPtrs[1]->nBlocks, regPtrs[2]->nBlocks);
 
     key = ftok(SHMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during users list creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during users list creation. Error");
     usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(usersListId, "Master: shmget failed during users list creation. Error: ");
+    SHM_TEST_ERROR(usersListId, "Master: shmget failed during users list creation. Error");
     usersList = (ProcListElem *)shmat(usersListId, NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(usersList, "Master: failed to attach to users list's memory segment. Error: ");
+    TEST_SHMAT_ERROR(usersList, "Master: failed to attach to users list's memory segment. Error");
 
     key = ftok(SHMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during nodes list creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during nodes list creation. Error");
     nodesListId = shmget(key, maxNumNode * sizeof(ProcListElem), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(nodesListId, "Master: shmget failed during nodes list creation. Error: ");
+    SHM_TEST_ERROR(nodesListId, "Master: shmget failed during nodes list creation. Error");
     nodesList = (ProcListElem *)shmat(nodesListId, NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(nodesList, "Master: failed to attach to nodes list's memory segment. Error: ");
+    TEST_SHMAT_ERROR(nodesList, "Master: failed to attach to nodes list's memory segment. Error");
 
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during parition one's shared variable creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during parition one's shared variable creation. Error");
     noReadersPartitions[0] = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(noReadersPartitions[0], "Master: shmget failed during parition one's shared variable creation. Error: ");
+    SHM_TEST_ERROR(noReadersPartitions[0], "Master: shmget failed during parition one's shared variable creation. Error");
     noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "Master: failed to attach to parition one's shared variable segment. Error: ");
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "Master: failed to attach to parition one's shared variable segment. Error");
     /*
         At the beginning we have no processes reading from the register's paritions
     */
     *(noReadersPartitionsPtrs[0]) = 0;
 
     key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during parition two's shared variable creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during parition two's shared variable creation. Error");
     noReadersPartitions[1] = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(noReadersPartitions[1], "Master: shmget failed during parition two's shared variable creation. Error: ");
+    SHM_TEST_ERROR(noReadersPartitions[1], "Master: shmget failed during parition two's shared variable creation. Error");
     noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "Master: failed to attach to parition rwo's shared variable segment. Error: ");
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "Master: failed to attach to parition rwo's shared variable segment. Error");
     *(noReadersPartitionsPtrs[1]) = 0;
 
     key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during parition three's shared variable creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during parition three's shared variable creation. Error");
     noReadersPartitions[2] = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(noReadersPartitions[2], "Master: shmget failed during parition three's shared variable creation. Error: ");
+    SHM_TEST_ERROR(noReadersPartitions[2], "Master: shmget failed during parition three's shared variable creation. Error");
     noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, MASTERPERMITS);
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "Master: failed to attach to parition three's shared variable segment. Error: ");
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "Master: failed to attach to parition three's shared variable segment. Error");
     *(noReadersPartitionsPtrs[2]) = 0;
 
     key = ftok(SHMFILEPATH, NOUSRSEGRDERSSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during users list's shared variable creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during users list's shared variable creation. Error");
     noUserSegReaders = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(key, "Master: shmget failed during users list's shared variable creation. Error: ");
+    SHM_TEST_ERROR(key, "Master: shmget failed during users list's shared variable creation. Error");
     noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
-    TEST_SHMAT_ERROR(noUserSegReadersPtr, "Master: failed to attach to users list's shared variable segment. Error: ");
+    TEST_SHMAT_ERROR(noUserSegReadersPtr, "Master: failed to attach to users list's shared variable segment. Error");
     /*
         At the beginning of the simulation there's no one
         reading from the user's list
@@ -1668,11 +1668,11 @@ boolean initializeIPCFacilities()
 
     /* AGGIUNTO DA STEFANO */
     key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
-    FTOK_TEST_ERROR(key, "Master: ftok failed during nodes list's shared variable creation. Error: ");
+    FTOK_TEST_ERROR(key, "Master: ftok failed during nodes list's shared variable creation. Error");
     noNodeSegReaders = shmget(key, sizeof(SO_NODES_NUM), IPC_CREAT | MASTERPERMITS);
-    SHM_TEST_ERROR(noNodeSegReaders, "Master: shmget failed during nodes list's shared variable creation. Error: ");
+    SHM_TEST_ERROR(noNodeSegReaders, "Master: shmget failed during nodes list's shared variable creation. Error");
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
-    TEST_SHMAT_ERROR(noNodeSegReadersPtr, "Master: failed to attach to nodes list's shared variable segment. Error: ");
+    TEST_SHMAT_ERROR(noNodeSegReadersPtr, "Master: failed to attach to nodes list's shared variable segment. Error");
     *noNodeSegReadersPtr = 0;
     /* END */
 
@@ -1869,7 +1869,7 @@ void endOfSimulation(int sig)
     */
     /*printf("Master: PID %ld\nMaster: parent PID %ld\n", (long int)getpid(), (long)getppid());*/
     if (terminationMessage == NULL || aus == NULL || getpid() != masterPid)
-        safeErrorPrint("Master: failed to alloacate memory. Error: ", __LINE__);
+        safeErrorPrint("Master: failed to alloacate memory. Error", __LINE__);
     else
     {
         /*
@@ -1897,7 +1897,7 @@ void endOfSimulation(int sig)
                 */
                 if (kill(0, SIGUSR1) == -1)
                 {
-                    safeErrorPrint("Master: failed to signal children for end of simulation. Error: ", __LINE__);
+                    safeErrorPrint("Master: failed to signal children for end of simulation. Error", __LINE__);
                 }
                 else
                 {
@@ -2094,7 +2094,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            safeErrorPrint("Master: failed to detach from users' list segment. Error: ", __LINE__);
+            safeErrorPrint("Master: failed to detach from users' list segment. Error", __LINE__);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2104,7 +2104,7 @@ boolean deallocateFacilities(int *exitCode)
         {
             if (errno != EAGAIN)
             {
-                safeErrorPrint("Master: failed to remove users' list segment. Error: ", __LINE__);
+                safeErrorPrint("Master: failed to remove users' list segment. Error", __LINE__);
                 *exitCode = EXIT_FAILURE;
             }
         }
@@ -2124,7 +2124,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            safeErrorPrint("Master: failed to detach from nodes' list segment. Error: ", __LINE__);
+            safeErrorPrint("Master: failed to detach from nodes' list segment. Error", __LINE__);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2134,7 +2134,7 @@ boolean deallocateFacilities(int *exitCode)
         {
             if (errno != EINVAL)
             {
-                safeErrorPrint("Master: failed to remove nodes' list segment. Error: ", __LINE__);
+                safeErrorPrint("Master: failed to remove nodes' list segment. Error", __LINE__);
                 *exitCode = EXIT_FAILURE;
             }
         }
@@ -2359,7 +2359,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            safeErrorPrint("Master: failed to detach from user list's shared variable. Error: ", __LINE__);
+            safeErrorPrint("Master: failed to detach from user list's shared variable. Error", __LINE__);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2369,7 +2369,7 @@ boolean deallocateFacilities(int *exitCode)
         {
             if (errno != EINVAL)
             {
-                safeErrorPrint("Master: failed to remove user list's shared variable. Error: ", __LINE__);
+                safeErrorPrint("Master: failed to remove user list's shared variable. Error", __LINE__);
                 *exitCode = EXIT_FAILURE;
             }
         }
@@ -2407,7 +2407,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            safeErrorPrint("Master: failed to detach from node list's shared variable. Error: ", __LINE__);
+            safeErrorPrint("Master: failed to detach from node list's shared variable. Error", __LINE__);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2417,7 +2417,7 @@ boolean deallocateFacilities(int *exitCode)
         {
             if (errno != EINVAL)
             {
-                safeErrorPrint("Master: failed to remove node list's shared variable. Error: ", __LINE__);
+                safeErrorPrint("Master: failed to remove node list's shared variable. Error", __LINE__);
                 *exitCode = EXIT_FAILURE;
             }
         }
@@ -2493,7 +2493,7 @@ void checkNodeCreationRequests()
                     sops[1].sem_op = -1;
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to reserve nodes' list semphore. Error: ", __LINE__);
+                        unsafeErrorPrint("Master: failed to reserve nodes' list semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2508,7 +2508,7 @@ void checkNodeCreationRequests()
 
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to release nodes' list semphore. Error: ", __LINE__);
+                        unsafeErrorPrint("Master: failed to release nodes' list semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2521,7 +2521,7 @@ void checkNodeCreationRequests()
 
                     tpId = msgget(ftok("msgfile.txt", currPid), IPC_EXCL | IPC_CREAT);
                     if (tpId == -1)
-                        safeErrorPrint("Master: failed to create additional node's transaction pool. Error: ", __LINE__);
+                        safeErrorPrint("Master: failed to create additional node's transaction pool. Error", __LINE__);
                     else
                     {
                         /* add a new entry to the tpList array */
@@ -2533,7 +2533,7 @@ void checkNodeCreationRequests()
 
                         if (tpList[tplLength - 1].msgQId == -1)
                         {
-                            unsafeErrorPrint("Master: failed to create the message queue for the transaction pool of the new node process. Error: ", __LINE__);
+                            unsafeErrorPrint("Master: failed to create the message queue for the transaction pool of the new node process. Error", __LINE__);
                             exit(EXIT_FAILURE); /* VA SOSTITUITO CON EndOfSimulation ??? */
                         }
 
@@ -2547,7 +2547,7 @@ void checkNodeCreationRequests()
 
                         if (msgsnd(tpId, &(aus.transaction), sizeof(MsgTP) - sizeof(long), 0) == -1)
                         {
-                            safeErrorPrint("Master: failed to initialize additional node's transaction pool. Error: ", __LINE__);
+                            safeErrorPrint("Master: failed to initialize additional node's transaction pool. Error", __LINE__);
                         }
                         else
                         {
@@ -2562,12 +2562,12 @@ void checkNodeCreationRequests()
                                     /*
                                         CORREGGERE: segnalazione fallimento trasazione a sender
                                     */
-                                    safeErrorPrint("Master: failed to send a friend to new node. Error: ", __LINE__);
+                                    safeErrorPrint("Master: failed to send a friend to new node. Error", __LINE__);
                                 }
                             }
 
                             if (execle("node.out", "node", "ADDITIONAL", NULL, environ) == -1)
-                                safeErrorPrint("Master: failed to load node's code. Error: ", __LINE__);
+                                safeErrorPrint("Master: failed to load node's code. Error", __LINE__);
                         }
                     }
                 }
@@ -2588,7 +2588,7 @@ void checkNodeCreationRequests()
                     sops[1].sem_op = -1;
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to reserve nodes' list read/mutex semphore. Error: ", __LINE__);
+                        unsafeErrorPrint("Master: failed to reserve nodes' list read/mutex semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2600,7 +2600,7 @@ void checkNodeCreationRequests()
                         sops[2].sem_op = -1;
                         if (semop(nodeListSem, sops, 1) == -1)
                         {
-                            unsafeErrorPrint("Master: failed to reserve nodes' list write semphore. Error: ", __LINE__);
+                            unsafeErrorPrint("Master: failed to reserve nodes' list write semphore. Error", __LINE__);
                             endOfSimulation(-1);
                         }
                     }
@@ -2613,7 +2613,7 @@ void checkNodeCreationRequests()
                     sops[1].sem_op = 1;
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to release nodes' list mutex/read semphore. Error: ", __LINE__);
+                        unsafeErrorPrint("Master: failed to release nodes' list mutex/read semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2632,7 +2632,7 @@ void checkNodeCreationRequests()
                                         CORREGGERE: possiamo semplicemente segnalare l'errore senza fare nulla?
                                         Io direi di sì, non mi sembra che gestioni più complicate siano utili
                                     */
-                            safeErrorPrint("Master: failed to ask a node to add the new process to its fiends' list. Error: ", __LINE__);
+                            safeErrorPrint("Master: failed to ask a node to add the new process to its fiends' list. Error", __LINE__);
                         }
                     }
 
@@ -2641,7 +2641,7 @@ void checkNodeCreationRequests()
                     sops[0].sem_op = -1;
                     if (semop(nodeListSem, sops, 1) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to reserve nodes' list mutex semphore. Error: ", __LINE__);
+                        unsafeErrorPrint("Master: failed to reserve nodes' list mutex semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2652,7 +2652,7 @@ void checkNodeCreationRequests()
                         sops[2].sem_op = 1;
                         if (semop(nodeListSem, sops, 1) == -1)
                         {
-                            unsafeErrorPrint("Master: failed to release nodes' list write semphore. Error: ", __LINE__);
+                            unsafeErrorPrint("Master: failed to release nodes' list write semphore. Error", __LINE__);
                             endOfSimulation(-1);
                         }
                     }
@@ -2662,7 +2662,7 @@ void checkNodeCreationRequests()
                     sops[0].sem_op = 1;
                     if (semop(nodeListSem, sops, 1) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to release nodes' list mutex semphore. Error: ", __LINE__);
+                        unsafeErrorPrint("Master: failed to release nodes' list mutex semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
                 }
