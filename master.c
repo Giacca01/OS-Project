@@ -391,12 +391,12 @@ int main(int argc, char *argv[])
         Usando alarm i figli non ricevono nessuno di questi timer
     */
     if (alarm(SO_SIM_SEC) != 0)
-        unsafeErrorPrint("Master: failed to set up simulation timer. ");
+        unsafeErrorPrint("Master: failed to set up simulation timer. ", __LINE__);
     else
     {
         printf("Master: setting up signal mask...\n");
         if (sigfillset(&set) == -1)
-            unsafeErrorPrint("Master: failed to initialize signals mask. Error: ");
+            unsafeErrorPrint("Master: failed to initialize signals mask. Error: ", __LINE__);
         else
         {
             /* We block all the signals during the execution of the handler*/
@@ -406,12 +406,12 @@ int main(int argc, char *argv[])
 
             printf("Master: setting end of timer disposition...\n");
             if (sigaction(SIGALRM, &act, NULL) == -1)
-                unsafeErrorPrint("Master: failed to set end of timer disposition. Error: ");
+                unsafeErrorPrint("Master: failed to set end of timer disposition. Error: ", __LINE__);
             else
             {
                 printf("Master: setting end of simulation disposition...\n");
                 if (sigaction(SIGUSR1, &act, NULL) == -1)
-                    unsafeErrorPrint("Master: failed to set end of simulation disposition. Error: ");
+                    unsafeErrorPrint("Master: failed to set end of simulation disposition. Error: ", __LINE__);
                 else
                 {
 
@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
                                 {
                                 case -1:
                                     /*Handle error*/
-                                    unsafeErrorPrint("Master: fork failed. Error: ");
+                                    unsafeErrorPrint("Master: fork failed. Error: ", __LINE__);
                                     /*
                                                 (**)
                                                 In case we failed to create a process we end
@@ -477,7 +477,7 @@ int main(int argc, char *argv[])
                                         /*
                                             See comment above (**)
                                         */
-                                        unsafeErrorPrint("User: failed to wait for zero on start semaphore. Error ");
+                                        unsafeErrorPrint("User: failed to wait for zero on start semaphore. Error ", __LINE__);
                                         endOfSimulation(-1);
                                     }
                                     else
@@ -485,7 +485,7 @@ int main(int argc, char *argv[])
                                         /* Temporary part to get the process to do something*/
                                         if (execle("user.out", "user", NULL, environ) == -1)
                                         {
-                                            unsafeErrorPrint("User: failed to load user's code. Error: ");
+                                            unsafeErrorPrint("User: failed to load user's code. Error: ", __LINE__);
                                             endOfSimulation(-1);
                                         }
                                         /*
@@ -505,7 +505,7 @@ int main(int argc, char *argv[])
                                     sops[0].sem_flg = IPC_NOWAIT;
                                     if (semop(fairStartSem, &sops[0], 1) == -1)
                                     {
-                                        safeErrorPrint("Master: failed to decrement start semaphore. Error: ");
+                                        safeErrorPrint("Master: failed to decrement start semaphore. Error: ", __LINE__);
                                         endOfSimulation(-1);
                                     }
 
@@ -527,8 +527,8 @@ int main(int argc, char *argv[])
                                     sops[1].sem_num = 2;
                                     if (semop(userListSem, sops, 2) == -1)
                                     {
-                                        unsafeErrorPrint("Master: failed to reserve users list semaphore for writing operation. Error ");
-                                        unsafeErrorPrint(-1);
+                                        unsafeErrorPrint("Master: failed to reserve users list semaphore for writing operation. Error ", __LINE__);
+                                        endOfSimulation(-1);
                                     }
 
                                     usersList[i].procId = child_pid;
@@ -544,8 +544,8 @@ int main(int argc, char *argv[])
                                     sops[1].sem_num = 2;
                                     if (semop(userListSem, sops, 2) == -1)
                                     {
-                                        unsafeErrorPrint("Master: failed to release users list semaphore for writing operation. Error ");
-                                        unsafeErrorPrint(-1);
+                                        unsafeErrorPrint("Master: failed to release users list semaphore for writing operation. Error ", __LINE__);
+                                        endOfSimulation(-1);
                                     }
 
                                     break;
@@ -564,7 +564,7 @@ int main(int argc, char *argv[])
                                 {
                                 case -1:
                                     /* Handle error*/
-                                    unsafeErrorPrint("Master: fork failed. Error: ");
+                                    unsafeErrorPrint("Master: fork failed. Error: ", __LINE__);
                                     endOfSimulation(-1);
                                 case 0:
                                     /*
@@ -584,7 +584,7 @@ int main(int argc, char *argv[])
 
                                     /* Temporary part to get the process to do something*/
                                     if (execle("node.out", "node", "NORMAL", NULL, environ) == -1)
-                                        unsafeErrorPrint("Node: failed to load node's code. Error: ");
+                                        unsafeErrorPrint("Node: failed to load node's code. Error: ", __LINE__);
                                     /*
                                             do_stuff(2);
                                             printf("Eseguo nodo...\n");
@@ -602,7 +602,7 @@ int main(int argc, char *argv[])
                                     sops[0].sem_flg = IPC_NOWAIT;
                                     if (semop(fairStartSem, &sops[0], 1) == -1)
                                     {
-                                        unsafeErrorPrint("User: failed to wait for zero on start semaphore. Error ");
+                                        unsafeErrorPrint("User: failed to wait for zero on start semaphore. Error ", __LINE__);
                                         endOfSimulation(-1);
                                     }
 
@@ -611,14 +611,14 @@ int main(int argc, char *argv[])
                                     key = ftok(MSGFILEPATH, child_pid);
                                     if (key == -1)
                                     {
-                                        unsafeErrorPrint("Master: failed to initialize process' transaction pool. Error: ");
+                                        unsafeErrorPrint("Master: failed to initialize process' transaction pool. Error: ", __LINE__);
                                         endOfSimulation(-1);
                                     }
 
                                     tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
                                     if (tpList[i].msgQId == -1)
                                     {
-                                        unsafeErrorPrint("Master: failed to initialize process' transaction pool. Error: ");
+                                        unsafeErrorPrint("Master: failed to initialize process' transaction pool. Error: ", __LINE__);
                                         endOfSimulation(-1);
                                     }
 
@@ -631,7 +631,7 @@ int main(int argc, char *argv[])
                                     sops[1].sem_num = 2;
                                     if (semop(nodeListSem, sops, 2) == -1)
                                     {
-                                        unsafeErrorPrint("Master: failed to reserve nodes list semaphore for writing operation. Error ");
+                                        unsafeErrorPrint("Master: failed to reserve nodes list semaphore for writing operation. Error ", __LINE__);
                                         endOfSimulation(-1);
                                     }
 
@@ -644,7 +644,7 @@ int main(int argc, char *argv[])
                                     sops[1].sem_num = 2;
                                     if (semop(nodeListSem, sops, 2) == -1)
                                     {
-                                        unsafeErrorPrint("Master: failed to release nodes list semaphore for writing operation. Error ");
+                                        unsafeErrorPrint("Master: failed to release nodes list semaphore for writing operation. Error ", __LINE__);
                                         endOfSimulation(-1);
                                     }
 
@@ -668,7 +668,7 @@ int main(int argc, char *argv[])
                             sops[1].sem_num = 1;
                             if (semop(userListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("Master: failed to reserve usersList semaphore for reading operation. Error: ");
+                                safeErrorPrint("Master: failed to reserve usersList semaphore for reading operation. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -679,7 +679,7 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = -1;
                                 if (semop(userListSem, &sops[0], 1) == -1)
                                 {
-                                    safeErrorPrint("Master: failed to reserve write usersList semaphore. Error: ");
+                                    safeErrorPrint("Master: failed to reserve write usersList semaphore. Error: ", __LINE__);
                                     endOfSimulation(-1);
                                 }
                                 /*
@@ -697,7 +697,7 @@ int main(int argc, char *argv[])
                             sops[1].sem_op = 1;
                             if (semop(userListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("Master: failed to release usersList semaphore after reading operation. Error: ");
+                                safeErrorPrint("Master: failed to release usersList semaphore after reading operation. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -719,7 +719,7 @@ int main(int argc, char *argv[])
                             sops[0].sem_op = -1;
                             if (semop(userListSem, &sops[0], 1) == -1)
                             {
-                                safeErrorPrint("Master: failed to reserve mutex usersList semaphore. Error: ");
+                                safeErrorPrint("Master: failed to reserve mutex usersList semaphore. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -730,7 +730,7 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = 1;
                                 if (semop(userListSem, &sops[0], 1) == -1)
                                 {
-                                    safeErrorPrint("Master: failed to reserve write usersList semaphore. Error: ");
+                                    safeErrorPrint("Master: failed to reserve write usersList semaphore. Error: ", __LINE__);
                                     endOfSimulation(-1);
                                 }
                                 /*
@@ -744,7 +744,7 @@ int main(int argc, char *argv[])
                             sops[0].sem_op = 1;
                             if (semop(userListSem, &sops[0], 1) == -1)
                             {
-                                safeErrorPrint("Master: failed to release mutex usersList semaphore. Error: ");
+                                safeErrorPrint("Master: failed to release mutex usersList semaphore. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -757,7 +757,7 @@ int main(int argc, char *argv[])
                             sops[1].sem_op = -1;
                             if (semop(nodeListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("Master: failed to reserve nodeList semaphore for reading operation. Error: ");
+                                safeErrorPrint("Master: failed to reserve nodeList semaphore for reading operation. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -768,7 +768,7 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = -1;
                                 if (semop(nodeListSem, &sops[0], 1) == -1)
                                 {
-                                    safeErrorPrint("Master: failed to reserve write nodeList semaphore. Error: ");
+                                    safeErrorPrint("Master: failed to reserve write nodeList semaphore. Error: ", __LINE__);
                                     endOfSimulation(-1);
                                 }
                             }
@@ -779,7 +779,7 @@ int main(int argc, char *argv[])
                             sops[1].sem_op = 1;
                             if (semop(nodeListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("Master: failed to release nodeList semaphore after reading operation. Error: ");
+                                safeErrorPrint("Master: failed to release nodeList semaphore after reading operation. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -813,10 +813,9 @@ int main(int argc, char *argv[])
                                 for (j = 0; j < SO_FRIENDS_NUM; j++)
                                 {
                                     msg_to_node.friend = nodesList[extractedFriendsIndex[j]].procId;
-                                    printf("***Master: invio messaggio nuovo amico a nodo\n");
                                     if (msgsnd(globalQueueId, &msg_to_node, sizeof(msg_to_node) - sizeof(long), 0) == -1)
                                     {
-                                        unsafeErrorPrint("Master: failed to initialize node friends. Error: ");
+                                        unsafeErrorPrint("Master: failed to initialize node friends. Error: ", __LINE__);
                                         endOfSimulation(-1);
                                     }
                                 }
@@ -827,7 +826,7 @@ int main(int argc, char *argv[])
                             sops[0].sem_op = -1;
                             if (semop(nodeListSem, &sops[0], 1) == -1)
                             {
-                                safeErrorPrint("Master: failed to reserve mutex nodeList semaphore. Error: ");
+                                safeErrorPrint("Master: failed to reserve mutex nodeList semaphore. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -838,7 +837,7 @@ int main(int argc, char *argv[])
                                 sops[0].sem_op = 1;
                                 if (semop(nodeListSem, &sops[0], 1) == -1)
                                 {
-                                    safeErrorPrint("Master: failed to reserve write nodeList semaphore. Error: ");
+                                    safeErrorPrint("Master: failed to reserve write nodeList semaphore. Error: ", __LINE__);
                                     endOfSimulation(-1);
                                 }
                             }
@@ -849,7 +848,7 @@ int main(int argc, char *argv[])
                             sops[1].sem_op = 1;
                             if (semop(nodeListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("Master: failed to release nodeList semaphore after reading operation. Error: ");
+                                safeErrorPrint("Master: failed to release nodeList semaphore after reading operation. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
@@ -914,7 +913,7 @@ int main(int argc, char *argv[])
                                     if (semop(rdPartSem, &sops[0], 1) == -1)
                                     {
                                         sprintf(aus, "Master: failed to reserve read semaphore for %d-th partition. Error: ", i);
-                                        unsafeErrorPrint(aus);
+                                        unsafeErrorPrint(aus, __LINE__);
                                         /*
                                                 Computing the budget is a critical operation, so we end the simulation
                                                 in case of error
@@ -928,7 +927,7 @@ int main(int argc, char *argv[])
                                         if (semop(mutexPartSem, &(sops[0]), 1) == -1)
                                         {
                                             sprintf(aus, "Master: failed to reserve mutex semaphore for %d-th partition. Error: ", i);
-                                            unsafeErrorPrint(aus);
+                                            unsafeErrorPrint(aus, __LINE__);
                                             endOfSimulation(-1);
                                         }
 
@@ -940,7 +939,7 @@ int main(int argc, char *argv[])
                                             if (semop(wrPartSem, &sops[0], 1) == -1)
                                             {
                                                 sprintf(aus, "Master: failed to reserve write semaphore for %d-th partition. Error: ", i);
-                                                unsafeErrorPrint(aus);
+                                                unsafeErrorPrint(aus, __LINE__);
                                                 endOfSimulation(-1);
                                             }
                                         }
@@ -951,7 +950,7 @@ int main(int argc, char *argv[])
                                         if (semop(mutexPartSem, &sops[0], 1) == -1)
                                         {
                                             sprintf(aus, "Master: failed to release mutex semaphore for %d-th partition. Error: ", i);
-                                            unsafeErrorPrint(aus);
+                                            unsafeErrorPrint(aus, __LINE__);
                                             endOfSimulation(-1);
                                         }
                                         else
@@ -961,7 +960,7 @@ int main(int argc, char *argv[])
                                             if (semop(rdPartSem, &sops[0], 1) == -1)
                                             {
                                                 sprintf(aus, "Master: failed to release read semaphore for %d-th partition. Error: ", i);
-                                                unsafeErrorPrint(aus);
+                                                unsafeErrorPrint(aus, __LINE__);
                                                 endOfSimulation(-1);
                                             }
                                             /*
@@ -1060,7 +1059,7 @@ int main(int argc, char *argv[])
                                             if (semop(mutexPartSem, &sops[0], 1) == -1)
                                             {
                                                 sprintf(aus, "Master: failed to reserve mutex semaphore for %d-th partition. Error: ", i);
-                                                unsafeErrorPrint(aus);
+                                                unsafeErrorPrint(aus, __LINE__);
                                                 endOfSimulation(-1);
                                             }
                                             else
@@ -1073,7 +1072,7 @@ int main(int argc, char *argv[])
                                                     if (semop(wrPartSem, &sops[0], 1) == -1)
                                                     {
                                                         sprintf(aus, "Master: failed to reserve write semaphore for %d-th partition. Error: ", i);
-                                                        unsafeErrorPrint(aus);
+                                                        unsafeErrorPrint(aus, __LINE__);
                                                         endOfSimulation(-1);
                                                     }
                                                 }
@@ -1083,7 +1082,7 @@ int main(int argc, char *argv[])
                                                 if (semop(mutexPartSem, &sops[0], 1) == -1)
                                                 {
                                                     sprintf(aus, "Master: failed to release read semaphore for %d-th partition. Error: ", i);
-                                                    unsafeErrorPrint(aus);
+                                                    unsafeErrorPrint(aus, __LINE__);
                                                     endOfSimulation(-1);
                                                 }
                                             }
@@ -1107,6 +1106,9 @@ int main(int argc, char *argv[])
                                      * so we print budget of all processes
                                      */
                                     printf("Master: Printing budget of all the processes.\n");
+
+                                    printf("Master: Number of active nodes: %d\n", noEffectiveNodes);
+                                    printf("Master: Number of active users: %d\n", noEffectiveUsers);
 
                                     for (el_list = bud_list_head; el_list != NULL; el_list = el_list->next)
                                     {
@@ -1181,7 +1183,7 @@ int main(int argc, char *argv[])
                                         sops[1].sem_op = -1;
                                         if (semop(userListSem, sops, 2) == -1)
                                         {
-                                            safeErrorPrint("Master: failed to reserve usersList semaphore for writing operation. Error: ");
+                                            safeErrorPrint("Master: failed to reserve usersList semaphore for writing operation. Error: ", __LINE__);
                                             endOfSimulation(-1);
                                         }
                                         else
@@ -1209,7 +1211,7 @@ int main(int argc, char *argv[])
                                             sops[1].sem_op = 1;
                                             if (semop(userListSem, sops, 2) == -1)
                                             {
-                                                safeErrorPrint("Master: failed to release usersList semaphore for writing operation. Error: ");
+                                                safeErrorPrint("Master: failed to release usersList semaphore for writing operation. Error: ", __LINE__);
                                                 /*
                                                         CORREGGERE: terminiamo la simulazione??
                                                         È la soluzione più sensata, perchè il rischio è quello di bloccare tutti gli altri processi
@@ -1229,7 +1231,7 @@ int main(int argc, char *argv[])
                                         if (msgsnd(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
                                         {
                                             /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
-                                            unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated users. Error: ");
+                                            unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated users. Error: ", __LINE__);
                                             endOfSimulation(-1);
                                         }
                                     }
@@ -1238,7 +1240,7 @@ int main(int argc, char *argv[])
                                 /* If errno is ENOMSG, no message of user termination on global queue, otherwise an error occured */
                                 if (errno != ENOMSG)
                                 {
-                                    unsafeErrorPrint("Master: failed to retrieve user termination messages from global queue. Error: ");
+                                    unsafeErrorPrint("Master: failed to retrieve user termination messages from global queue. Error: ", __LINE__);
                                     /*
                                      * DEVO FARE EXIT?????
                                      * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
@@ -1270,7 +1272,7 @@ int main(int argc, char *argv[])
                                         sops[1].sem_op = -1;
                                         if (semop(nodeListSem, sops, 2) == -1)
                                         {
-                                            safeErrorPrint("Master: failed to reserve nodesList semaphore for writing operation. Error: ");
+                                            safeErrorPrint("Master: failed to reserve nodesList semaphore for writing operation. Error: ", __LINE__);
                                             endOfSimulation(-1);
                                         }
                                         else
@@ -1293,7 +1295,7 @@ int main(int argc, char *argv[])
                                             sops[1].sem_op = 1;
                                             if (semop(nodeListSem, sops, 2) == -1)
                                             {
-                                                safeErrorPrint("Master: failed to release nodeslist semaphore for writing operation. Error: ");
+                                                safeErrorPrint("Master: failed to release nodeslist semaphore for writing operation. Error: ", __LINE__);
                                                 /*
                                                         CORREGGERE: terminiamo la simulazione??
                                                         È la soluzione più sensata, perchè il rischio è quello di bloccare tutti gli altri processi
@@ -1313,7 +1315,7 @@ int main(int argc, char *argv[])
                                         if (msgsnd(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
                                         {
                                             /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
-                                            unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated nodes. Error: ");
+                                            unsafeErrorPrint("Master: failed to reinsert the message read from the global queue while checking for terminated nodes. Error: ", __LINE__);
                                             endOfSimulation(-1);
                                         }
                                     }
@@ -1322,7 +1324,7 @@ int main(int argc, char *argv[])
                                 /* If errno is ENOMSG, no message of user termination on global queue, otherwise an error occured */
                                 if (errno != ENOMSG)
                                 {
-                                    unsafeErrorPrint("Master: failed to retrieve node termination messages from global queue. Error: ");
+                                    unsafeErrorPrint("Master: failed to retrieve node termination messages from global queue. Error: ", __LINE__);
                                     /*
                                      * DEVO FARE EXIT?????
                                      * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
@@ -1434,14 +1436,14 @@ boolean readConfigParameters()
 
     aus = (char *)calloc(35, sizeof(char));
     if (aus == NULL)
-        unsafeErrorPrint("Master: failed to allocate memory. Error: ");
+        unsafeErrorPrint("Master: failed to allocate memory. Error: ", __LINE__);
     else
     {
         /* Handles any error in opening the file*/
         if (fp == NULL)
         {
             sprintf(aus, "Master: could not open file %s", filename);
-            unsafeErrorPrint(aus);
+            unsafeErrorPrint(aus, __LINE__);
             ret = FALSE;
         }
         else
@@ -1456,7 +1458,7 @@ boolean readConfigParameters()
 
             if (line[k] == NULL && errno)
             {
-                unsafeErrorPrint("Master: failed to read cofiguration parameters. Error: ");
+                unsafeErrorPrint("Master: failed to read cofiguration parameters. Error: ", __LINE__);
                 ret = FALSE;
             }
             else
@@ -1766,7 +1768,7 @@ int update_budget(pid_t remove_pid, int amount_changing)
     /* check if budgetlist is NULL, if yes its an error */
     if (bud_list_head == NULL)
     {
-        safeErrorPrint("Master: Error in function update_budget: NULL list passed to the function\n");
+        safeErrorPrint("Master: Error in function update_budget: NULL list passed to the function.", __LINE__);
         return -1;
     }
 
@@ -1812,7 +1814,7 @@ int update_budget(pid_t remove_pid, int amount_changing)
     if (found == 0)
     {
         sprintf(msg, "Master: Trying to update budget but no element in budgetlist with pid %5d\n", remove_pid);
-        safeErrorPrint(msg);
+        safeErrorPrint(msg, __LINE__);
         return -1;
     }
 
@@ -1867,7 +1869,7 @@ void endOfSimulation(int sig)
     */
     /*printf("Master: PID %ld\nMaster: parent PID %ld\n", (long int)getpid(), (long)getppid());*/
     if (terminationMessage == NULL || aus == NULL || getpid() != masterPid)
-        safeErrorPrint("Master: failed to alloacate memory. Error: ");
+        safeErrorPrint("Master: failed to alloacate memory. Error: ", __LINE__);
     else
     {
         /*
@@ -1895,7 +1897,7 @@ void endOfSimulation(int sig)
                 */
                 if (kill(0, SIGUSR1) == -1)
                 {
-                    safeErrorPrint("Master: failed to signal children for end of simulation. Error: ");
+                    safeErrorPrint("Master: failed to signal children for end of simulation. Error: ", __LINE__);
                 }
                 else
                 {
@@ -1973,7 +1975,7 @@ void endOfSimulation(int sig)
             }
             else
             {
-                safeErrorPrint("Master: an error occurred while waiting for children. Description: ");
+                safeErrorPrint("Master: an error occurred while waiting for children. Description: ", __LINE__);
             }
             write(STDOUT_FILENO, "Master: simulation terminated successfully!!!\n", strlen("Master: simulation terminated successfully!!!\n"));
         }
@@ -2092,7 +2094,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            safeErrorPrint("Master: failed to detach from users' list segment. Error: ");
+            safeErrorPrint("Master: failed to detach from users' list segment. Error: ", __LINE__);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2102,7 +2104,7 @@ boolean deallocateFacilities(int *exitCode)
         {
             if (errno != EAGAIN)
             {
-                safeErrorPrint("Master: failed to remove users' list segment. Error: ");
+                safeErrorPrint("Master: failed to remove users' list segment. Error: ", __LINE__);
                 *exitCode = EXIT_FAILURE;
             }
         }
@@ -2122,7 +2124,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            safeErrorPrint("Master: failed to detach from nodes' list segment. Error: ");
+            safeErrorPrint("Master: failed to detach from nodes' list segment. Error: ", __LINE__);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2132,7 +2134,7 @@ boolean deallocateFacilities(int *exitCode)
         {
             if (errno != EINVAL)
             {
-                safeErrorPrint("Master: failed to remove nodes' list segment. Error: ");
+                safeErrorPrint("Master: failed to remove nodes' list segment. Error: ", __LINE__);
                 *exitCode = EXIT_FAILURE;
             }
         }
@@ -2357,7 +2359,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            safeErrorPrint("Master: failed to detach from user list's shared variable. Error: ");
+            safeErrorPrint("Master: failed to detach from user list's shared variable. Error: ", __LINE__);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2367,7 +2369,7 @@ boolean deallocateFacilities(int *exitCode)
         {
             if (errno != EINVAL)
             {
-                safeErrorPrint("Master: failed to remove user list's shared variable. Error: ");
+                safeErrorPrint("Master: failed to remove user list's shared variable. Error: ", __LINE__);
                 *exitCode = EXIT_FAILURE;
             }
         }
@@ -2405,7 +2407,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            safeErrorPrint("Master: failed to detach from node list's shared variable. Error: ");
+            safeErrorPrint("Master: failed to detach from node list's shared variable. Error: ", __LINE__);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2415,7 +2417,7 @@ boolean deallocateFacilities(int *exitCode)
         {
             if (errno != EINVAL)
             {
-                safeErrorPrint("Master: failed to remove node list's shared variable. Error: ");
+                safeErrorPrint("Master: failed to remove node list's shared variable. Error: ", __LINE__);
                 *exitCode = EXIT_FAILURE;
             }
         }
@@ -2491,7 +2493,7 @@ void checkNodeCreationRequests()
                     sops[1].sem_op = -1;
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to reserve nodes' list semphore. Error: ");
+                        unsafeErrorPrint("Master: failed to reserve nodes' list semphore. Error: ", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2506,7 +2508,7 @@ void checkNodeCreationRequests()
 
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to release nodes' list semphore. Error: ");
+                        unsafeErrorPrint("Master: failed to release nodes' list semphore. Error: ", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2519,7 +2521,7 @@ void checkNodeCreationRequests()
 
                     tpId = msgget(ftok("msgfile.txt", currPid), IPC_EXCL | IPC_CREAT);
                     if (tpId == -1)
-                        safeErrorPrint("Master: failed to create additional node's transaction pool. Error: ");
+                        safeErrorPrint("Master: failed to create additional node's transaction pool. Error: ", __LINE__);
                     else
                     {
                         /* add a new entry to the tpList array */
@@ -2531,7 +2533,7 @@ void checkNodeCreationRequests()
 
                         if (tpList[tplLength - 1].msgQId == -1)
                         {
-                            unsafeErrorPrint("Master: failed to create the message queue for the transaction pool of the new node process. Error: ");
+                            unsafeErrorPrint("Master: failed to create the message queue for the transaction pool of the new node process. Error: ", __LINE__);
                             exit(EXIT_FAILURE); /* VA SOSTITUITO CON EndOfSimulation ??? */
                         }
 
@@ -2545,7 +2547,7 @@ void checkNodeCreationRequests()
 
                         if (msgsnd(tpId, &(aus.transaction), sizeof(MsgTP) - sizeof(long), 0) == -1)
                         {
-                            safeErrorPrint("Master: failed to initialize additional node's transaction pool. Error: ");
+                            safeErrorPrint("Master: failed to initialize additional node's transaction pool. Error: ", __LINE__);
                         }
                         else
                         {
@@ -2560,12 +2562,12 @@ void checkNodeCreationRequests()
                                     /*
                                         CORREGGERE: segnalazione fallimento trasazione a sender
                                     */
-                                    safeErrorPrint("Master: failed to send a friend to new node. Error: ");
+                                    safeErrorPrint("Master: failed to send a friend to new node. Error: ", __LINE__);
                                 }
                             }
 
                             if (execle("node.out", "node", "ADDITIONAL", NULL, environ) == -1)
-                                safeErrorPrint("Master: failed to load node's code. Error: ");
+                                safeErrorPrint("Master: failed to load node's code. Error: ", __LINE__);
                         }
                     }
                 }
@@ -2586,7 +2588,7 @@ void checkNodeCreationRequests()
                     sops[1].sem_op = -1;
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to reserve nodes' list read/mutex semphore. Error: ");
+                        unsafeErrorPrint("Master: failed to reserve nodes' list read/mutex semphore. Error: ", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2598,7 +2600,7 @@ void checkNodeCreationRequests()
                         sops[2].sem_op = -1;
                         if (semop(nodeListSem, sops, 1) == -1)
                         {
-                            unsafeErrorPrint("Master: failed to reserve nodes' list write semphore. Error: ");
+                            unsafeErrorPrint("Master: failed to reserve nodes' list write semphore. Error: ", __LINE__);
                             endOfSimulation(-1);
                         }
                     }
@@ -2611,7 +2613,7 @@ void checkNodeCreationRequests()
                     sops[1].sem_op = 1;
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to release nodes' list mutex/read semphore. Error: ");
+                        unsafeErrorPrint("Master: failed to release nodes' list mutex/read semphore. Error: ", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2630,7 +2632,7 @@ void checkNodeCreationRequests()
                                         CORREGGERE: possiamo semplicemente segnalare l'errore senza fare nulla?
                                         Io direi di sì, non mi sembra che gestioni più complicate siano utili
                                     */
-                            safeErrorPrint("Master: failed to ask a node to add the new process to its fiends' list. Error: ");
+                            safeErrorPrint("Master: failed to ask a node to add the new process to its fiends' list. Error: ", __LINE__);
                         }
                     }
 
@@ -2639,7 +2641,7 @@ void checkNodeCreationRequests()
                     sops[0].sem_op = -1;
                     if (semop(nodeListSem, sops, 1) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to reserve nodes' list mutex semphore. Error: ");
+                        unsafeErrorPrint("Master: failed to reserve nodes' list mutex semphore. Error: ", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2650,7 +2652,7 @@ void checkNodeCreationRequests()
                         sops[2].sem_op = 1;
                         if (semop(nodeListSem, sops, 1) == -1)
                         {
-                            unsafeErrorPrint("Master: failed to release nodes' list write semphore. Error: ");
+                            unsafeErrorPrint("Master: failed to release nodes' list write semphore. Error: ", __LINE__);
                             endOfSimulation(-1);
                         }
                     }
@@ -2660,13 +2662,13 @@ void checkNodeCreationRequests()
                     sops[0].sem_op = 1;
                     if (semop(nodeListSem, sops, 1) == -1)
                     {
-                        unsafeErrorPrint("Master: failed to release nodes' list mutex semphore. Error: ");
+                        unsafeErrorPrint("Master: failed to release nodes' list mutex semphore. Error: ", __LINE__);
                         endOfSimulation(-1);
                     }
                 }
                 else
                 {
-                    unsafeErrorPrint("Master: no more resources for new node. Simulation will be terminated.");
+                    unsafeErrorPrint("Master: no more resources for new node. Simulation will be terminated.", __LINE__);
                     /*
                 Sono finite le risorse, cosa facciamo?
                     1) Segnaliamo stampando la cosa a video e basta (del resto
@@ -2682,7 +2684,7 @@ void checkNodeCreationRequests()
             }
             else
             {
-                unsafeErrorPrint("Master: no space left for storing new node information. Simulation will be terminated.");
+                unsafeErrorPrint("Master: no space left for storing new node information. Simulation will be terminated.", __LINE__);
                 /*
                     CORREGGERE: Mettere qui la segnalazione di fine simulazione
                     oppure quella di fallimento transazione

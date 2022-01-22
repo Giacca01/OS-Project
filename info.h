@@ -63,49 +63,49 @@ i figli lo preleveranno dalla lista dei nodi*/
 #define FTOK_TEST_ERROR(key,msg)                                                    \
     if (key == -1)                                                                   \
     {                                                                                \
-        unsafeErrorPrint(msg);                                                      \
+        unsafeErrorPrint(msg, __LINE__);                                                      \
         return FALSE;                                                                \
     }
 
 #define SEM_TEST_ERROR(id,msg)                                                         \
     if (id == -1)                                                                     \
     {                                                                                 \
-        unsafeErrorPrint(msg); \
+        unsafeErrorPrint(msg, __LINE__); \
         return FALSE;                                                                 \
     }
 
 #define SEMCTL_TEST_ERROR(id,msg)                                                         \
     if (id == -1)                                                                     \
     {                                                                                 \
-        unsafeErrorPrint(msg); \
+        unsafeErrorPrint(msg, __LINE__); \
         return FALSE;                                                                 \
     }
 
 #define SHM_TEST_ERROR(id,msg)                                                                     \
     if (id == -1)                                                                                 \
     {                                                                                             \
-        unsafeErrorPrint(msg);                                                                      \
+        unsafeErrorPrint(msg, __LINE__);                                                                      \
         return FALSE;                                                                             \
     }
 
 #define MSG_TEST_ERROR(id,msg)                                                                 \
     if (id == -1)                                                                          \
     {                                                                                      \
-        unsafeErrorPrint(msg); \
+        unsafeErrorPrint(msg, __LINE__); \
         return FALSE;                                                                      \
     }
 
 #define TEST_MALLOC_ERROR(ptr,msg)                                          \
     if (ptr == NULL)                                                    \
     {                                                                   \
-        unsafeErrorPrint(msg);                                          \
+        unsafeErrorPrint(msg, __LINE__);                                          \
         return FALSE;                                                   \
     }
 
 #define TEST_SHMAT_ERROR(ptr,msg)                                                           \
     if (ptr == NULL)                                                                    \
     {                                                                                   \
-        unsafeErrorPrint(msg); \
+        unsafeErrorPrint(msg, __LINE__); \
         return FALSE;                                                                   \
     }
 
@@ -279,6 +279,6 @@ typedef struct
 #define TEST_ERROR_PARAM                                                             \
     if (errno)                                                                       \
     {                                                                                \
-        unsafeErrorPrint("Master: failed to read configuration parameter. Error: "); \
+        unsafeErrorPrint("Master: failed to read configuration parameter. Error: ", __LINE__); \
         return FALSE;                                                                \
     }
