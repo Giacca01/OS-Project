@@ -266,7 +266,7 @@ int main(int argc, char *argv[], char *envp[])
             {
                 if(sigfillset(&mask) == -1)
                 {
-                    unsafeErrorPrint("User: failed to initialize signal mask. Error: ", __LINE__);
+                    unsafeErrorPrint("User: failed to initialize signal mask. Error", __LINE__);
                     endOfExecution(1);
                 }
                 else
@@ -275,7 +275,7 @@ int main(int argc, char *argv[], char *envp[])
                     actEndOfExec.sa_mask = mask;
                     if(sigaction(SIGUSR1, &actEndOfExec, NULL) == -1)
                     {
-                        unsafeErrorPrint("User: failed to set up end of simulation handler. Error: ", __LINE__);
+                        unsafeErrorPrint("User: failed to set up end of simulation handler. Error", __LINE__);
                         endOfExecution(1);
                     }
                     else
@@ -284,7 +284,7 @@ int main(int argc, char *argv[], char *envp[])
                         actGenTrans.sa_mask = mask;
                         if(sigaction(SIGUSR2, &actGenTrans, NULL) == -1)
                         {
-                            unsafeErrorPrint("User: failed to set up transaction generation handler. Error: ", __LINE__);
+                            unsafeErrorPrint("User: failed to set up transaction generation handler. Error", __LINE__);
                             endOfExecution(1);
                         }
                         else
@@ -313,11 +313,11 @@ int main(int argc, char *argv[], char *envp[])
                                         printf("User: no failed transactions found.\n");
                                         /* the message wasn't the one we were looking for, reinserting it on the global queue */
                                         if(msgsnd(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans)-sizeof(long), 0) == -1)
-                                            unsafeErrorPrint("User: failed to reinsert the message read from global queue while checking for failed transactions. Error: ", __LINE__);
+                                            unsafeErrorPrint("User: failed to reinsert the message read from global queue while checking for failed transactions. Error", __LINE__);
                                     }
                                 }
                                 else if(errno != ENOMSG)
-                                    unsafeErrorPrint("User: failed to check for failed transaction messages on global queue. Error: ", __LINE__);
+                                    unsafeErrorPrint("User: failed to check for failed transaction messages on global queue. Error", __LINE__);
                                 /* else errno == ENOMSG, so no transaction has failed */
                                 
                                 /* generate a transaction */
@@ -408,10 +408,10 @@ boolean readParams()
 boolean allocateMemory()
 {
     regPtrs = (Register **)calloc(REG_PARTITION_COUNT, sizeof(Register *));
-    TEST_MALLOC_ERROR(regPtrs, "User: failed to allocate register paritions' pointers array. Error: ");
+    TEST_MALLOC_ERROR(regPtrs, "User: failed to allocate register paritions' pointers array. Error");
 
     regPartsIds = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(regPartsIds, "User: failed to allocate register paritions' ids array. Error: ");
+    TEST_MALLOC_ERROR(regPartsIds, "User: failed to allocate register paritions' ids array. Error");
 
     /*
         noReadersPartitions e noReadersPartitionsPtrs vanno allocati
@@ -419,14 +419,14 @@ boolean allocateMemory()
         abbastanza grande da contenere REG_PARTITION_COUNT interi/puntatori ad interi
     */
     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(noReadersPartitions, "User: failed to allocate registers partitions' shared variables ids. Error: ");
+    TEST_MALLOC_ERROR(noReadersPartitions, "User: failed to allocate registers partitions' shared variables ids. Error");
 
     /*
     Non allochiamo il noReadersPartitionsPtrs[i] perchè esso dovrà
     contenere un puntatore alla shared memory
     */
     noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
-    TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "USer: failed to allocate registers partitions' shared variables pointers. Error: ");
+    TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "USer: failed to allocate registers partitions' shared variables pointers. Error");
 
     return TRUE;
 }
@@ -443,129 +443,129 @@ boolean initializeFacilities()
         testare errori shmat
     */
     key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during fair start semaphore creation. Error: ")
+    FTOK_TEST_ERROR(key, "User: ftok failed during fair start semaphore creation. Error")
     fairStartSem = semget(key, 1, 0600);
-    SEM_TEST_ERROR(fairStartSem, "User: semget failed during fair start semaphore creation. Error: ");
+    SEM_TEST_ERROR(fairStartSem, "User: semget failed during fair start semaphore creation. Error");
 
     key = ftok(SEMFILEPATH, WRPARTSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during partitions writing semaphores creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during partitions writing semaphores creation. Error");
     wrPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(wrPartSem, "User: semget failed during partitions writing semaphores creation. Error: ");
+    SEM_TEST_ERROR(wrPartSem, "User: semget failed during partitions writing semaphores creation. Error");
 
     key = ftok(SEMFILEPATH, RDPARTSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during partitions reading semaphores creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during partitions reading semaphores creation. Error");
     rdPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(rdPartSem, "User: semget failed during partitions reading semaphores creation. Error: ");
+    SEM_TEST_ERROR(rdPartSem, "User: semget failed during partitions reading semaphores creation. Error");
 
     key = ftok(SEMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during user list semaphore creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during user list semaphore creation. Error");
     userListSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(userListSem, "User: semget failed during user list semaphore creation. Error: ");
+    SEM_TEST_ERROR(userListSem, "User: semget failed during user list semaphore creation. Error");
 
     key = ftok(SEMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during nodes list semaphore creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during nodes list semaphore creation. Error");
     nodeListSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(nodeListSem, "User: semget failed during nodes list semaphore creation. Error: ");
+    SEM_TEST_ERROR(nodeListSem, "User: semget failed during nodes list semaphore creation. Error");
 
     key = ftok(SEMFILEPATH, PARTMUTEXSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during partitions mutex semaphores creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during partitions mutex semaphores creation. Error");
     mutexPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(mutexPartSem, "User: semget failed during partitions mutex semaphores creation. Error: ");
+    SEM_TEST_ERROR(mutexPartSem, "User: semget failed during partitions mutex semaphores creation. Error");
 
     /*****  Creates and initialize the messages queues  *****/
     /********************************************************/
     /* Creates the global queue*/
     key = ftok(MSGFILEPATH, GLOBALMSGSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during global queue creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during global queue creation. Error");
     globalQueueId = msgget(key, 0600);
-    MSG_TEST_ERROR(globalQueueId, "User: msgget failed during global queue creation. Error: ");
+    MSG_TEST_ERROR(globalQueueId, "User: msgget failed during global queue creation. Error");
     /********************************************************/
     /********************************************************/
 
     /*****  Initialization of shared memory segments    *****/
     /********************************************************/
     key = ftok(SHMFILEPATH, REGPARTONESEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during register parition one creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during register parition one creation. Error");
     regPartsIds[0] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[0], "User: shmget failed during partition one creation. Error: ");
+    SHM_TEST_ERROR(regPartsIds[0], "User: shmget failed during partition one creation. Error");
 
     key = ftok(SHMFILEPATH, REGPARTTWOSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during register parition two creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during register parition two creation. Error");
     regPartsIds[1] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[1], "User: shmget failed during partition two creation. Error: ");
+    SHM_TEST_ERROR(regPartsIds[1], "User: shmget failed during partition two creation. Error");
 
     key = ftok(SHMFILEPATH, REGPARTTHREESEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during register parition three creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during register parition three creation. Error");
     regPartsIds[2] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[2], "User: shmget failed during partition three creation. Error: ");
+    SHM_TEST_ERROR(regPartsIds[2], "User: shmget failed during partition three creation. Error");
 
     regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
     /*SHMAT_TEST_ERROR(regPtrs[0], "User");*/
-    TEST_SHMAT_ERROR(regPtrs[0], "User: failed to attach to partition one's memory segment. Error: ");
+    TEST_SHMAT_ERROR(regPtrs[0], "User: failed to attach to partition one's memory segment. Error");
     regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
     /*SHMAT_TEST_ERROR(regPtrs[1], "User");*/
-    TEST_SHMAT_ERROR(regPtrs[1], "User: failed to attach to partition two's memory segment. Error: ");
+    TEST_SHMAT_ERROR(regPtrs[1], "User: failed to attach to partition two's memory segment. Error");
     regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
     /*SHMAT_TEST_ERROR(regPtrs[2], "User");*/
-    TEST_SHMAT_ERROR(regPtrs[2], "User: failed to attach to partition three's memory segment. Error: ");
+    TEST_SHMAT_ERROR(regPtrs[2], "User: failed to attach to partition three's memory segment. Error");
 
 
     key = ftok(SHMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during users list creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during users list creation. Error");
     usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), 0600);
-    SHM_TEST_ERROR(usersListId, "User: shmget failed during users list creation. Error: ");
+    SHM_TEST_ERROR(usersListId, "User: shmget failed during users list creation. Error");
     usersList = (ProcListElem *)shmat(usersListId, NULL, SHM_RDONLY);
     /*SHMAT_TEST_ERROR(usersList, "User");*/
-    TEST_SHMAT_ERROR(usersList, "User: failed to attach to users list's memory segment. Error: ")
+    TEST_SHMAT_ERROR(usersList, "User: failed to attach to users list's memory segment. Error")
 
     key = ftok(SHMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during nodes list creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during nodes list creation. Error");
     nodesListId = shmget(key, SO_NODES_NUM * sizeof(ProcListElem), 0600);
-    SHM_TEST_ERROR(nodesListId, "User: shmget failed during nodes list creation. Error: ");
+    SHM_TEST_ERROR(nodesListId, "User: shmget failed during nodes list creation. Error");
     nodesList = (ProcListElem *)shmat(nodesListId, NULL, SHM_RDONLY);
     /*SHMAT_TEST_ERROR(nodesList, "User");*/
-    TEST_SHMAT_ERROR(nodesList, "User: failed to attach to nodes list's memory segment. Error: ");
+    TEST_SHMAT_ERROR(nodesList, "User: failed to attach to nodes list's memory segment. Error");
 
     /* Aggancio segmenti per variabili condivise*/
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during parition one's shared variable creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during parition one's shared variable creation. Error");
     noReadersPartitions[0] = shmget(key, sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(nodesListId, "User: shmget failed during parition one's shared variable creation. Error: ");
+    SHM_TEST_ERROR(nodesListId, "User: shmget failed during parition one's shared variable creation. Error");
     noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[0], "User");*/
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "User: failed to attach to parition one's shared variable segment. Error: ");
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "User: failed to attach to parition one's shared variable segment. Error");
 
     key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during parition two's shared variable creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during parition two's shared variable creation. Error");
     noReadersPartitions[1] = shmget(key, sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noReadersPartitions[1], "User: shmget failed during parition two's shared variable creation. Error: ")
+    SHM_TEST_ERROR(noReadersPartitions[1], "User: shmget failed during parition two's shared variable creation. Error")
     noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[1], "User");*/
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "User: failed to attach to parition rwo's shared variable segment. Error: ");
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "User: failed to attach to parition rwo's shared variable segment. Error");
 
     key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during parition three's shared variable creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during parition three's shared variable creation. Error");
     noReadersPartitions[2] = shmget(key, sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noReadersPartitions[2], "User: shmget failed during parition three's shared variable creation. Error: ")
+    SHM_TEST_ERROR(noReadersPartitions[2], "User: shmget failed during parition three's shared variable creation. Error")
     noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[2], "User");*/
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "User: failed to attach to parition three's shared variable segment. Error: ");
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "User: failed to attach to parition three's shared variable segment. Error");
 
     key = ftok(SHMFILEPATH, NOUSRSEGRDERSSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during users list's shared variable creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during users list's shared variable creation. Error");
     noUserSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noUserSegReaders, "User: shmget failed during users list's shared variable creation. Error: ")
+    SHM_TEST_ERROR(noUserSegReaders, "User: shmget failed during users list's shared variable creation. Error")
     noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
     /*SHMAT_TEST_ERROR(noUserSegReadersPtr, "User");*/
-    TEST_SHMAT_ERROR(noUserSegReadersPtr, "User: failed to attach to users list's shared variable segment. Error: ");
+    TEST_SHMAT_ERROR(noUserSegReadersPtr, "User: failed to attach to users list's shared variable segment. Error");
 
     key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
-    FTOK_TEST_ERROR(key, "User: ftok failed during nodes list's shared variable creation. Error: ");
+    FTOK_TEST_ERROR(key, "User: ftok failed during nodes list's shared variable creation. Error");
     noNodeSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noNodeSegReaders, "User: shmget failed during nodes list's shared variable creation. Error: ")
+    SHM_TEST_ERROR(noNodeSegReaders, "User: shmget failed during nodes list's shared variable creation. Error")
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
     /*SHMAT_TEST_ERROR(noNodeSegReadersPtr, "User");*/
-    TEST_SHMAT_ERROR(noNodeSegReadersPtr, "User: failed to attach to nodes list's shared variable segment. Error: ");
+    TEST_SHMAT_ERROR(noNodeSegReadersPtr, "User: failed to attach to nodes list's shared variable segment. Error");
 
     return TRUE;
 }
@@ -588,6 +588,8 @@ double computeBalance(TransList *transSent)
     pid_t procPid = getpid();
     struct sembuf op;
     boolean errBeforeComputing = FALSE, errAfterComputing = FALSE;
+
+    balance = SO_BUDGET_INIT;
 
     /*
         Soluzione equa al problema dei lettori scrittori
@@ -612,14 +614,14 @@ double computeBalance(TransList *transSent)
         */
         if (semop(rdPartSem, &op, 1) == -1)
         {
-            safeErrorPrint("User: failed to reserve register partition reading semaphore. Error: ", __LINE__);
+            safeErrorPrint("User: failed to reserve register partition reading semaphore. Error", __LINE__);
             errBeforeComputing = TRUE;
         }
         else 
         {
             if (semop(mutexPartSem, &op, 1) == -1)
             {
-                safeErrorPrint("User: failed to reserve register partition mutex semaphore. Error: ", __LINE__);
+                safeErrorPrint("User: failed to reserve register partition mutex semaphore. Error", __LINE__);
                 errBeforeComputing = TRUE;
             }
             else 
@@ -640,14 +642,14 @@ double computeBalance(TransList *transSent)
 
                 if (semop(mutexPartSem, &op, 1) == -1)
                 {
-                    safeErrorPrint("User: failed to release register partition mutex semaphore. Error: ", __LINE__);
+                    safeErrorPrint("User: failed to release register partition mutex semaphore. Error", __LINE__);
                     errBeforeComputing = TRUE;
                 }
                 else 
                 {
                     if (semop(rdPartSem, &op, 1) == -1)
                     {
-                        safeErrorPrint("User: failed to release register partition reading semaphore. Error: ", __LINE__);
+                        safeErrorPrint("User: failed to release register partition reading semaphore. Error", __LINE__);
                         errBeforeComputing = TRUE;
                     }
                     else 
@@ -657,7 +659,6 @@ double computeBalance(TransList *transSent)
                             break; /* we stop the cycle and end balance computation */
 
                         ptr = regPtrs[i];
-                        balance = SO_BUDGET_INIT;
                         
                         /* Il while portava alla generazione di segmentatio fault */
                         for(l = 0; l < REG_PARTITION_COUNT; l++,ptr++)
@@ -691,7 +692,7 @@ double computeBalance(TransList *transSent)
                         if (semop(mutexPartSem, &op, 1) == -1)
                         {
                             balance = 0;
-                            safeErrorPrint("User: failed to reserve register partition mutex semaphore. Error: ", __LINE__);
+                            safeErrorPrint("User: failed to reserve register partition mutex semaphore. Error", __LINE__);
                             userFailure();
                             errAfterComputing = TRUE;
                         }
@@ -707,7 +708,7 @@ double computeBalance(TransList *transSent)
                                 if (semop(wrPartSem, &op, 1) == -1)
                                 {
                                     balance = 0;
-                                    safeErrorPrint("User: failed to release register partition writing semaphore. Error: ", __LINE__);
+                                    safeErrorPrint("User: failed to release register partition writing semaphore. Error", __LINE__);
                                     errAfterComputing = TRUE;
                                 }
                             }
@@ -719,7 +720,7 @@ double computeBalance(TransList *transSent)
                             if (semop(mutexPartSem, &op, 1) == -1)
                             {
                                 balance = 0;
-                                safeErrorPrint("User: failed to release register partition mutex semaphore. Error: ", __LINE__);
+                                safeErrorPrint("User: failed to release register partition mutex semaphore. Error", __LINE__);
                                 userFailure();
                                 errAfterComputing = TRUE;
                             }
@@ -855,7 +856,7 @@ void endOfExecution(int sig)
         msgOnGQueue.msgContent = TERMINATEDUSER;
         msgOnGQueue.terminatedPid = getpid();
         if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
-            safeErrorPrint("User: failed to inform master of my termination. Error: ", __LINE__);
+            safeErrorPrint("User: failed to inform master of my termination. Error", __LINE__);
     }
     
     exit(exitCode);
@@ -893,7 +894,7 @@ void deallocateIPCFacilities()
                     Non vale la pena, possiamo limitarci a proseguire la deallocazione
                     riducendo al minimo il memory leak
                 */
-                safeErrorPrint("User: failed to detach from register's partition. Error: ", __LINE__);
+                safeErrorPrint("User: failed to detach from register's partition. Error", __LINE__);
             }
         }
     }
@@ -910,7 +911,7 @@ void deallocateIPCFacilities()
     if(shmdt(usersList) == -1)
     {
         if (errno != EINVAL)
-            safeErrorPrint("User: failed to detach from users list. Error: ", __LINE__);
+            safeErrorPrint("User: failed to detach from users list. Error", __LINE__);
     }
 
     write(STDOUT_FILENO, 
@@ -920,7 +921,7 @@ void deallocateIPCFacilities()
     if(shmdt(nodesList) == -1)
     {
         if (errno != EINVAL)
-            safeErrorPrint("User: failed to detach from nodes list. Error: ", __LINE__);
+            safeErrorPrint("User: failed to detach from nodes list. Error", __LINE__);
     }
 
     write(STDOUT_FILENO, 
@@ -932,7 +933,7 @@ void deallocateIPCFacilities()
         if(shmdt(noReadersPartitionsPtrs[i]) == -1)
         {
             if(errno != EINVAL)
-                safeErrorPrint("User: failed to detach from partitions' number of readers shared variable. Error: ", __LINE__);
+                safeErrorPrint("User: failed to detach from partitions' number of readers shared variable. Error", __LINE__);
         }
     }
     if(noReadersPartitions != NULL)
@@ -948,7 +949,7 @@ void deallocateIPCFacilities()
     if(shmdt(noUserSegReadersPtr) == -1)
     {
         if(errno != EINVAL)
-            safeErrorPrint("User: failed to detach from users list's number of readers shared variable. Error: ", __LINE__);
+            safeErrorPrint("User: failed to detach from users list's number of readers shared variable. Error", __LINE__);
     }
 
     write(STDOUT_FILENO, 
@@ -958,7 +959,7 @@ void deallocateIPCFacilities()
     if(shmdt(noNodeSegReadersPtr) == -1)
     {
         if(errno != EINVAL)
-            safeErrorPrint("User: failed to detach from nodes list's number of readers shared variable. Error: ", __LINE__);
+            safeErrorPrint("User: failed to detach from nodes list's number of readers shared variable. Error", __LINE__);
     }
 
     write(STDOUT_FILENO, 
@@ -999,7 +1000,7 @@ void transactionGeneration(int sig)
         receiver_user = extractReceiver(getpid());
         if(receiver_user == -1)
         {
-            safeErrorPrint("User: failed to extract user receiver. Error: ", __LINE__);
+            safeErrorPrint("User: failed to extract user receiver. Error", __LINE__);
             userFailure();
         }
         else 
@@ -1031,7 +1032,7 @@ void transactionGeneration(int sig)
             receiver_node = extractNode();
             if(receiver_node == -1)
             {
-                safeErrorPrint("User: failed to extract node which to send transaction on TP. Error: ", __LINE__);
+                safeErrorPrint("User: failed to extract node which to send transaction on TP. Error", __LINE__);
                 userFailure();
             }
             else
@@ -1044,7 +1045,7 @@ void transactionGeneration(int sig)
                 key = ftok(MSGFILEPATH, receiver_node);
                 if(key == -1)
                 {
-                    safeErrorPrint("User: ftok failed during node's queue retrieving. Error: ", __LINE__);
+                    safeErrorPrint("User: ftok failed during node's queue retrieving. Error", __LINE__);
                     userFailure();
                 }
                 else
@@ -1053,7 +1054,7 @@ void transactionGeneration(int sig)
                     queueId = msgget(key, 0600);
                     if(queueId == -1)
                     {
-                        safeErrorPrint("User: failed to connect to node's transaction pool. Error: ", __LINE__);
+                        safeErrorPrint("User: failed to connect to node's transaction pool. Error", __LINE__);
                         userFailure();
                     }
                     else
@@ -1081,16 +1082,16 @@ void transactionGeneration(int sig)
                                 msgOnGQueue.hops = 0;
                                 if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
                                 {
-                                    safeErrorPrint("User: failed to send transaction on global queue. Error: ", __LINE__);
+                                    safeErrorPrint("User: failed to send transaction on global queue. Error", __LINE__);
                                     userFailure();
                                 }
                             }
                             else
                             {
                                 if(sig == 0)
-                                    safeErrorPrint("User: failed to send transaction to node. Error: ", __LINE__);
+                                    safeErrorPrint("User: failed to send transaction to node. Error", __LINE__);
                                 else
-                                    safeErrorPrint("User: failed to send transaction generated on event to node. Error: ", __LINE__);
+                                    safeErrorPrint("User: failed to send transaction generated on event to node. Error", __LINE__);
                                 
                                 userFailure();
                             }
@@ -1108,14 +1109,24 @@ void transactionGeneration(int sig)
                             
                             /* Wait a random time in between SO_MIN_TRANS_GEN_NSEC and SO_MAX_TRANS_GEN_NSEC */
                             request.tv_sec = 0;
-                            request.tv_nsec = (rand() % SO_MAX_TRANS_GEN_NSEC) + SO_MIN_TRANS_GEN_NSEC;
+                            request.tv_nsec = (rand() % (SO_MAX_TRANS_GEN_NSEC+1-SO_MIN_TRANS_GEN_NSEC)) + SO_MIN_TRANS_GEN_NSEC;
+
+                            /* 
+                             * Adjusting wait time, if number of nanoseconds is greater or equal to 1 second (10^9 nanoseconds)
+                             * we increase the number of seconds.
+                             */
+                            while(request.tv_nsec >= 1000000000)
+                            {
+                                request.tv_sec++;
+                                request.tv_nsec -= 1000000000;
+                            }
                             
                             write(STDOUT_FILENO, 
                                 "User: processing the transaction...\n",
                                 strlen("User: processing the transaction...\n"));
                             
                             if (nanosleep(&request, &remaining) == -1)
-                                safeErrorPrint("User: failed to simulate wait for processing the transaction. Error: ", __LINE__);
+                                safeErrorPrint("User: failed to simulate wait for processing the transaction. Error", __LINE__);
                             
                             /* 
                                 qui in caso di fallimento non serve incrementare il counter del numero di fallimenti perché 
@@ -1219,7 +1230,7 @@ pid_t extractReceiver(pid_t pid)
             sops.sem_op = -1;
             if (semop(userListSem, &sops, 1) == -1)
             {
-                safeErrorPrint("User: failed to reserve write usersList semaphore. Error: ", __LINE__);
+                safeErrorPrint("User: failed to reserve write usersList semaphore. Error", __LINE__);
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                 return (pid_t)-1;
             }
@@ -1252,7 +1263,7 @@ pid_t extractReceiver(pid_t pid)
                     sops.sem_op = 1;
                     if (semop(userListSem, &sops, 1) == -1)
                     {
-                        safeErrorPrint("User: failed to release write usersList semaphore. Error: ", __LINE__);
+                        safeErrorPrint("User: failed to release write usersList semaphore. Error", __LINE__);
                         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                         return (pid_t)-1;
                     }
@@ -1266,25 +1277,25 @@ pid_t extractReceiver(pid_t pid)
                 }
                 else
                 {
-                    safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ", __LINE__);
+                    safeErrorPrint("User: failed to release mutex usersList semaphore. Error", __LINE__);
                     /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                 }
             }
             else
             {
-                safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ", __LINE__);
+                safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error", __LINE__);
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
             }
         }
         else
         {
-            safeErrorPrint("User: failed to release mutex usersList semaphore. Error: ", __LINE__);
+            safeErrorPrint("User: failed to release mutex usersList semaphore. Error", __LINE__);
             /* restituiamo -1 e contiamo come fallimento di invio di transazione */
         }
     }
     else
     {
-        safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error: ", __LINE__);
+        safeErrorPrint("User: failed to reserve mutex usersList semaphore. Error", __LINE__);
         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
     }
 
@@ -1313,7 +1324,7 @@ pid_t extractNode()
             sops.sem_op = -1;
             if(semop(nodeListSem, &sops, 1) == -1)
             {
-                safeErrorPrint("User: failed to reserve write nodesList semaphore. Error: ", __LINE__);
+                safeErrorPrint("User: failed to reserve write nodesList semaphore. Error", __LINE__);
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                 return (pid_t)-1;
             }
@@ -1343,7 +1354,7 @@ pid_t extractNode()
                     sops.sem_op = 1;
                     if(semop(nodeListSem, &sops, 1) == -1)
                     {
-                        safeErrorPrint("User: failed to release write nodesList semaphore. Error: ", __LINE__);
+                        safeErrorPrint("User: failed to release write nodesList semaphore. Error", __LINE__);
                         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                         return (pid_t)-1;
                     }
@@ -1357,25 +1368,25 @@ pid_t extractNode()
                 }
                 else
                 {
-                    safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ", __LINE__);
+                    safeErrorPrint("User: failed to release mutex nodesList semaphore. Error", __LINE__);
                     /* restituiamo -1 e contiamo come fallimento di invio di transazione */
                 }
             }
             else
             {
-                safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ", __LINE__);
+                safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error", __LINE__);
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
             }
         }
         else
         {
-            safeErrorPrint("User: failed to release mutex nodesList semaphore. Error: ", __LINE__);
+            safeErrorPrint("User: failed to release mutex nodesList semaphore. Error", __LINE__);
             /* restituiamo -1 e contiamo come fallimento di invio di transazione */
         }
     }
     else
     {
-        safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error: ", __LINE__);
+        safeErrorPrint("User: failed to reserve mutex nodesList semaphore. Error", __LINE__);
         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
     }
 
