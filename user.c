@@ -294,7 +294,7 @@ int main(int argc, char *argv[], char *envp[])
                             */
                             while (TRUE)
                             {
-                                printf("User: checking if there are failed transactions...\n");
+                                printf("User %ld: checking if there are failed transactions...\n", (long)getpid());
                                 /* check on global queue if a sent transaction failed */
                                 if (msgrcv(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), getpid(), IPC_NOWAIT) != -1)
                                 {
@@ -302,7 +302,7 @@ int main(int argc, char *argv[], char *envp[])
                                     /* got a message for this user from global queue */
                                     if (msgCheckFailedTrans.msgContent == FAILEDTRANS)
                                     {
-                                        printf("User: failed transaction found. Removing it from list...\n");
+                                        printf("User %ld: failed transaction found. Removing it from list...\n", (long)getpid);
                                         /* the transaction failed, so we remove it from the list of sent transactions */
                                         removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
                                     }
@@ -593,7 +593,7 @@ double computeBalance(TransList *transSent)
         se vi saranno più cicli di lettura o di scrittura e per evitare
         la starvation degli scrittori o dei lettori.
     */
-    printf("User: computing balance...\n");
+    printf("User %ld: computing balance...\n", (long)getpid());
     for (i = 0; i < REG_PARTITION_COUNT && !errBeforeComputing && !errAfterComputing; i++)
     {
         op.sem_num = i;

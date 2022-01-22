@@ -366,11 +366,20 @@ int main(int argc, char *argv[], char* envp[])
                                                             }
                                                             else
                                                             {
+                                                                if (errno != EINTR)
+                                                                    unsafeErrorPrint("Node: failed to retrieve transaction from Transaction Pool. Error: ", __LINE__);
+                                                                /*
+                                                                if (num_bytes == ENOMSG)
+                                                                    printf("Non ci sono più messaggi...\n");
+                                                                else if (num_bytes == EINTR){
                                                                 /*
                                                                         Potrebbe avere senso far ripartire l'estrazione da capo ?
                                                                         No, non cambierebbe nulla, ricordare che le transazioni nel TP
                                                                         non sono legate, quindi in un blocco possono esserci transazioni qualsiasi
                                                                     */
+                                                                /*
+                                                                unsafeErrorPrint("Node: failed to retrieve transaction from Transaction Pool. Error: ", __LINE__);
+                                                                }*/
                                                                 unsafeErrorPrint("Node: failed to retrieve transaction from Transaction Pool. Error: ", __LINE__);
                                                             }
 
