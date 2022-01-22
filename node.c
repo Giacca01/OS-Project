@@ -949,7 +949,7 @@ void dispatchToFriend()
     
     if (msgrcv(tpId, &aus, sizeof(Transaction), getpid(), IPC_NOWAIT) == -1)
     {
-        if (errno != ENOMSG)
+        if (errno != ENOMSG && errno != EINTR)
             safeErrorPrint("Node: failed to extract a transaction to send it to a friend. Error", __LINE__);
         /*
             CORREGGERE: In caso di errore procediamo limitandoci a segnalarlo??
@@ -1070,7 +1070,7 @@ void sendTransaction()
     */
     if (msgrcv(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), getpid(), IPC_NOWAIT) == -1)
     {
-        if (errno != ENOMSG)
+        if (errno != ENOMSG && errno != EINTR)
         {
             safeErrorPrint("Node: failed to check existence of transactions on global queue. Error", __LINE__);
         }
