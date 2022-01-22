@@ -1107,6 +1107,9 @@ int main(int argc, char *argv[])
                                      */
                                     printf("Master: Printing budget of all the processes.\n");
 
+                                    printf("Master: Number of active nodes: %d\n", noEffectiveNodes);
+                                    printf("Master: Number of active users: %d\n", noEffectiveUsers);
+
                                     for (el_list = bud_list_head; el_list != NULL; el_list = el_list->next)
                                     {
                                         if (el_list->p_type) /* Budget of node process */
