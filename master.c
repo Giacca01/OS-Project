@@ -2458,6 +2458,7 @@ void checkNodeCreationRequests()
         /*
             Su questa coda l'unico tipo di messaggio per il master è NEWNODE
         */
+        /*printf("MSGCONT: %d\n", aus.terminatedPid);*/
         if (aus.msgContent == NEWNODE)
         {
 
@@ -2692,13 +2693,23 @@ void checkNodeCreationRequests()
         else
         {
             printf("[MASTER]: no node creation requests to be served. \n");
-            /*
-                Reinserire transazione
-            */
+            /* Reinserting the message that we have consumed from the global queue */
+            if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), IPC_NOWAIT) == -1)
+            {
+                /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
+                unsafeErrorPrint("[MASTER]: failed to reinsert the message read from the global queue while checking for terminated nodes. Error", __LINE__);
+                endOfSimulation(-1);
+            }
         }
     }
     else
     {
         printf("[MASTER]: no node creation requests to be served. \n");
+        if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), IPC_NOWAIT) == -1)
+        {
+            /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
+            unsafeErrorPrint("[MASTER]: failed to reinsert the message read from the global queue while checking for terminated nodes. Error", __LINE__);
+            endOfSimulation(-1);
+        }
     }
 }

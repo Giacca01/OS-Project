@@ -60,60 +60,60 @@ i figli lo preleveranno dalla lista dei nodi*/
     MOsificarle in modo che segnalino il modulo in cui si è verificato un erorre
     Segnalare anche il nome del semafor/segmento
 */
-#define FTOK_TEST_ERROR(key,msg)                                                    \
-    if (key == -1)                                                                   \
-    {                                                                                \
-        unsafeErrorPrint(msg, __LINE__);                                                      \
-        return FALSE;                                                                \
-    }
-
-#define SEM_TEST_ERROR(id,msg)                                                         \
-    if (id == -1)                                                                     \
-    {                                                                                 \
+#define FTOK_TEST_ERROR(key, msg)        \
+    if (key == -1)                       \
+    {                                    \
         unsafeErrorPrint(msg, __LINE__); \
-        return FALSE;                                                                 \
+        return FALSE;                    \
     }
 
-#define SEMCTL_TEST_ERROR(id,msg)                                                         \
-    if (id == -1)                                                                     \
-    {                                                                                 \
+#define SEM_TEST_ERROR(id, msg)          \
+    if (id == -1)                        \
+    {                                    \
         unsafeErrorPrint(msg, __LINE__); \
-        return FALSE;                                                                 \
+        return FALSE;                    \
     }
 
-#define SHM_TEST_ERROR(id,msg)                                                                     \
-    if (id == -1)                                                                                 \
-    {                                                                                             \
-        unsafeErrorPrint(msg, __LINE__);                                                                      \
-        return FALSE;                                                                             \
-    }
-
-#define MSG_TEST_ERROR(id,msg)                                                                 \
-    if (id == -1)                                                                          \
-    {                                                                                      \
+#define SEMCTL_TEST_ERROR(id, msg)       \
+    if (id == -1)                        \
+    {                                    \
         unsafeErrorPrint(msg, __LINE__); \
-        return FALSE;                                                                      \
+        return FALSE;                    \
     }
 
-#define TEST_MALLOC_ERROR(ptr,msg)                                          \
-    if (ptr == NULL)                                                    \
-    {                                                                   \
-        unsafeErrorPrint(msg, __LINE__);                                          \
-        return FALSE;                                                   \
-    }
-
-#define TEST_SHMAT_ERROR(ptr,msg)                                                           \
-    if (ptr == NULL)                                                                    \
-    {                                                                                   \
+#define SHM_TEST_ERROR(id, msg)          \
+    if (id == -1)                        \
+    {                                    \
         unsafeErrorPrint(msg, __LINE__); \
-        return FALSE;                                                                   \
+        return FALSE;                    \
+    }
+
+#define MSG_TEST_ERROR(id, msg)          \
+    if (id == -1)                        \
+    {                                    \
+        unsafeErrorPrint(msg, __LINE__); \
+        return FALSE;                    \
+    }
+
+#define TEST_MALLOC_ERROR(ptr, msg)      \
+    if (ptr == NULL)                     \
+    {                                    \
+        unsafeErrorPrint(msg, __LINE__); \
+        return FALSE;                    \
+    }
+
+#define TEST_SHMAT_ERROR(ptr, msg)       \
+    if (ptr == NULL)                     \
+    {                                    \
+        unsafeErrorPrint(msg, __LINE__); \
+        return FALSE;                    \
     }
 
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
 #define REWARD_TRANSACTION -1
 #define INIT_TRANSACTION -1
 #define REG_PARTITION_COUNT 3
-#define SO_BLOCK_SIZE 10       /* Modificato 10/12/2021*/
+#define SO_BLOCK_SIZE 5        /* Modificato 10/12/2021*/
                                /* Modificato 10/12/2021*/
 #define CONF_MAX_LINE_SIZE 128 /* Configuration file's line maximum bytes length*/
 #define CONF_MAX_LINE_NO 14    /* Configuration file's maximum lines count*/
@@ -192,17 +192,17 @@ typedef struct /* Modificato 10/12/2021*/
 } TPElement;
 
 /*
-    NEWNODE: message sent to master from node 
+    NEWNODE: message sent to master from node
             to request the creation of a new node to serve a transaction
-    
+
     NEWFRIEND: message sent to node from master to order the latter
                 to add a new process to its friends
 
     FAILEDTRANS: message sent to user from node to inform it that
     the attached transaction has failed (this is used in case
-    the receiver was a terminated user)   
+    the receiver was a terminated user)
 
-    FRIENDINIT: massage sent to user from master to initialize its friends list 
+    FRIENDINIT: massage sent to user from master to initialize its friends list
 
     TRANSTPFULL: message sent to user (or node) to node to inform it that a transaction
     must be served either by requesting the creation of new node or by dispatching it to a friend
@@ -226,25 +226,25 @@ typedef struct
 {
     long int mtype; /* Pid of the receiver, taken with getppid (children) or from dedicated arrays (parent) */
     GlobalMsgContent msgContent;
-    /* ProcListElem * friends;*/  /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
+    /* ProcListElem * friends;*/ /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
     /*
      * Abbiamo rimosso la definizione precedente in quanto friends non può essere allocato staticamente,
      * quindi era necessario definirlo dinamicamente prima di inviare il messaggio sulla coda; questo
-     * però comporta che quando il ricevitore (processo diverso da quello che ha mandato il messaggio) 
+     * però comporta che quando il ricevitore (processo diverso da quello che ha mandato il messaggio)
      * prova ad accedere a tale array, si verifica un errore di segmentazione perché il processo cerca
      * di accedere ad una zona di memoria che non è la sua ma è di un altro processo. Per questo motivo,
-     * dopo aver valutato attentamente le diverse opzioni per risolvere questo problema, si è deciso di non 
-     * mandare la lista di nodi amici tramite un singolo messaggio ma di mandarla tramite più messaggi 
-     * sulla coda globale e starà quindi al nodo destinatario leggere i messaggi dalla coda e creare la 
+     * dopo aver valutato attentamente le diverse opzioni per risolvere questo problema, si è deciso di non
+     * mandare la lista di nodi amici tramite un singolo messaggio ma di mandarla tramite più messaggi
+     * sulla coda globale e starà quindi al nodo destinatario leggere i messaggi dalla coda e creare la
      * sua lista di nodi amici.
      */
     /*
         CORREGGERE: mettere solo il pid
     */
-    pid_t friend;               /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
-    Transaction transaction;    /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
-    long hops;                  /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
-    pid_t terminatedPid;        /* pid of terminated user/node, garbage if msgContent != TERMINATEDUSER || msgContent != TERMINATEDNODE */
+    pid_t friend;            /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
+    Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    long hops;               /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
+    pid_t terminatedPid;     /* pid of terminated user/node, garbage if msgContent != TERMINATEDUSER || msgContent != TERMINATEDNODE */
 } MsgGlobalQueue;
 
 /*
@@ -276,9 +276,9 @@ typedef struct
     pid_t pid;  /* user-define message */
 } msgbuff;
 
-#define TEST_ERROR_PARAM                                                             \
-    if (errno)                                                                       \
-    {                                                                                \
+#define TEST_ERROR_PARAM                                                                       \
+    if (errno)                                                                                 \
+    {                                                                                          \
         unsafeErrorPrint("Master: failed to read configuration parameter. Error: ", __LINE__); \
-        return FALSE;                                                                \
+        return FALSE;                                                                          \
     }
