@@ -113,7 +113,7 @@ i figli lo preleveranno dalla lista dei nodi*/
 #define REWARD_TRANSACTION -1
 #define INIT_TRANSACTION -1
 #define REG_PARTITION_COUNT 3
-#define SO_BLOCK_SIZE 5        /* Modificato 10/12/2021*/
+#define SO_BLOCK_SIZE 7        /* Modificato 10/12/2021*/
                                /* Modificato 10/12/2021*/
 #define CONF_MAX_LINE_SIZE 128 /* Configuration file's line maximum bytes length*/
 #define CONF_MAX_LINE_NO 14    /* Configuration file's maximum lines count*/

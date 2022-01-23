@@ -42,8 +42,8 @@ int wrPartSem = -1;
 
 int rdPartSem = -1;
 
-/* Id of the set that contains the three semaphores used to access the number of readers 
- * variables of the registers partitions in mutual exclusion 
+/* Id of the set that contains the three semaphores used to access the number of readers
+ * variables of the registers partitions in mutual exclusion
  */
 int mutexPartSem = -1;
 
@@ -51,9 +51,9 @@ int mutexPartSem = -1;
 int nodeListSem = -1;
 
 /* Id of the shared memory segment that contains the variable used to syncronize readers and writers access to nodes list */
-int noNodeSegReaders = -1; 
+int noNodeSegReaders = -1;
 
-/* Pointer to the variable that counts the number of readers, used to syncronize readers and writers access to nodes list */           
+/* Pointer to the variable that counts the number of readers, used to syncronize readers and writers access to nodes list */
 int *noNodeSegReadersPtr = NULL;
 
 /* Id of the Transaction Pool of the node */
@@ -95,9 +95,9 @@ long SO_HOPS;                /* Attempts to insert a transaction in a node's TP 
 /*** FUNCTIONS PROTOTYPES DECLARATION ***/
 #pragma region FUNCTIONS PROTOTYPES DECLARATION
 /**
- * @brief Function that assigns the values of the environment variables to the global 
+ * @brief Function that assigns the values of the environment variables to the global
  * variables defined above.
- * @return Returns TRUE if successfull, FALSE in case an error occurred. 
+ * @return Returns TRUE if successfull, FALSE in case an error occurred.
  */
 boolean assignEnvironmentVariables();
 
@@ -129,7 +129,7 @@ boolean sembufInit(struct sembuf *, int);
 void reinsertTransactions(Block);
 
 /**
- * @brief Function that sends a transaction from this node's transaction pool to 
+ * @brief Function that sends a transaction from this node's transaction pool to
  * a friend chosen randomly.
  */
 void dispatchToFriend();
@@ -137,7 +137,7 @@ void dispatchToFriend();
 /**
  * @brief Function that gets a message for this node from the global queue and if its msgContent is
  * TRANSTPFULL it sends the transaction to a friend or on global queue if transaction remaining hops are 0;
- * in case the msgContent of the message received is NEWNODE, the functions adds the new friend to the 
+ * in case the msgContent of the message received is NEWNODE, the functions adds the new friend to the
  * friends list.
  */
 void sendTransaction();
@@ -156,7 +156,7 @@ boolean sendOnGlobalQueue(MsgGlobalQueue *, pid_t, GlobalMsgContent, long);
 /**
  * @brief Function that extracts randomly a friend node which to send a transaction.
  * @return Returns the index of the selected friend node to pick from the list of friends,
- * -1 if the function generates an error. 
+ * -1 if the function generates an error.
  */
 int extractFriendNode();
 
@@ -173,7 +173,7 @@ void deallocateIPCFacilities();
 #pragma endregion
 /*** END FUNCTIONS PROTOTYPES DECLARATION ***/
 
-int main(int argc, char *argv[], char* envp[])
+int main(int argc, char *argv[], char *envp[])
 {
     int exitCode = EXIT_FAILURE;
     time_t timeSinceEpoch = (time_t)-1;
@@ -197,14 +197,14 @@ int main(int argc, char *argv[], char* envp[])
     int contMex = 0;
     boolean error = FALSE;
     struct timespec simTime, remTime; /* simTime = simulation length; remTime = remaining time to wait (in case a signal wakes up process)*/
-    char * printMsg;
+    char *printMsg;
 
     /*
         Il nodo potrebbe essere interrotto soltanto
         dal segnale di fine simulazione, ma in tal caso
-        l'esecuzione della procedura in corso non ripartirebbe 
+        l'esecuzione della procedura in corso non ripartirebbe
         da capo, quindi qui si può usare codice non rientrante
-        
+
         Falso!!! Un nodo può terminare in caso di errori non aspettati durante l'esecuzione!!!
     */
 
@@ -229,11 +229,11 @@ int main(int argc, char *argv[], char* envp[])
                     /*
                         CORREGGERE: ma è giusto metterla qui??
                     */
-                    /* 
-                     * argv[1] is the type of node, if NODE it has to wait for simulation to start, 
+                    /*
+                     * argv[1] is the type of node, if NODE it has to wait for simulation to start,
                      * so we set the sops varriabile to access to the fairStartSem semaphore
                      */
-                    if(strcmp(argv[1],"NORMAL") == 0)
+                    if (strcmp(argv[1], "NORMAL") == 0)
                     {
                         /* Wait all processes are ready to start the simulation */
                         printf("[NODE %5ld]: waiting for simulation to start...\n", my_pid);
@@ -243,20 +243,20 @@ int main(int argc, char *argv[], char* envp[])
                     }
 
                     /* if node is of type NORMAL, it has to wait the simulation to start, otherwise no */
-                    if (strcmp(argv[1],"NORMAL") == 0 && semop(fairStartSem, &sops[0], 1) == -1)
+                    if (strcmp(argv[1], "NORMAL") == 0 && semop(fairStartSem, &sops[0], 1) == -1)
                     {
                         sprintf(printMsg, "[NODE %5ld]: failed to wait for simulation to start. Error", my_pid);
                         unsafeErrorPrint(printMsg, __LINE__);
                         printMsg[0] = 0; /* resetting string's content */
                     }
-                    else 
+                    else
                     {
                         printf("[NODE %5ld]: reading friends from global queue...\n", my_pid);
-                    
+
                         /* Receives all friends pid from global message queue and stores them in the array */
                         while (contMex < SO_FRIENDS_NUM && !error)
                         {
-                            num_bytes = msgrcv(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue)-sizeof(long), my_pid, 0);
+                            num_bytes = msgrcv(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue) - sizeof(long), my_pid, 0);
                             if (num_bytes == -1)
                             {
                                 sprintf(printMsg, "[NODE %5ld]: failed to initialize friends' list. Error", my_pid);
@@ -264,9 +264,9 @@ int main(int argc, char *argv[], char* envp[])
                                 printMsg[0] = 0; /* resetting string's content */
                                 error = TRUE;
                             }
-                            else 
+                            else
                             {
-                                if(friendFromList.msgContent == FRIENDINIT)
+                                if (friendFromList.msgContent == FRIENDINIT)
                                 {
                                     friends_node[contMex] = friendFromList.friend;
                                     contMex++;
@@ -274,7 +274,7 @@ int main(int argc, char *argv[], char* envp[])
                                 else
                                 {
                                     /* the message wasn't the one we were looking for, so we reinsert it on the global queue */
-                                    if(msgsnd(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
+                                    if (msgsnd(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
                                     {
                                         sprintf(printMsg, "[NODE %5ld]: failed to initialize friends' list. Error", my_pid);
                                         unsafeErrorPrint(printMsg, __LINE__);
@@ -350,7 +350,6 @@ int main(int argc, char *argv[], char* envp[])
                                                     printf("[NODE %5ld]: starting lifecycle...\n", my_pid);
                                                     while (!waitForTerm)
                                                     {
-                                                        
 
                                                         /* Generating a Block of SO_BLOCK_SIZE-1 Transitions from TP */
                                                         /* SO_BLOCK_SIZE is initialized reading the value from environment variables */
@@ -405,10 +404,10 @@ int main(int argc, char *argv[], char* envp[])
                                                             }
 
                                                             /*
-                                                                * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
-                                                                * and waits for a message on queue; it will exit this cycle when it reads the requested 
-                                                                * number of transactions (put in extractedBlock.transList)
-                                                                */
+                                                             * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
+                                                             * and waits for a message on queue; it will exit this cycle when it reads the requested
+                                                             * number of transactions (put in extractedBlock.transList)
+                                                             */
                                                         }
 
                                                         /* putting reward transaction in extracted block */
@@ -426,13 +425,13 @@ int main(int argc, char *argv[], char* envp[])
                                                         clock_gettime(CLOCK_REALTIME, &simTime); /* get a value in nanoseconds as a random value */
                                                         simTime.tv_sec = 0;
                                                         /* generates a random number in [SO_MIN_TRANS_PROC_NSEC, SO_MAX_TRANS_PROC_NSEC] */
-                                                        simTime.tv_nsec = (simTime.tv_nsec % (SO_MAX_TRANS_PROC_NSEC+1-SO_MIN_TRANS_PROC_NSEC)) + SO_MIN_TRANS_PROC_NSEC;
+                                                        simTime.tv_nsec = (simTime.tv_nsec % (SO_MAX_TRANS_PROC_NSEC + 1 - SO_MIN_TRANS_PROC_NSEC)) + SO_MIN_TRANS_PROC_NSEC;
 
-                                                        /* 
+                                                        /*
                                                          * Adjusting wait time, if number of nanoseconds is greater or equal to 1 second (10^9 nanoseconds)
                                                          * we increase the number of seconds.
                                                          */
-                                                        while(simTime.tv_nsec >= 1000000000)
+                                                        while (simTime.tv_nsec >= 1000000000)
                                                         {
                                                             simTime.tv_sec++;
                                                             simTime.tv_nsec -= 1000000000;
@@ -448,11 +447,11 @@ int main(int argc, char *argv[], char* envp[])
                                                             /*
                                                                         PRECONDIZIONE:
                                                                             extractedBlock.bIndex == SO_BLOCK_SIZE - 1
-                                                                            extractedBlock.transList == Transazioni da scrivere sul blocco 
+                                                                            extractedBlock.transList == Transazioni da scrivere sul blocco
                                                                                                         estratte dalla transaction pool
 
                                                                             candidateBlock.bIndex == SO_BLOCK_SIZE
-                                                                            candidateBlock.transList == Transazioni da scrivere sul blocco 
+                                                                            candidateBlock.transList == Transazioni da scrivere sul blocco
                                                                                                         estratte dalla transaction pool + transazione di reward
                                                                 */
                                                             /*
@@ -464,9 +463,9 @@ int main(int argc, char *argv[], char* envp[])
                                                                         blocco e solo in caso negativo procedere con la wait sul semaforo della partizione i+1-esima
 
                                                                         Il primo approccio consente di eseguire n operazioni con una sola system call, mentre il secondo
-                                                                        evita che il processo rimanga sospeso per accedere in mutua esclusione a partizioni sulle quali 
+                                                                        evita che il processo rimanga sospeso per accedere in mutua esclusione a partizioni sulle quali
                                                                         non scriverà
-                                                        
+
                                                                         Io ho implementato il primo approccio
                                                                 */
 
@@ -570,7 +569,7 @@ int main(int argc, char *argv[], char* envp[])
                                                                             printMsg[0] = 0; /* resetting string's content */
 
                                                                             waitForTerm = TRUE;
-                                                                        }                                                                      
+                                                                        }
                                                                     }
 
                                                                     /*
@@ -587,7 +586,7 @@ int main(int argc, char *argv[], char* envp[])
                                                                     sops[2].sem_flg = 0;
                                                                     sops[2].sem_num = 2;
                                                                     sops[2].sem_op = 1;
-                                                                    
+
                                                                     printf("[NODE %5ld]: releasing register's partition...\n", my_pid);
                                                                     if (semop(wrPartSem, sops, REG_PARTITION_COUNT) == -1)
                                                                     {
@@ -636,7 +635,7 @@ int main(int argc, char *argv[], char* envp[])
                                                                 /*
                                                                         La nanosleep (o meglio, l'attesa del processo) è stata interrotta da un segnale.
                                                                         Dovremmo far ripartire la nanosleep con il tempo rimanente? Ha senso?
-                                                                        CONTROLLARE MAN PAGES NANOSLEEP NOTES PER PROBLEMA NEL RIESEGUIRE SUBITO 
+                                                                        CONTROLLARE MAN PAGES NANOSLEEP NOTES PER PROBLEMA NEL RIESEGUIRE SUBITO
                                                                         NANOSLEEP QUANDO IL PROCESSO VIENE RISVEGLIATO DA UN SEGNALE.
                                                                     */
                                                             }
@@ -670,12 +669,12 @@ int main(int argc, char *argv[], char* envp[])
                                                         waits to be signaled so that its end-of-execution handler will be executed.
                                                     */
 
-                                                /* 
-                                                     * now the node process must wait for end of simulation signal; we do it
-                                                     * with pause, but a signal could wake it up. We only want the end of simulation
-                                                     * signal to wake up the process, so we must ignore the SIGALRM signal that
-                                                     * might arrive for the periodic sending of a transaction to a friend node.
-                                                     */
+                                                /*
+                                                 * now the node process must wait for end of simulation signal; we do it
+                                                 * with pause, but a signal could wake it up. We only want the end of simulation
+                                                 * signal to wake up the process, so we must ignore the SIGALRM signal that
+                                                 * might arrive for the periodic sending of a transaction to a friend node.
+                                                 */
                                                 if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
                                                 {
                                                     sprintf(printMsg, "[NODE %5ld]: failed to set ignoring of SIGALRM signal before pause of process. Error", my_pid);
@@ -690,14 +689,15 @@ int main(int argc, char *argv[], char* envp[])
                                             /*
                                             if (alarm(TRANS_FRIEND_INTERVAL) == 0)
                                             {
-                                                
+
                                             }
                                             else
                                             {
                                                 sprintf(printMsg, "[NODE %5ld]: set transaction's dispatch timer. Error", my_pid);
                                                 unsafeErrorPrint(printMsg, __LINE__);
-                                                printMsg[0] = 0; *//* resetting string's content *//*
-                                            }*/
+                                                printMsg[0] = 0; */
+                                            /* resetting string's content */ /*
+                      }*/
                                         }
                                     }
                                 }
@@ -724,13 +724,13 @@ int main(int argc, char *argv[], char* envp[])
                 printf("[NODE %5ld]: failed to create one or more IPC facilities. Stopping execution...\n", my_pid);
                 deallocateIPCFacilities();
             }
-        } 
-        else 
+        }
+        else
         {
             sprintf(printMsg, "[NODE %5ld]: failed to allocate friends' array. Error", my_pid);
             unsafeErrorPrint(printMsg, __LINE__);
             printMsg[0] = 0; /* resetting string's content */
-        }    
+        }
     }
     else
     {
@@ -742,12 +742,12 @@ int main(int argc, char *argv[], char* envp[])
     }
 
     printf("[NODE %5ld]: about to terminate execution...\n", my_pid);
-    
+
     /* notify master that user process terminated before expected */
     msgOnGQueue.mtype = getppid();
     msgOnGQueue.msgContent = TERMINATEDNODE;
     msgOnGQueue.terminatedPid = (pid_t)my_pid;
-    if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
+    if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
     {
         sprintf(printMsg, "[NODE %5ld]: failed to inform master of my termination Error", my_pid);
         unsafeErrorPrint(printMsg, __LINE__);
@@ -762,9 +762,9 @@ int main(int argc, char *argv[], char* envp[])
 /*** FUNCTIONS IMPLEMENTATION ***/
 #pragma region FUNCTIONS IMPLEMENTATION
 /**
- * @brief Function that assigns the values of the environment variables to the global 
+ * @brief Function that assigns the values of the environment variables to the global
  * variables defined above.
- * @return Returns TRUE if successfull, FALSE in case an error occurred. 
+ * @return Returns TRUE if successfull, FALSE in case an error occurred.
  */
 boolean assignEnvironmentVariables()
 {
@@ -927,7 +927,7 @@ boolean sembufInit(struct sembuf *sops, int op)
 {
     int i = 0;
     boolean ret = FALSE;
-    char * aus;
+    char *aus;
 
     aus = (char *)calloc(200, sizeof(char));
 
@@ -974,11 +974,11 @@ void reinsertTransactions(Block failedTrs)
             sprintf(aus, "[NODE %5ld]: failed to reinsert transaction number %d.", my_pid, failedTrs.bIndex);
             safeErrorPrint(aus, __LINE__);
             aus[0] = 0;
-            
+
             /* Inform the sender the transaction's processing failed */
             temp.transaction = failedTrs.transList[failedTrs.bIndex];
             temp.msgContent = FAILEDTRANS;
-            if(!sendOnGlobalQueue(&temp, failedTrs.transList[failedTrs.bIndex].sender, FAILEDTRANS, 0))
+            if (!sendOnGlobalQueue(&temp, failedTrs.transList[failedTrs.bIndex].sender, FAILEDTRANS, 0))
             {
                 /* Che facciamo in questo caso ???*/
                 sprintf(aus, "[NODE %5ld]: failed to inform sender of transaction that the transaction wasn't processed. Error", my_pid);
@@ -986,7 +986,7 @@ void reinsertTransactions(Block failedTrs)
             }
         }
     }
-    
+
     msg_length = sprintf(aus, "[NODE %5ld]: transactions successfully reinserted on queue!\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
 
@@ -994,7 +994,7 @@ void reinsertTransactions(Block failedTrs)
 }
 
 /**
- * @brief Function that sends a transaction from this node's transaction pool to 
+ * @brief Function that sends a transaction from this node's transaction pool to
  * a friend chosen randomly.
  */
 void dispatchToFriend()
@@ -1011,14 +1011,14 @@ void dispatchToFriend()
     /*sigset_t mask;
     struct sigaction actSendTrans;*/
     Block temp;
-    char * printMsg;
+    char *printMsg;
 
     printMsg = (char *)calloc(200, sizeof(char));
 
     msg_length = sprintf(printMsg, "[NODE %5ld]: dispatching transaction to friend...\n", my_pid);
     write(STDOUT_FILENO, printMsg, msg_length);
     printMsg[0] = 0; /* resetting string's content */
-    
+
     if (msgrcv(tpId, &aus, sizeof(Transaction), my_pid, IPC_NOWAIT) == -1)
     {
         if (errno != ENOMSG && errno != EINTR)
@@ -1036,10 +1036,10 @@ void dispatchToFriend()
         /*
             Precondizione: aus contiene la transazione da inviare ad un amico
         */
-        
+
         /* generating a random index to access the array of nodes friend */
         i = extractFriendNode();
-        if(i == -1)
+        if (i == -1)
         {
             sprintf(printMsg, "[NODE %5ld]: failed to extract a friend node which to send the transaction. Error", my_pid);
             safeErrorPrint(printMsg, __LINE__);
@@ -1085,7 +1085,7 @@ void dispatchToFriend()
                         sprintf(printMsg, "[NODE %5ld]: failed to dispatch transaction to friend. Error", my_pid);
                         safeErrorPrint(printMsg, __LINE__);
                         printMsg[0] = 0;
-                        
+
                         temp.bIndex = 0;
                         temp.transList[0] = aus.transaction;
                         reinsertTransactions(temp);
@@ -1101,40 +1101,40 @@ void dispatchToFriend()
         }
     }
 
-
     /*
         Vedere se togliere il segnale di fine simulazione
     */
-   /*
-    msg_length = sprintf(printMsg, "[NODE %5ld]: resetting transaction's dispatch timer and handler...\n", my_pid);
-    write(STDOUT_FILENO, printMsg, msg_length);
-    printMsg[0] = 0; *//* resetting string's content *//*
-    
-    if (sigfillset(&mask) == -1)
-    {
-        sprintf(printMsg, "[NODE %5ld]: failed to set up signal mask. Error", my_pid);
-        safeErrorPrint(printMsg, __LINE__);
-        printMsg[0] = 0;
-    }
-    else
-    {
-        actSendTrans.sa_mask = mask;
-        actSendTrans.sa_handler = dispatchToFriend;
-        if (sigaction(SIGALRM, &actSendTrans, NULL) == -1)
-        {
-            sprintf(printMsg, "[NODE %5ld]: failed to set simulation's dispatch handler. Error", my_pid);
-            safeErrorPrint(printMsg, __LINE__);
-            printMsg[0] = 0;
-        }
-        else
-        {
-            if (alarm(TRANS_FRIEND_INTERVAL) != 0)
-            {
-                sprintf(printMsg, "[NODE %5ld]: failed to set transaction's dispatch timer. Error", my_pid);
-                safeErrorPrint(printMsg, __LINE__);
-            }
-        }
-    }*/
+    /*
+     msg_length = sprintf(printMsg, "[NODE %5ld]: resetting transaction's dispatch timer and handler...\n", my_pid);
+     write(STDOUT_FILENO, printMsg, msg_length);
+     printMsg[0] = 0; */
+    /* resetting string's content */ /*
+
+if (sigfillset(&mask) == -1)
+{
+sprintf(printMsg, "[NODE %5ld]: failed to set up signal mask. Error", my_pid);
+safeErrorPrint(printMsg, __LINE__);
+printMsg[0] = 0;
+}
+else
+{
+actSendTrans.sa_mask = mask;
+actSendTrans.sa_handler = dispatchToFriend;
+if (sigaction(SIGALRM, &actSendTrans, NULL) == -1)
+{
+sprintf(printMsg, "[NODE %5ld]: failed to set simulation's dispatch handler. Error", my_pid);
+safeErrorPrint(printMsg, __LINE__);
+printMsg[0] = 0;
+}
+else
+{
+if (alarm(TRANS_FRIEND_INTERVAL) != 0)
+{
+sprintf(printMsg, "[NODE %5ld]: failed to set transaction's dispatch timer. Error", my_pid);
+safeErrorPrint(printMsg, __LINE__);
+}
+}
+}*/
 
     free(printMsg);
 }
@@ -1142,7 +1142,7 @@ void dispatchToFriend()
 /**
  * @brief Function that gets a message for this node from the global queue and if its msgContent is
  * TRANSTPFULL it sends the transaction to a friend or on global queue if transaction remaining hops are 0;
- * in case the msgContent of the message received is NEWNODE, the functions adds the new friend to the 
+ * in case the msgContent of the message received is NEWNODE, the functions adds the new friend to the
  * friends list.
  */
 void sendTransaction()
@@ -1153,7 +1153,7 @@ void sendTransaction()
     int friendTp = -1;
     MsgTP aus;
     boolean found = FALSE;
-    char * printMsg;
+    char *printMsg;
 
     printMsg = (char *)calloc(200, sizeof(char));
 
@@ -1164,15 +1164,15 @@ void sendTransaction()
         in un'invocazione e molto poco nella altre.
         Così invece le system call vengono meglio distribuite
     */
-    if (msgrcv(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), my_pid, IPC_NOWAIT) == -1)
+    if (msgrcv(globalQueueId, &trans, sizeof(MsgGlobalQueue) - sizeof(long), my_pid, IPC_NOWAIT) == -1)
     {
         if (errno != ENOMSG && errno != EINTR)
         {
             sprintf(printMsg, "[NODE %5ld]: failed to check existence of transactions on global queue. Error", my_pid);
             safeErrorPrint(printMsg, __LINE__);
         }
-    } 
-    else 
+    }
+    else
     {
         /*
             Ora trans contiene il messaggio letto dalla coda globale, dobbiamo verificare il contenuto del messaggio
@@ -1190,9 +1190,9 @@ void sendTransaction()
                     sprintf(printMsg, "[NODE %5ld]: failed to dispatch transaction to master. Error", my_pid);
                     safeErrorPrint(printMsg, __LINE__);
                     printMsg[0] = 0;
-                    
+
                     /* Inform the sender the transaction's processing failed */
-                    if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
+                    if (!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                     {
                         /* Che facciamo in questo caso ???*/
                         sprintf(printMsg, "[NODE %5ld]: failed to inform sender of transaction that the transaction wasn't processed. Error", my_pid);
@@ -1211,14 +1211,14 @@ void sendTransaction()
             {
                 /* generating a random index to access the array of nodes friend */
                 i = extractFriendNode();
-                if(i == -1)
+                if (i == -1)
                 {
                     sprintf(printMsg, "[NODE %5ld]: failed to extract a friend node which to send the transaction. Error", my_pid);
                     safeErrorPrint(printMsg, __LINE__);
                     printMsg[0] = 0;
-                            
+
                     /* Inform the sender the transaction's processing failed */
-                    if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
+                    if (!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                     {
                         /* Che facciamo in questo caso ??? */
                         sprintf(printMsg, "[NODE %5ld]: failed to inform sender of transaction that the transaction wasn't processed. Error", my_pid);
@@ -1230,7 +1230,7 @@ void sendTransaction()
                 {
                     key = ftok(MSGFILEPATH, *(friends_node + i));
                     /*
-                        Dovremmo controllare se il nodo scelto è attivo? 
+                        Dovremmo controllare se il nodo scelto è attivo?
                         Sì, ma come facciamo a controllare il cambio di stato (attivo/terminato) di un nodo amico???
                     */
                     if (key == -1)
@@ -1250,9 +1250,9 @@ void sendTransaction()
                             sprintf(printMsg, "[NODE %5ld]: failed to dispatch transaction to friend via global queue. Error", my_pid);
                             safeErrorPrint(printMsg, __LINE__);
                             printMsg[0] = 0;
-                            
+
                             /* Inform the sender the transaction's processing failed */
-                            if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
+                            if (!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                             {
                                 /* Che facciamo in questo caso ??? */
                                 sprintf(printMsg, "[NODE %5ld]: failed to inform sender of transaction that the transaction wasn't processed. Error", my_pid);
@@ -1262,50 +1262,14 @@ void sendTransaction()
                         }
                     }
                     else
-                {
-                    friendTp = msgget(key, 0600);
-                    if (friendTp == -1)
                     {
-                        sprintf(printMsg, "[NODE %5ld]: failed to connect to friend's transaction pool. Error", my_pid);
-                        safeErrorPrint(printMsg, __LINE__);
-                        printMsg[0] = 0;
-
-                        if (sendOnGlobalQueue(&trans, *(friends_node + i), TRANSTPFULL, -1))
+                        friendTp = msgget(key, 0600);
+                        if (friendTp == -1)
                         {
-                            msg_length = sprintf(printMsg, "[NODE %5ld]: transaction successfully dispatched to friend via global queue.\n", my_pid);
-                            write(STDOUT_FILENO, printMsg, msg_length);
-                            printMsg[0] = 0; /* resetting string's content */
-                        }
-                        else
-                        {
-                            sprintf(printMsg, "[NODE %5ld]: failed to dispatch transaction to friend via global queue. Error", my_pid);
+                            sprintf(printMsg, "[NODE %5ld]: failed to connect to friend's transaction pool. Error", my_pid);
                             safeErrorPrint(printMsg, __LINE__);
                             printMsg[0] = 0;
 
-                            /* Inform the sender the transaction's processing failed */
-                            if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
-                            {
-                                /* Che facciamo in questo caso ??? */
-                                sprintf(printMsg, "[NODE %5ld]: failed to inform sender of transaction that the transaction wasn't processed. Error", my_pid);
-                                safeErrorPrint(printMsg, __LINE__);
-                                printMsg[0] = 0;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        /* Create a copy of the message read */
-                        aus.transaction = trans.transaction;
-                        aus.mtype = *(friends_node + i);
-                        if (msgsnd(friendTp, &aus, sizeof(Transaction), IPC_NOWAIT) == -1)
-                        {
-                            /*
-                                Reinserirla nella coda globale con un'operazione di rollback sarebbe inutile:
-                                tanto vale mandarla all'amico
-                            */
-                            /*
-                                Coda dell'amico piena ==> inviare su TP globale
-                            */
                             if (sendOnGlobalQueue(&trans, *(friends_node + i), TRANSTPFULL, -1))
                             {
                                 msg_length = sprintf(printMsg, "[NODE %5ld]: transaction successfully dispatched to friend via global queue.\n", my_pid);
@@ -1319,7 +1283,7 @@ void sendTransaction()
                                 printMsg[0] = 0;
 
                                 /* Inform the sender the transaction's processing failed */
-                                if(!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
+                                if (!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
                                 {
                                     /* Che facciamo in questo caso ??? */
                                     sprintf(printMsg, "[NODE %5ld]: failed to inform sender of transaction that the transaction wasn't processed. Error", my_pid);
@@ -1330,15 +1294,51 @@ void sendTransaction()
                         }
                         else
                         {
-                            msg_length = sprintf(printMsg, "[NODE %5ld]: transaction successfully dispatched to friend.\n", my_pid);
-                            write(STDOUT_FILENO, printMsg, msg_length);
-                            printMsg[0] = 0; /* resetting string's content */
+                            /* Create a copy of the message read */
+                            aus.transaction = trans.transaction;
+                            aus.mtype = *(friends_node + i);
+                            if (msgsnd(friendTp, &aus, sizeof(Transaction), IPC_NOWAIT) == -1)
+                            {
+                                /*
+                                    Reinserirla nella coda globale con un'operazione di rollback sarebbe inutile:
+                                    tanto vale mandarla all'amico
+                                */
+                                /*
+                                    Coda dell'amico piena ==> inviare su TP globale
+                                */
+                                if (sendOnGlobalQueue(&trans, *(friends_node + i), TRANSTPFULL, -1))
+                                {
+                                    msg_length = sprintf(printMsg, "[NODE %5ld]: transaction successfully dispatched to friend via global queue.\n", my_pid);
+                                    write(STDOUT_FILENO, printMsg, msg_length);
+                                    printMsg[0] = 0; /* resetting string's content */
+                                }
+                                else
+                                {
+                                    sprintf(printMsg, "[NODE %5ld]: failed to dispatch transaction to friend via global queue. Error", my_pid);
+                                    safeErrorPrint(printMsg, __LINE__);
+                                    printMsg[0] = 0;
+
+                                    /* Inform the sender the transaction's processing failed */
+                                    if (!sendOnGlobalQueue(&trans, trans.transaction.sender, FAILEDTRANS, 0))
+                                    {
+                                        /* Che facciamo in questo caso ??? */
+                                        sprintf(printMsg, "[NODE %5ld]: failed to inform sender of transaction that the transaction wasn't processed. Error", my_pid);
+                                        safeErrorPrint(printMsg, __LINE__);
+                                        printMsg[0] = 0;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                msg_length = sprintf(printMsg, "[NODE %5ld]: transaction successfully dispatched to friend.\n", my_pid);
+                                write(STDOUT_FILENO, printMsg, msg_length);
+                                printMsg[0] = 0; /* resetting string's content */
+                            }
                         }
                     }
                 }
-                }
             }
-        } 
+        }
         else if (trans.msgContent == NEWFRIEND)
         {
             /*
@@ -1373,7 +1373,7 @@ void sendTransaction()
                 SE SÌ, OCCORRE REINSERIRLO SULLA CODA GLOBALE!
             */
             /* the message wasn't the one we were looking for, so we reinsert it on the global queue */
-            if(msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
+            if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
             {
                 sprintf(printMsg, "[NODE %5ld]: failed to reinsert on global queue a message read from it. Error", my_pid);
                 safeErrorPrint(printMsg, __LINE__);
@@ -1393,14 +1393,14 @@ void sendTransaction()
  * @param hp value (positive or negative) to add to the number of hops of the transaction
  * @return Returns TRUE if successfull, FALSE in case an error occurred while sending the message.
  */
-boolean sendOnGlobalQueue(MsgGlobalQueue * trans, pid_t pid, GlobalMsgContent cnt, long hp)
+boolean sendOnGlobalQueue(MsgGlobalQueue *trans, pid_t pid, GlobalMsgContent cnt, long hp)
 {
     boolean ret = TRUE;
 
     trans->mtype = pid;
     trans->msgContent = cnt;
     trans->hops += hp;
-    if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), 0) == -1)
+    if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
     {
         ret = FALSE;
     }
@@ -1411,7 +1411,7 @@ boolean sendOnGlobalQueue(MsgGlobalQueue * trans, pid_t pid, GlobalMsgContent cn
 /**
  * @brief Function that extracts randomly a friend node which to send a transaction.
  * @return Returns the index of the selected friend node to pick from the list of friends,
- * -1 if the function generates an error. 
+ * -1 if the function generates an error.
  */
 int extractFriendNode()
 {
@@ -1419,22 +1419,22 @@ int extractFriendNode()
     struct sembuf sops;
     struct timespec now;
     boolean errInWriteSemaphore = FALSE;
-    char * aus;
+    char *aus;
 
     aus = (char *)calloc(200, sizeof(char));
-    
+
     sops.sem_flg = 0;
 
-    sops.sem_num = 0; 
+    sops.sem_num = 0;
     sops.sem_op = -1;
-    if(semop(nodeListSem, &sops, 1) != -1)
+    if (semop(nodeListSem, &sops, 1) != -1)
     {
         (*noNodeSegReadersPtr)++;
-        if((*noNodeSegReadersPtr) == 1)
+        if ((*noNodeSegReadersPtr) == 1)
         {
             sops.sem_num = 2;
             sops.sem_op = -1;
-            if(semop(nodeListSem, &sops, 1) == -1)
+            if (semop(nodeListSem, &sops, 1) == -1)
             {
                 sprintf(aus, "[NODE %5ld]: failed to reserve write nodesList semaphore. Error", my_pid);
                 safeErrorPrint(aus, __LINE__);
@@ -1446,9 +1446,9 @@ int extractFriendNode()
 
         sops.sem_num = 0;
         sops.sem_op = 1;
-        if(semop(nodeListSem, &sops, 1) != -1)
+        if (semop(nodeListSem, &sops, 1) != -1)
         {
-            if(errInWriteSemaphore)
+            if (errInWriteSemaphore)
                 return (pid_t)-1;
 
             do
@@ -1460,14 +1460,14 @@ int extractFriendNode()
 
             sops.sem_num = 0;
             sops.sem_op = -1;
-            if(semop(nodeListSem, &sops, 1) != -1)
+            if (semop(nodeListSem, &sops, 1) != -1)
             {
                 (*noNodeSegReadersPtr)--;
-                if((*noNodeSegReadersPtr) == 0)
+                if ((*noNodeSegReadersPtr) == 0)
                 {
                     sops.sem_num = 2;
                     sops.sem_op = 1;
-                    if(semop(nodeListSem, &sops, 1) == -1)
+                    if (semop(nodeListSem, &sops, 1) == -1)
                     {
                         sprintf(aus, "[NODE %5ld]: failed to release write nodesList semaphore. Error", my_pid);
                         safeErrorPrint(aus, __LINE__);
@@ -1478,7 +1478,7 @@ int extractFriendNode()
 
                 sops.sem_num = 0;
                 sops.sem_op = 1;
-                if(semop(nodeListSem, &sops, 1) != -1)
+                if (semop(nodeListSem, &sops, 1) != -1)
                 {
                     return n;
                 }
@@ -1514,7 +1514,7 @@ int extractFriendNode()
     }
 
     free(aus);
-    
+
     return -1;
 }
 
@@ -1522,8 +1522,10 @@ int extractFriendNode()
  * @brief Function that end the execution of the node.
  * @param sig the signal that called the handler
  */
-void endOfExecution(int sig){
+void endOfExecution(int sig)
+{
     deallocateIPCFacilities();
+    exit(EXIT_SUCCESS);
 }
 
 /**
@@ -1543,15 +1545,16 @@ void deallocateIPCFacilities()
             e deallocare la memoria allocata dinamicamente
     */
     int i = 0, msg_length;
-    char * printMsg;
+    char *printMsg;
 
     printMsg = (char *)calloc(200, sizeof(char));
 
     msg_length = sprintf(printMsg, "[NODE %5ld]: detaching from register's partitions...\n", my_pid);
     write(STDOUT_FILENO, printMsg, msg_length);
     printMsg[0] = 0; /* resetting string's content */
-    
-    for (i = 0; i < REG_PARTITION_COUNT; i++){
+
+    for (i = 0; i < REG_PARTITION_COUNT; i++)
+    {
         if (shmdt(regPtrs[i]) == -1)
         {
             if (errno != EINVAL)
@@ -1568,14 +1571,14 @@ void deallocateIPCFacilities()
             }
         }
     }
-    
+
     if (regPtrs != NULL)
         free(regPtrs);
 
     msg_length = sprintf(printMsg, "[NODE %5ld]: detaching from nodes list...\n", my_pid);
     write(STDOUT_FILENO, printMsg, msg_length);
     printMsg[0] = 0; /* resetting string's content */
-    
+
     if (shmdt(nodesList) == -1)
     {
         if (errno != EAGAIN)
@@ -1589,7 +1592,7 @@ void deallocateIPCFacilities()
     msg_length = sprintf(printMsg, "[NODE %5ld]: detaching from nodes list's number of readers shared variable...\n", my_pid);
     write(STDOUT_FILENO, printMsg, msg_length);
     printMsg[0] = 0; /* resetting string's content */
-    
+
     if (shmdt(noNodeSegReadersPtr) == -1)
     {
         if (errno != EAGAIN)

@@ -1107,9 +1107,6 @@ int main(int argc, char *argv[])
                                      */
                                     printf("[MASTER]: Printing budget of all the processes.\n");
 
-                                    printf("[MASTER]: Number of active nodes: %ld\n", noEffectiveNodes);
-                                    printf("[MASTER]: Number of active users: %ld\n", noEffectiveUsers);
-
                                     for (el_list = bud_list_head; el_list != NULL; el_list = el_list->next)
                                     {
                                         if (el_list->p_type) /* Budget of node process */
@@ -1155,6 +1152,9 @@ int main(int argc, char *argv[])
                                         el_list = el_list->prev;
                                     }
                                 }
+
+                                printf("[MASTER]: Number of active nodes: %ld\n", noEffectiveNodes);
+                                printf("[MASTER]: Number of active users: %ld\n", noEffectiveUsers);
 
                                 /**** END OF PRINT BUDGET OF EVERY PROCESS ****/
                                 /**********************************************/
@@ -1342,6 +1342,11 @@ int main(int argc, char *argv[])
                                 /***************************************/
 
                                 printf("--------------- END OF CYCLE ---------------\n"); /* for debug purpose */
+
+                                if (noEffectiveUsers == 0)
+                                {
+                                    endOfSimulation(54);
+                                }
 
                                 /* now sleep for 1 second */
                                 nanosleep(&onesec, &tim);
@@ -1882,7 +1887,8 @@ void endOfSimulation(int sig)
               strlen("[MASTER]: trying to terminate simulation...\n"));
         /* error check*/
         fflush(stdout);
-        if (noTerminatedUsers + noTerminatedNodes < noEffectiveNodes + noEffectiveUsers)
+        /*if (noTerminatedUsers + noTerminatedNodes <= noEffectiveNodes + noEffectiveUsers)*/
+        if (noEffectiveNodes > 0 || noEffectiveUsers > 0)
         {
             /*
                 There are still active children that need
@@ -1960,6 +1966,8 @@ void endOfSimulation(int sig)
                     strcat(terminationMessage, "Termination reason: end of simulation.\n");
                 else if (sig == SIGUSR1)
                     strcat(terminationMessage, "Termination reason: register is full.\n");
+                else if (sig == 54)
+                    strcat(terminationMessage, "No more users alive.\n");
                 else if (sig == -1)
                     strcat(terminationMessage, "Termination reason: critical error.\n");
 
