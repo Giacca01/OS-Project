@@ -678,7 +678,7 @@ double computeBalance(TransList *transSent)
 
                         ptr = regPtrs[i];
                         
-                        /* Il while portava alla generazione di segmentatio fault */
+                        /* Il while portava alla generazione di segmentation fault */
                         for (l = 0; l < REG_PARTITION_COUNT; l++, ptr++)
                         {
                             for (j = 0; j < ptr->nBlocks; j++)
@@ -1090,6 +1090,8 @@ void transactionGeneration(int sig)
             new_trans.reward = (new_trans.amountSend / 100) * SO_REWARD; /* se supponiamo che SO_REWARD sia un valore (percentuale) espresso tra 1 e 100 */
             if (new_trans.reward < 1)
                 new_trans.reward = 1;
+            
+            new_trans.amountSend -= new_trans.reward;                    /* update amount sent to receiver removing node's reward */
 
             clock_gettime(CLOCK_REALTIME, &new_trans.timestamp); /* get timestamp for transaction */
 

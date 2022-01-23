@@ -32,19 +32,6 @@
 #define NO_ATTEMPTS_UPDATE_BUDGET 3 /* Number of attempts to update budget reading a block on register */
 /**** End of Constants definition ****/
 
-/**********  Function prototypes  *****************/
-boolean assignEnvironmentVariables();
-boolean readConfigParameters();
-boolean allocateGlobalStructures();
-boolean initializeIPCFacilities();
-
-void endOfSimulation(int);
-void printBudget();
-boolean deallocateFacilities(int *);
-void freeGlobalVariables();
-void checkNodeCreationRequests();
-/**************************************************/
-
 /*****        Global structures        *****/
 
 union semun
@@ -122,6 +109,29 @@ long tplLength = 0; /* keeps tpList length */
 extern char **environ;
 struct timespec now;
 int *extractedFriendsIndex;
+
+/* struct that rappresents a process and its budget*/
+typedef struct proc_budget
+{
+    pid_t proc_pid;
+    double budget;
+    int p_type;               /* type of node: 0 if user, 1 if node */
+    struct proc_budget *prev; /* keeps link to previous node */
+    struct proc_budget *next; /* keeps link to next node */
+} proc_budget;
+
+/* linked list of budgets for every user and node process */
+/*
+    L'idea è che il libro mastro sia immutabile e non sia quindi
+    necessario scorrerlo tutto ogni volta.
+    Per migliorare l'efficienza del calcolo del budget
+    possiamo limitarci ad aggiornare i budget sulla base
+    delle sole transazioni inserite nel libro mastro
+    tra un aggiornamento e l'altro
+*/
+typedef proc_budget *budgetlist;
+/* budgetlist is implemented as a linked list */
+
 /***** End of Global structures *****/
 
 /***** Configuration parameters *****/
@@ -141,6 +151,44 @@ long SO_USERS_NUM,
 /***** End of Configuration parameters ***********/
 long maxNumNode = 0;
 char line[CONF_MAX_LINE_NO][CONF_MAX_LINE_SIZE];
+/* initialization of the budgetlist head - array to maintain budgets read from ledger */
+budgetlist bud_list_head = NULL;
+/* initialization of the budgetlist tail - array to maintain budgets read from ledger */
+budgetlist bud_list_tail = NULL;
+long masterPid = -1;
+
+/**********  Function prototypes  *****************/
+boolean assignEnvironmentVariables();
+boolean readConfigParameters();
+boolean allocateGlobalStructures();
+boolean initializeIPCFacilities();
+
+void endOfSimulation(int);
+void printBudget();
+boolean deallocateFacilities(int *);
+void checkNodeCreationRequests();
+
+/* 
+ * Function to frees the space dedicated to the budget list p passed as argument 
+ */
+void budgetlist_free(budgetlist);
+
+/*
+ * Function that inserts in the global list bud_list the node passed as
+ * argument in an ordered way (the list is ordered in ascending order).
+ * We want to keep the list sorted to implement a more efficient
+ * budget calculation.
+ */
+void insert_ordered(budgetlist);
+
+/*
+ * Function that searches in the gloabl list bud_list for an element with
+ * proc_pid as the one passed as first argument; if it's found, upgrades its budget
+ * adding the second argument, which is a positive or negative amount.
+ * It returns -1 in case an error happens, otherwise it returns 0 on success.
+ */
+int update_budget(pid_t, double);
+/**************************************************/
 
 /*****  Momentary functions created for testing purposes  *****/
 /**************************************************************/
@@ -225,59 +273,6 @@ void estrai(int k)
 }
 
 void tmpHandler(int sig);
-
-/**************** CAPIRE SE SPOSTARE IN INFO.H O SE LASCIARE QUI ****************/
-
-/* struct that rappresents a process and its budget*/
-typedef struct proc_budget
-{
-    pid_t proc_pid;
-    int budget;
-    int p_type;               /* type of node: 0 if user, 1 if node */
-    struct proc_budget *prev; /* keeps link to previous node */
-    struct proc_budget *next; /* keeps link to next node */
-} proc_budget;
-
-/* linked list of budgets for every user and node process */
-/*
-    L'idea è che il libro mastro sia immutabile e non sia quindi
-    necessario scorrerlo tutto ogni volta.
-    Per migliorare l'efficienza del calcolo del budget
-    possiamo limitarci ad aggiornare i budget sulla base
-    delle sole transazioni inserite nel libro mastro
-    tra un aggiornamento e l'altro
-*/
-typedef proc_budget *budgetlist;
-/* budgetlist is implemented as a linked list */
-
-/* Function to free the space dedicated to the budget list p passed as argument */
-void budgetlist_free(budgetlist p);
-
-/*
- * Function that inserts in the global list bud_list the node passed as
- * argument in an ordered way (the list is ordered in ascending order).
- * We want to keep the list sorted to implement a more efficient
- * budget calculation.
- */
-void insert_ordered(budgetlist);
-
-/*
- * Function that searches in the gloabl list bud_list for an element with
- * proc_pid as the one passed as first argument; if it's found, upgrades its budget
- * adding the second argument, which is a positive or negative amount.
- * It returns -1 in case an error happens, otherwise it returns 0 on success.
- */
-int update_budget(pid_t, int);
-
-/* initialization of the budgetlist head - array to maintain budgets read from ledger */
-budgetlist bud_list_head = NULL;
-/* initialization of the budgetlist tail - array to maintain budgets read from ledger */
-budgetlist bud_list_tail = NULL;
-long masterPid = -1;
-
-/**/
-
-/**************** CAPIRE SE SPOSTARE IN INFO.H O SE LASCIARE QUI ****************/
 
 int main(int argc, char *argv[])
 {
@@ -372,7 +367,7 @@ int main(int argc, char *argv[])
 
     /* Read configuration parameters from
                     // file and save them as environment variables*/
-    printf("PID MASTER: %ld\n", masterPid);
+    printf("[MASTER]: my pid is %5ld\n", masterPid);
     printf("**** [MASTER]: simulation configuration started ****\n");
 
     printf("[MASTER]: reading configuration parameters...\n");
@@ -996,7 +991,7 @@ int main(int argc, char *argv[])
 
                                                     /* update budget of sender of transaction, the amount is negative */
                                                     /* error checking not needed, already done in function */
-                                                    else if (update_budget(trans.sender, -(trans.amountSend)) == 0)
+                                                    else if (update_budget(trans.sender, -(trans.amountSend+trans.reward)) == 0)
                                                         ct_updates++;
 
                                                     /* update budget of receiver of transaction, the amount is positive */
@@ -1110,9 +1105,9 @@ int main(int argc, char *argv[])
                                     for (el_list = bud_list_head; el_list != NULL; el_list = el_list->next)
                                     {
                                         if (el_list->p_type) /* Budget of node process */
-                                            printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.1d\n", (long)el_list->proc_pid, el_list->budget);
+                                            printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
                                         else /* Budget of user process */
-                                            printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.1d\n", (long)el_list->proc_pid, el_list->budget);
+                                            printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
                                     }
                                 }
                                 else
@@ -1133,9 +1128,9 @@ int main(int argc, char *argv[])
                                     while (el_list != NULL && el_list->budget == bud_list_head->budget)
                                     {
                                         if (el_list->p_type) /* Budget of node process */
-                                            printf("[MASTER]:  - NODE PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                            printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
                                         else /* Budget of user process */
-                                            printf("[MASTER]:  - USER PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                            printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
 
                                         el_list = el_list->next;
                                     }
@@ -1145,9 +1140,9 @@ int main(int argc, char *argv[])
                                     while (el_list != NULL && el_list->budget == bud_list_tail->budget)
                                     {
                                         if (el_list->p_type) /* Budget of node process */
-                                            printf("[MASTER]:  - NODE PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                            printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
                                         else /* Budget of user process */
-                                            printf("[MASTER]:  - USER PROCESS PID %5d: actual budget %4d\n", el_list->proc_pid, el_list->budget);
+                                            printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
 
                                         el_list = el_list->prev;
                                     }
@@ -1263,7 +1258,6 @@ int main(int argc, char *argv[])
                                 /* Check if a node process has terminated to update the nodes list */
                                 while (msgrcv(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                 {
-                                    printf("***[MASTER]: checking if there are terminated nodes...\n");
                                     if (msg_from_node.msgContent == TERMINATEDNODE)
                                     {
                                         sops[0].sem_num = 1;
@@ -1685,7 +1679,7 @@ boolean initializeIPCFacilities()
 /****************************************************************************/
 /****************************************************************************/
 
-/* Function to free the space dedicated to the budget list p passed as argument */
+/* Function to frees the space dedicated to the budget list p passed as argument */
 void budgetlist_free(budgetlist p)
 {
     if (p == NULL)
@@ -1757,7 +1751,7 @@ void insert_ordered(budgetlist new_el)
  * proc_pid as the one passed as first argument; if it's found, upgrades its budget
  * adding the second argument, which is a positive or negative amount.
  */
-int update_budget(pid_t remove_pid, int amount_changing)
+int update_budget(pid_t remove_pid, double amount_changing)
 {
     /*
         Dobbiamo rimuovere il nodo e poi reinserirlo
@@ -1817,7 +1811,7 @@ int update_budget(pid_t remove_pid, int amount_changing)
 
     if (found == 0)
     {
-        sprintf(msg, "[MASTER]: Trying to update budget but no element in budgetlist with pid %5d\n", remove_pid);
+        sprintf(msg, "[MASTER]: Trying to update budget but no element in budgetlist with pid %5ld\n", (long)remove_pid);
         safeErrorPrint(msg, __LINE__);
         return -1;
     }
@@ -1844,10 +1838,9 @@ void endOfSimulation(int sig)
     // reach every children with just one system call).
     // how to check if everyone was signaled (it returns true even if
     // only one signal was sent)*/
+    int i = 0, ret = -1;
     char *terminationMessage = (char *)calloc(100, sizeof(char));
-    int ret = -1;
     char *aus = (char *)calloc(100, sizeof(char));
-    int i = 0;
     /*
     // Contiene una exit, perchè potrebbe essere ivocato in maniera
     // asincrona durante l'esecuzione del ciclo di vita
@@ -1880,8 +1873,13 @@ void endOfSimulation(int sig)
             CORREGGERE: reimpostare maschera ed associazione segnaliip
         */
         signal(SIGUSR1, SIG_IGN);
-        printf("[MASTER]: segnale ricevuto %d\n", sig);
-        printf("[MASTER]: pid %ld\n", (long)getpid());
+        
+        ret = sprintf(aus, "[MASTER]: received signal %d\n", sig);
+        write(STDOUT_FILENO, aus, ret);
+
+        ret = sprintf(aus, "[MASTER]: pid %5ld\n", masterPid);
+        write(STDOUT_FILENO, aus, ret);
+
         write(STDOUT_FILENO,
               "[MASTER]: trying to terminate simulation...\n",
               strlen("[MASTER]: trying to terminate simulation...\n"));
@@ -1967,7 +1965,7 @@ void endOfSimulation(int sig)
                 else if (sig == SIGUSR1)
                     strcat(terminationMessage, "Termination reason: register is full.\n");
                 else if (sig == 54)
-                    strcat(terminationMessage, "No more users alive.\n");
+                    strcat(terminationMessage, "Termination reason: no more users alive.\n");
                 else if (sig == -1)
                     strcat(terminationMessage, "Termination reason: critical error.\n");
 
@@ -1982,9 +1980,11 @@ void endOfSimulation(int sig)
             }
             else
             {
-                safeErrorPrint("[MASTER]: an error occurred while waiting for children. Description: ", __LINE__);
+                safeErrorPrint("[MASTER]: an error occurred while waiting for children. Error", __LINE__);
             }
-            write(STDOUT_FILENO, "[MASTER]: simulation terminated successfully!!!\n", strlen("[MASTER]: simulation terminated successfully!!!\n"));
+            write(STDOUT_FILENO, 
+                "[MASTER]: simulation terminated successfully!\n", 
+                strlen("[MASTER]: simulation terminated successfully!\n"));
         }
         else
         {
@@ -2461,7 +2461,7 @@ void checkNodeCreationRequests()
     struct sembuf sops[3];
     long childPid = -1;
 
-    if (msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), currPid, IPC_NOWAIT) == -1)
+    if (msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1)
     {
         /*
             Su questa coda l'unico tipo di messaggio per il master è NEWNODE
@@ -2499,7 +2499,7 @@ void checkNodeCreationRequests()
                     sops[1].sem_op = -1;
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("[MASTER]: failed to reserve nodes' list semphore. Error", __LINE__);
+                        safeErrorPrint("[MASTER]: failed to reserve nodes' list semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2514,7 +2514,7 @@ void checkNodeCreationRequests()
 
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("[MASTER]: failed to release nodes' list semphore. Error", __LINE__);
+                        safeErrorPrint("[MASTER]: failed to release nodes' list semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2539,8 +2539,8 @@ void checkNodeCreationRequests()
 
                         if (tpList[tplLength - 1].msgQId == -1)
                         {
-                            unsafeErrorPrint("[MASTER]: failed to create the message queue for the transaction pool of the new node process. Error", __LINE__);
-                            exit(EXIT_FAILURE); /* VA SOSTITUITO CON EndOfSimulation ??? */
+                            safeErrorPrint("[MASTER]: failed to create the message queue for the transaction pool of the new node process. Error", __LINE__);
+                            endOfSimulation(-1);
                         }
 
                         /*
@@ -2594,7 +2594,7 @@ void checkNodeCreationRequests()
                     sops[1].sem_op = -1;
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("[MASTER]: failed to reserve nodes' list read/mutex semphore. Error", __LINE__);
+                        safeErrorPrint("[MASTER]: failed to reserve nodes' list read/mutex semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2606,7 +2606,7 @@ void checkNodeCreationRequests()
                         sops[2].sem_op = -1;
                         if (semop(nodeListSem, sops, 1) == -1)
                         {
-                            unsafeErrorPrint("[MASTER]: failed to reserve nodes' list write semphore. Error", __LINE__);
+                            safeErrorPrint("[MASTER]: failed to reserve nodes' list write semphore. Error", __LINE__);
                             endOfSimulation(-1);
                         }
                     }
@@ -2619,7 +2619,7 @@ void checkNodeCreationRequests()
                     sops[1].sem_op = 1;
                     if (semop(nodeListSem, sops, 2) == -1)
                     {
-                        unsafeErrorPrint("[MASTER]: failed to release nodes' list mutex/read semphore. Error", __LINE__);
+                        safeErrorPrint("[MASTER]: failed to release nodes' list mutex/read semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2647,7 +2647,7 @@ void checkNodeCreationRequests()
                     sops[0].sem_op = -1;
                     if (semop(nodeListSem, sops, 1) == -1)
                     {
-                        unsafeErrorPrint("[MASTER]: failed to reserve nodes' list mutex semphore. Error", __LINE__);
+                        safeErrorPrint("[MASTER]: failed to reserve nodes' list mutex semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
 
@@ -2658,7 +2658,7 @@ void checkNodeCreationRequests()
                         sops[2].sem_op = 1;
                         if (semop(nodeListSem, sops, 1) == -1)
                         {
-                            unsafeErrorPrint("[MASTER]: failed to release nodes' list write semphore. Error", __LINE__);
+                            safeErrorPrint("[MASTER]: failed to release nodes' list write semphore. Error", __LINE__);
                             endOfSimulation(-1);
                         }
                     }
@@ -2668,13 +2668,13 @@ void checkNodeCreationRequests()
                     sops[0].sem_op = 1;
                     if (semop(nodeListSem, sops, 1) == -1)
                     {
-                        unsafeErrorPrint("[MASTER]: failed to release nodes' list mutex semphore. Error", __LINE__);
+                        safeErrorPrint("[MASTER]: failed to release nodes' list mutex semphore. Error", __LINE__);
                         endOfSimulation(-1);
                     }
                 }
                 else
                 {
-                    unsafeErrorPrint("[MASTER]: no more resources for new node. Simulation will be terminated.", __LINE__);
+                    safeErrorPrint("[MASTER]: no more resources for new node. Simulation will be terminated.", __LINE__);
                     /*
                 Sono finite le risorse, cosa facciamo?
                     1) Segnaliamo stampando la cosa a video e basta (del resto
@@ -2690,7 +2690,7 @@ void checkNodeCreationRequests()
             }
             else
             {
-                unsafeErrorPrint("[MASTER]: no space left for storing new node information. Simulation will be terminated.", __LINE__);
+                safeErrorPrint("[MASTER]: no space left for storing new node information. Simulation will be terminated.", __LINE__);
                 /*
                     CORREGGERE: Mettere qui la segnalazione di fine simulazione
                     oppure quella di fallimento transazione
@@ -2700,24 +2700,26 @@ void checkNodeCreationRequests()
         }
         else
         {
-            printf("[MASTER]: no node creation requests to be served. \n");
+            write(STDOUT_FILENO, 
+                "[MASTER]: no node creation requests to be served.\n", 
+                strlen("[MASTER]: no node creation requests to be served.\n"));
+            
             /* Reinserting the message that we have consumed from the global queue */
             if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), IPC_NOWAIT) == -1)
             {
                 /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
-                unsafeErrorPrint("[MASTER]: failed to reinsert the message read from the global queue while checking for terminated nodes. Error", __LINE__);
+                safeErrorPrint("[MASTER]: failed to reinsert the message read from the global queue while checking for new node creation requests. Error", __LINE__);
                 endOfSimulation(-1);
             }
         }
     }
     else
     {
-        printf("[MASTER]: no node creation requests to be served. \n");
-        if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), IPC_NOWAIT) == -1)
-        {
-            /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
-            unsafeErrorPrint("[MASTER]: failed to reinsert the message read from the global queue while checking for terminated nodes. Error", __LINE__);
-            endOfSimulation(-1);
-        }
+        if(errno != ENOMSG)
+            safeErrorPrint("[MASTER]: failed to check for node creation requests on global queue. Error", __LINE__);
+        else
+            write(STDOUT_FILENO, 
+                "[MASTER]: no node creation requests to be served.\n", 
+                strlen("[MASTER]: no node creation requests to be served.\n"));
     }
 }

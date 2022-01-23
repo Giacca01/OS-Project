@@ -749,7 +749,7 @@ int main(int argc, char *argv[], char *envp[])
     msgOnGQueue.terminatedPid = (pid_t)my_pid;
     if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
     {
-        sprintf(printMsg, "[NODE %5ld]: failed to inform master of my termination Error", my_pid);
+        sprintf(printMsg, "[NODE %5ld]: failed to inform master of my termination. Error", my_pid);
         unsafeErrorPrint(printMsg, __LINE__);
     }
 
@@ -1524,7 +1524,25 @@ int extractFriendNode()
  */
 void endOfExecution(int sig)
 {
+    MsgGlobalQueue msgOnGQueue;
+    char * aus;
+
+    aus = (char *)calloc(200, sizeof(char));
+
     deallocateIPCFacilities();
+    
+    /* notify master that user process terminated before expected */
+    msgOnGQueue.mtype = getppid();
+    msgOnGQueue.msgContent = TERMINATEDNODE;
+    msgOnGQueue.terminatedPid = (pid_t)my_pid;
+    if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
+    {
+        sprintf(aus, "[NODE %5ld]: failed to inform master of my termination. Error", my_pid);
+        unsafeErrorPrint(aus, __LINE__);
+    }
+    
+    free(aus);
+
     exit(EXIT_SUCCESS);
 }
 
