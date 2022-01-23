@@ -852,6 +852,8 @@ void endOfExecution(int sig)
         msgOnGQueue.terminatedPid = getpid();
         if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
             safeErrorPrint("User: failed to inform master of my termination. Error", __LINE__);
+        else
+        	printf("User: done\n");
     }
 
     exit(exitCode);

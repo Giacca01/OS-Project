@@ -695,8 +695,10 @@ int main(int argc, char *argv[], char* envp[])
     msgOnGQueue.mtype = getppid();
     msgOnGQueue.msgContent = TERMINATEDNODE;
     msgOnGQueue.terminatedPid = getpid();
-    if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), 0) == -1)
+    if(msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue)-sizeof(long), IPC_NOWAIT) == -1)
         safeErrorPrint("Node: failed to inform master of my termination. Error", __LINE__);
+    else
+    	printf("Node done\n");
 
     exit(exitCode);
 }

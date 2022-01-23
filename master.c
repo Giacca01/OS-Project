@@ -1885,6 +1885,9 @@ void endOfSimulation(int sig)
         fflush(stdout);
         if (noTerminatedUsers + noTerminatedNodes < noEffectiveNodes + noEffectiveUsers)
         {
+        	/*
+        		Caso in cui non tutti i processi sono terminati prima della fine della simulazione
+        	*/
             /*
                 There are still active children that need
                 to be notified the end of simulation
