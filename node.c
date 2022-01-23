@@ -387,14 +387,21 @@ int main(int argc, char *argv[], char* envp[])
                                                             }
                                                             else
                                                             {
+                                                                if (errno != EINTR)
+                                                                {
+                                                                    sprintf(printMsg, "[NODE %5ld]: failed to retrieve transaction from Transaction Pool. Error", my_pid);
+                                                                    unsafeErrorPrint(printMsg, __LINE__);
+                                                                    printMsg[0] = 0; /* resetting string's content */
+                                                                }
+                                                                /*
+                                                                if (num_bytes == ENOMSG)
+                                                                    printf("[NODE %5ld]: Non ci sono più messaggi...\n", my_pid);
+                                                                else if (num_bytes == EINTR){
                                                                 /*
                                                                         Potrebbe avere senso far ripartire l'estrazione da capo ?
                                                                         No, non cambierebbe nulla, ricordare che le transazioni nel TP
                                                                         non sono legate, quindi in un blocco possono esserci transazioni qualsiasi
                                                                     */
-                                                                sprintf(printMsg, "[NODE %5ld]: failed to retrieve transaction from Transaction Pool. Error", my_pid);
-                                                                unsafeErrorPrint(printMsg, __LINE__);
-                                                                printMsg[0] = 0; /* resetting string's content */
                                                             }
 
                                                             /*
@@ -1014,7 +1021,7 @@ void dispatchToFriend()
     
     if (msgrcv(tpId, &aus, sizeof(Transaction), my_pid, IPC_NOWAIT) == -1)
     {
-        if (errno != ENOMSG)
+        if (errno != ENOMSG && errno != EINTR)
         {
             sprintf(printMsg, "[NODE %5ld]: failed to extract a transaction to send it to a friend. Error", my_pid);
             safeErrorPrint(printMsg, __LINE__);
@@ -1034,7 +1041,10 @@ void dispatchToFriend()
         i = extractFriendNode();
         if(i == -1)
         {
-            safeErrorPrint("Node: failed to extract a friend node which to send the transaction. Error", __LINE__);
+            sprintf(printMsg, "[NODE %5ld]: failed to extract a friend node which to send the transaction. Error", my_pid);
+            safeErrorPrint(printMsg, __LINE__);
+            printMsg[0] = 0;
+
             temp.bIndex = 0;
             temp.transList[0] = aus.transaction;
             reinsertTransactions(temp);
@@ -1044,7 +1054,9 @@ void dispatchToFriend()
             key = ftok(MSGFILEPATH, *(friends_node + i));
             if (key == -1)
             {
-                safeErrorPrint("Node: failed to connect to friend's transaction pool. Error", __LINE__);
+                sprintf(printMsg, "[NODE %5ld]: failed to connect to friend's transaction pool. Error", my_pid);
+                safeErrorPrint(printMsg, __LINE__);
+                printMsg[0] = 0;
                 /*
                     Reinserire transazione
                 */
@@ -1057,7 +1069,10 @@ void dispatchToFriend()
                 friendTp = msgget(key, 0600);
                 if (friendTp == -1)
                 {
-                    safeErrorPrint("Node: failed to connect to friend's transaction pool. Error", __LINE__);
+                    sprintf(printMsg, "[NODE %5ld]: failed to connect to friend's transaction pool. Error", my_pid);
+                    safeErrorPrint(printMsg, __LINE__);
+                    printMsg[0] = 0;
+
                     temp.bIndex = 0;
                     temp.transList[0] = aus.transaction;
                     reinsertTransactions(temp);
@@ -1067,16 +1082,19 @@ void dispatchToFriend()
                     aus.mtype = *(friends_node + i);
                     if (msgsnd(friendTp, &aus, sizeof(Transaction), 0600) == -1)
                     {
-                        safeErrorPrint("Node: failed to dispatch transaction to friend. Error", __LINE__);
+                        sprintf(printMsg, "[NODE %5ld]: failed to dispatch transaction to friend. Error", my_pid);
+                        safeErrorPrint(printMsg, __LINE__);
+                        printMsg[0] = 0;
+                        
                         temp.bIndex = 0;
                         temp.transList[0] = aus.transaction;
                         reinsertTransactions(temp);
                     }
                     else
                     {
-                        write(STDOUT_FILENO,
-                            "Node: transaction successfully dispatched to friend.\n",
-                            strlen("Node: transaction successfully dispatched to friend.\n"));
+                        msg_length = sprintf(printMsg, "[NODE %5ld]: transaction successfully dispatched to friend\n", my_pid);
+                        write(STDOUT_FILENO, printMsg, msg_length);
+                        printMsg[0] = 0; /* resetting string's content */
                     }
                 }
             }
@@ -1148,7 +1166,7 @@ void sendTransaction()
     */
     if (msgrcv(globalQueueId, &trans, sizeof(MsgGlobalQueue)-sizeof(long), my_pid, IPC_NOWAIT) == -1)
     {
-        if (errno != ENOMSG)
+        if (errno != ENOMSG && errno != EINTR)
         {
             sprintf(printMsg, "[NODE %5ld]: failed to check existence of transactions on global queue. Error", my_pid);
             safeErrorPrint(printMsg, __LINE__);
