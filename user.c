@@ -326,6 +326,8 @@ int main(int argc, char *argv[], char *envp[])
 
                                 /* generate a transaction */
                                 transactionGeneration(0);
+
+                                sleep(1);
                             }
                         }
                     }
@@ -884,16 +886,10 @@ void endOfExecution(int sig)
         msgOnGQueue.msgContent = TERMINATEDUSER;
         msgOnGQueue.terminatedPid = (pid_t)my_pid;
         if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
-<<<<<<< HEAD
-            safeErrorPrint("User: failed to inform master of my termination. Error", __LINE__);
-        else
-        	printf("User: done\n");
-=======
         {
             sprintf(aus, "[USER %5ld]: failed to inform master of my termination. Error", my_pid);
             safeErrorPrint(aus, __LINE__);
         }
->>>>>>> c86b966c1d36a781db8b434cbb291b28825c5b79
     }
 
     free(aus);

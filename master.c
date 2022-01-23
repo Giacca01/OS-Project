@@ -1339,8 +1339,9 @@ int main(int argc, char *argv[])
 
                                 if (noEffectiveUsers == 0)
                                 {
-                                    endOfSimulation(54);
-                                }
+                                    endOfSimulation(-2);
+                                } else if (noEffectiveNodes == 0)
+                                    endOfSimulation(-3);
 
                                 /* now sleep for 1 second */
                                 nanosleep(&onesec, &tim);
@@ -1967,8 +1968,10 @@ void endOfSimulation(int sig)
                     strcat(terminationMessage, "Termination reason: end of simulation.\n");
                 else if (sig == SIGUSR1)
                     strcat(terminationMessage, "Termination reason: register is full.\n");
-                else if (sig == 54)
+                else if (sig == -2)
                     strcat(terminationMessage, "Termination reason: no more users alive.\n");
+                else if (sig == -3)
+                    strcat(terminationMessage, "Termination reason: no more nodes alive.\n");
                 else if (sig == -1)
                     strcat(terminationMessage, "Termination reason: critical error.\n");
 
