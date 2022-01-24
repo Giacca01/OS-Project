@@ -1419,7 +1419,7 @@ boolean assignEnvironmentVariables()
 /************************************************************************/
 boolean readConfigParameters()
 {
-    char *filename = "params.txt";
+    char *filename = "params_3.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*

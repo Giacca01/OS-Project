@@ -41,7 +41,7 @@
 /* il seed è il pid del proprietario
 i figli lo preleveranno dalla lista dei nodi*/
 
-#define SO_REGISTRY_SIZE 10000
+#define SO_REGISTRY_SIZE 1000
 #define MAX_ADDITIONAL_NODES 100
 /*Right now it's not reentrant, we should modify it*/
 #define EXIT_ON_ERROR                        \

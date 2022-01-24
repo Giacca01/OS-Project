@@ -1,66 +1,66 @@
 [MASTER]: no node creation requests to be served.
-[USER 18792]: computing balance...
-[USER 18791]: computing balance...
-[USER 18795]: computing balance...
-[USER 18792]: current balance is 1000.0
-[USER 18791]: current balance is 1000.0
-[USER 18795]: current balance is 1000.0
-[USER 18793]: computing balance...
-[USER 18792]: generating a new transaction...
-[USER 18791]: generating a new transaction...
-[USER 18795]: generating a new transaction...
-[USER 18794]: computing balance...
-[USER 18792]: sending the created transaction to the node...
-[USER 18792]: transaction correctly sent to node.
-[USER 18792]: processing the transaction...
-[USER 18793]: current balance is 1000.0
-[USER 18791]: sending the created transaction to the node...
-[USER 18795]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[USER 18795]: transaction correctly sent to node.
-[USER 18793]: generating a new transaction...
-[USER 18795]: processing the transaction...
-[USER 18794]: current balance is 1000.0
-[USER 18793]: sending the created transaction to the node...
-[USER 18793]: transaction correctly sent to node.
-[USER 18793]: processing the transaction...
-[USER 18794]: generating a new transaction...
-[USER 18794]: sending the created transaction to the node...
-[USER 18794]: transaction correctly sent to node.
-[USER 18794]: processing the transaction...
+[USER  9940]: computing balance...
+[USER  9938]: computing balance...
+[USER  9939]: computing balance...
+[USER  9941]: computing balance...
+[USER  9940]: current balance is 1000.0
+[USER  9940]: generating a new transaction...
+[USER  9938]: current balance is 1000.0
+[USER  9938]: generating a new transaction...
+[USER  9940]: sending the created transaction to the node...
+[USER  9939]: current balance is 1000.0
+[USER  9940]: transaction correctly sent to node.
+[USER  9938]: sending the created transaction to the node...
+[USER  9939]: generating a new transaction...
+[USER  9940]: processing the transaction...
+[USER  9941]: current balance is 1000.0
+[USER  9938]: transaction correctly sent to node.
+[USER  9941]: generating a new transaction...
+[USER  9938]: processing the transaction...
+[USER  9939]: sending the created transaction to the node...
+[USER  9941]: sending the created transaction to the node...
+[USER  9939]: transaction correctly sent to node.
+[USER  9941]: transaction correctly sent to node.
+[USER  9939]: processing the transaction...
+[USER  9941]: processing the transaction...
+[USER  9942]: computing balance...
+[USER  9942]: current balance is 1000.0
+[USER  9942]: generating a new transaction...
+[USER  9942]: sending the created transaction to the node...
+[USER  9942]: transaction correctly sent to node.
+[USER  9942]: processing the transaction...
 [MASTER]: no node creation requests to be served.
-[USER 18792]: computing balance...
-[USER 18791]: computing balance...
-[USER 18795]: computing balance...
-[USER 18792]: current balance is 923.0
-[USER 18793]: computing balance...
-[USER 18792]: generating a new transaction...
-[USER 18791]: current balance is 970.0
-[USER 18795]: current balance is 795.0
-[USER 18791]: generating a new transaction...
-[USER 18792]: sending the created transaction to the node...
-[USER 18793]: current balance is 197.0
-[USER 18795]: generating a new transaction...
-[USER 18792]: transaction correctly sent to node.
-[USER 18791]: sending the created transaction to the node...
-[USER 18795]: sending the created transaction to the node...
-[USER 18793]: generating a new transaction...
-[USER 18792]: processing the transaction...
-[USER 18791]: transaction correctly sent to node.
-[USER 18795]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[USER 18793]: sending the created transaction to the node...
-[USER 18795]: processing the transaction...
-[USER 18793]: transaction correctly sent to node.
-[USER 18793]: processing the transaction...
-[USER 18794]: computing balance...
-[USER 18794]: current balance is 554.0
-[USER 18794]: generating a new transaction...
-[USER 18794]: sending the created transaction to the node...
-[USER 18794]: transaction correctly sent to node.
-[USER 18794]: processing the transaction...
-[MASTER]: my pid is 18790
+[USER  9941]: computing balance...
+[USER  9938]: computing balance...
+[USER  9940]: computing balance...
+[USER  9939]: computing balance...
+[USER  9941]: current balance is 282.0
+[USER  9938]: current balance is 263.0
+[USER  9942]: computing balance...
+[USER  9941]: generating a new transaction...
+[USER  9938]: generating a new transaction...
+[USER  9940]: current balance is 49.0
+[USER  9939]: current balance is 501.0
+[USER  9940]: generating a new transaction...
+[USER  9939]: generating a new transaction...
+[USER  9942]: current balance is 316.0
+[USER  9941]: sending the created transaction to the node...
+[USER  9942]: generating a new transaction...
+[USER  9938]: sending the created transaction to the node...
+[USER  9941]: transaction correctly sent to node.
+[USER  9941]: processing the transaction...
+[USER  9940]: sending the created transaction to the node...
+[USER  9938]: transaction correctly sent to node.
+[USER  9940]: transaction correctly sent to node.
+[USER  9938]: processing the transaction...
+[USER  9939]: sending the created transaction to the node...
+[USER  9942]: sending the created transaction to the node...
+[USER  9940]: processing the transaction...
+[USER  9939]: transaction correctly sent to node.
+[USER  9942]: transaction correctly sent to node.
+[USER  9939]: processing the transaction...
+[USER  9942]: processing the transaction...
+[MASTER]: my pid is  9937
 **** [MASTER]: simulation configuration started ****
 [MASTER]: reading configuration parameters...
 [MASTER]: reading configuration parameters...
@@ -98,16 +98,16 @@ Blocks: 0 0 0
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - USER PROCESS PID 18795: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18794: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1000.00
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 5
 [MASTER]: checking if there are node creation requests to be served...
@@ -119,16 +119,16 @@ Blocks: 0 0 0
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - USER PROCESS PID 18795: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18794: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1000.00
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 5
 [MASTER]: checking if there are node creation requests to be served...
@@ -140,136 +140,141 @@ Blocks: 0 0 0
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - USER PROCESS PID 18795: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18794: actual budget 1000.00
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
 [MASTE[MASTER]: no node creation requests to be served.
-[USER 18794]: computing balance...
-[USER 18795]: computing balance...
-[USER 18792]: computing balance...
-[USER 18791]: computing balance...
-[USER 18793]: computing balance...
-[USER 18794]: current balance is 530.0
-[USER 18795]: current balance is 303.0
-[USER 18792]: current balance is 78.0
-[USER 18791]: current balance is 625.0
-[USER 18793]: current balance is 149.0
-[USER 18794]: generating a new transaction...
-[USER 18795]: generating a new transaction...
-[USER 18795]: sending the created transaction to the node...
-[USER 18794]: sending the created transaction to the node...
-[USER 18795]: transaction correctly sent to node.
-[USER 18795]: processing the transaction...
-[USER 18794]: transaction correctly sent to node.
-[USER 18794]: processing the transaction...
-[USER 18792]: generating a new transaction...
-[USER 18792]: sending the created transaction to the node...
-[USER 18792]: transaction correctly sent to node.
-[USER 18792]: processing the transaction...
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[USER 18793]: generating a new transaction...
-[USER 18793]: sending the created transaction to the node...
-[USER 18793]: transaction correctly sent to node.
-[USER 18793]: processing the transaction...
+[USER  9941]: computing balance...
+[USER  9938]: computing balance...
+[USER  9940]: computing balance...
+[USER  9939]: computing balance...
+[USER  9942]: computing balance...
+[USER  9941]: current balance is 66.0
+[USER  9938]: current balance is 42.0
+[USER  9940]: current balance is  0.0
+[USER  9941]: generating a new transaction...
+[USER  9938]: generating a new transaction...
+[USER  9939]: current balance is 447.0
+[USER  9940]: generating a new transaction...
+[USER  9942]: current balance is 126.0
+[USER  9939]: generating a new transaction...
+[USER  9940]: not enough money to make a transaction...
+[USER  9942]: generating a new transaction...
+[USER  9941]: sending the created transaction to the node...
+[USER  9938]: sending the created transaction to the node...
+[USER  9941]: transaction correctly sent to node.
+[USER  9940]: failed to create a transaction, increasing number of failure counter.
+[USER  9939]: sending the created transaction to the node...
+[USER  9938]: transaction correctly sent to node.
+[USER  9941]: processing the transaction...
+[USER  9942]: sending the created transaction to the node...
+[USER  9938]: processing the transaction...
+[USER  9939]: transaction correctly sent to node.
+[USER  9942]: transaction correctly sent to node.
+[USER  9939]: processing the transaction...
+[USER  9942]: processing the transaction...
 [MASTER]: no node creation requests to be served.
-[USER 18795]: computing balance...
-[USER 18794]: computing balance...
-[USER 18795]: current balance is 212.0
-[USER 18795]: generating a new transaction...
-[USER 18794]: current balance is 173.0
-[USER 18795]: sending the created transaction to the node...
-[USER 18794]: generating a new transaction...
-[USER 18795]: transaction correctly sent to node.
-[USER 18795]: processing the transaction...
-[USER 18794]: sending the created transaction to the node...
-[USER 18794]: transaction correctly sent to node.
-[USER 18794]: processing the transaction...
-[USER 18792]: computing balance...
-[USER 18791]: computing balance...
-[USER 18792]: current balance is 53.0
-[USER 18791]: current balance is 542.0
-[USER 18792]: generating a new transaction...
-[USER 18791]: generating a new transaction...
-[USER 18793]: computing balance...
-[USER 18792]: sending the created transaction to the node...
-[USER 18791]: sending the created transaction to the node...
-[USER 18792]: transaction correctly sent to node.
-[USER 18791]: transaction correctly sent to node.
-[USER 18792]: processing the transaction...
-[USER 18791]: processing the transaction...
-[USER 18793]: current balance is  6.0
-[USER 18793]: generating a new transaction...
-[USER 18793]: sending the created transaction to the node...
-[USER 18793]: transaction correctly sent to node.
-[USER 18793]: processing the transaction...
+[USER  9940]: computing balance...
+[USER  9940]: current balance is  0.0
+[USER  9940]: generating a new transaction...
+[USER  9940]: not enough money to make a transaction...
+[USER  9940]: failed to create a transaction, increasing number of failure counter.
+[USER  9938]: computing balance...
+[USER  9939]: computing balance...
+[USER  9942]: computing balance...
+[USER  9938]: current balance is 38.0
+[USER  9938]: generating a new transaction...
+[USER  9939]: current balance is 94.0
+[USER  9942]: current balance is 18.0
+[USER  9939]: generating a new transaction...
+[USER  9938]: sending the created transaction to the node...
+[USER  9942]: generating a new transaction...
+[USER  9938]: transaction correctly sent to node.
+[USER  9938]: processing the transaction...
+[USER  9939]: sending the created transaction to the node...
+[USER  9942]: sending the created transaction to the node...
+[USER  9941]: computing balance...
+[USER  9939]: transaction correctly sent to node.
+[USER  9942]: transaction correctly sent to node.
+[USER  9939]: processing the transaction...
+[USER  9942]: processing the transaction...
+[USER  9941]: current balance is 57.0
+[USER  9941]: generating a new transaction...
+[USER  9941]: sending the created transaction to the node...
+[USER  9941]: transaction correctly sent to node.
+[USER  9941]: processing the transaction...
 [MASTER]: no node creation requests to be served.
-[USER 18795]: computing balance...
-[USER 18794]: computing balance...
-[USER 18795]: current balance is 65.0
-[USER 18795]: generating a new transaction...
-[USER 18794]: current balance is 13.0
-[USER 18795]: sending the created transaction to the node...
-[USER 18791]: computing balance...
-[USER 18795]: transaction correctly sent to node.
-[USER 18794]: generating a new transaction...
-[USER 18792]: computing balance...
-[USER 18795]: processing the transaction...
-[USER 18794]: sending the created transaction to the node...
-[USER 18791]: current balance is 160.0
-[USER 18793]: computing balance...
-[USER 18794]: transaction correctly sent to node.
-[USER 18792]: current balance is 48.0
-[USER 18791]: generating a new transaction...
-[USER 18794]: processing the transaction...
-[USER 18792]: generating a new transaction...
-[USER 18793]: current balance is  1.0
-[USER 18791]: sending the created transaction to the node...
-[USER 18793]: not enough money to make a transaction...
-[USER 18792]: sending the created transaction to the node...
-[USER 18793]: failed to create a transaction, increasing number of failure counter.
-[USER 18791]: transaction correctly sent to node.
-[USER 18792]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[USER 18792]: processing the transaction...
+[USER  9940]: computing balance...
+[USER  9940]: current balance is  0.0
+[USER  9940]: generating a new transaction...
+[USER  9940]: not enough money to make a transaction...
+[USER  9940]: failed to create a transaction, increasing number of failure counter.
+[USER  9941]: computing balance...
+[USER  9941]: current balance is 35.0
+[USER  9941]: generating a new transaction on event request...
+[USER  9941]: sending the created transaction to the node...
+[USER  9941]: transaction generated on event correctly sent to node.
+[USER  9941]: processing the transaction...
+[USER  9938]: computing balance...
+[USER  9939]: computing balance...
+[USER  9942]: computing balance...
+[USER  9938]: current balance is 20.0
+[USER  9938]: generating a new transaction...
+[USER  9939]: current balance is 61.0
+[USER  9938]: sending the created transaction to the node...
+[USER  9942]: current balance is 12.0
+[USER  9939]: generating a new transaction...
+[USER  9938]: transaction correctly sent to node.
+[USER  9942]: generating a new transaction...
+[USER  9938]: processing the transaction...
+[USER  9939]: sending the created transaction to the node...
+[USER  9942]: sending the created transaction to the node...
+[USER  9939]: transaction correctly sent to node.
+[USER  9939]: processing the transaction...
+[USER  9942]: transaction correctly sent to node.
+[USER  9942]: processing the transaction...
+[USER  9941]: computing balance...
+[USER  9941]: current balance is 28.0
+[USER  9941]: generating a new transaction...
+[USER  9941]: sending the created transaction to the node...
+[USER  9941]: transaction correctly sent to node.
+[USER  9941]: processing the transaction...
 [MASTER]: no node creation requests to be served.
-[USER 18793]: computing balance...
-[USER 18793]: current balance is  1.0
-[USER 18793]: not enough money to make a transaction...
-[USER 18793]: failed to create a transaction, increasing number of failure counter.
-[USER 18791]: computing balance...
-[USER 18794]: computing balance...
-[USER 18795]: computing balance...
-[USER 18792]: computing balance...
-[USER 18791]: current balance is 111.0
-[USER 18794]: current balance is  4.0
-[USER 18791]: generating a new transaction...
-[USER 18795]: current balance is 30.0
-[USER 18794]: generating a new transaction...
-[USER 18792]: current balance is 34.0
-[USER 18791]: sending the created transaction to the node...
-[USER 18795]: generating a new transaction...
-[USER 18792]: generating a new transaction...
-[USER 18791]: transaction correctly sent to node.
-[USER 18794]: sending the created transaction to the node...
-[USER 18791]: processing the transaction...
-[USER 18795]: sending the created transaction to the node...
-[USER 18794]: transaction correctly sent to node.
-[USER 18792]: sending the created transaction to the node...
-[USER 18794]: processing the transaction...
-[USER 18795]: transaction correctly sent to node.
-[USER 18792]: transaction correctly sent to node.
-[USER 18795]: processing the transaction...
-[USER 18792]: processing the transaction...
-R]:  - USER PROCESS PID 18793: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1000.00
+[USER  9940]: computing balance...
+[USER  9940]: current balance is  0.0
+[USER  9940]: generating a new transaction...
+[USER  9940]: not enough money to make a transaction...
+[USER  9940]: failed to create a transaction, increasing number of failure counter.
+[USER  9938]: computing balance...
+[USER  9942]: computing balance...
+[USER  9939]: computing balance...
+[USER  9938]: current balance is  7.0
+[USER  9938]: generating a new transaction...
+[USER  9942]: current balance is  1.0
+[USER  9939]: current balance is 37.0
+[USER  9942]: generating a new transaction...
+[USER  9938]: sending the created transaction to the node...
+[USER  9939]: generating a new transaction...
+[USER  9942]: not enough money to make a transaction...
+[USER  9938]: transaction correctly sent to node.
+[USER  9942]: failed to create a transaction, increasing number of failure counter.
+[USER  9938]: processing the transaction...
+[USER  9939]: sending the created transaction to the node...
+[USER  9939]: transaction correctly sent to node.
+[USER  9939]: processing the transaction...
+[USER  9941]: computing balance...
+[USER  9941]: current balance is 15.0
+[USER  9941]: generating a new transaction...
+[USER  9941]: sending the created transaction to the node...
+[USER  9941]: transaction correctly sent to node.
+[USER  9941]: processing the transaction...
+R]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 5
 [MASTER]: checking if there are node creation requests to be served...
@@ -281,16 +286,16 @@ R]:  - USER PROCESS PID 18793: actual budget 1000.00
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - USER PROCESS PID 18795: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18794: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1000.00
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 5
 [MASTER]: checking if there are node creation requests to be served...
@@ -302,16 +307,16 @@ R]:  - USER PROCESS PID 18793: actual budget 1000.00
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - USER PROCESS PID 18795: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18794: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1000.00
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 5
 [MASTER]: checking if there are node creation requests to be served...
@@ -323,16 +328,16 @@ R]:  - USER PROCESS PID 18793: actual budget 1000.00
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - USER PROCESS PID 18795: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18794: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1000.00
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 5
 [MASTER]: checking if there are node creation requests to be served...
@@ -345,113 +350,111 @@ R]:  - USER PROCESS PID 18793: actual budget 1000.00
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
 [MAS[MASTER]: no node creation requests to be served.
-[USER 18793]: computing balance...
-[USER 18793]: current balance is  1.0
-[USER 18793]: not enough money to make a transaction...
-[USER 18793]: failed to create a transaction, increasing number of failure counter.
-[USER 18791]: computing balance...
-[USER 18794]: computing balance...
-[USER 18795]: computing balance...
-[USER 18792]: computing balance...
-[USER 18791]: current balance is 62.0
-[USER 18794]: current balance is  2.0
-[USER 18795]: current balance is  2.0
-[USER 18794]: not enough money to make a transaction...
-[USER 18791]: generating a new transaction...
-[USER 18795]: not enough money to make a transaction...
-[USER 18792]: current balance is 28.0
-[USER 18794]: failed to create a transaction, increasing number of failure counter.
-[USER 18795]: failed to create a transaction, increasing number of failure counter.
-[USER 18791]: sending the created transaction to the node...
-[USER 18792]: generating a new transaction...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[USER 18792]: sending the created transaction to the node...
-[USER 18792]: transaction correctly sent to node.
-[USER 18792]: processing the transaction...
+[USER  9940]: computing balance...
+[USER  9940]: current balance is  0.0
+[USER  9940]: generating a new transaction...
+[USER  9940]: not enough money to make a transaction...
+[USER  9940]: failed to create a transaction, increasing number of failure counter.
+[USER  9940]: detaching from register's partitions...
+[USER  9940]: detaching from users list...
+[USER  9940]: detaching from nodes list...
+[USER  9940]: detaching from partitions' number of readers shared variable...
+[USER  9940]: detaching from users list's number of readers shared variable...
+[USER  9940]: detaching from nodes list's number of readers shared variable...
+[USER  9940]: cleanup operations completed. Process is about to end its execution...
+[USER  9940]: starting lifecycle...
+[USER  9940]: checking if there are failed transactions...
+[USER  9940]: checking if there are failed transactions...
+[USER  9940]: checking if there are failed transactions...
+[USER  9940]: checking if there are failed transactions...
+[USER  9940]: checking if there are failed transactions...
+[USER  9940]: checking if there are failed transactions...
+[USER  9940]: checking if there are failed transactions...
+[USER  9942]: computing balance...
+[USER  9942]: current balance is  1.0
+[USER  9942]: generating a new transaction...
+[USER  9942]: not enough money to make a transaction...
+[USER  9942]: failed to create a transaction, increasing number of failure counter.
+[USER  9938]: computing balance...
+[USER  9939]: computing balance...
+[USER  9938]: current balance is  2.0
+[USER  9938]: generating a new transaction...
+[USER  9939]: current balance is 35.0
+[USER  9938]: not enough money to make a transaction...
+[USER  9939]: generating a new transaction...
+[USER  9938]: failed to create a transaction, increasing number of failure counter.
+[USER  9939]: sending the created transaction to the node...
+[USER  9939]: transaction correctly sent to node.
+[USER  9939]: processing the transaction...
+[USER  9941]: computing balance...
+[USER  9941]: current balance is  9.0
+[USER  9941]: generating a new transaction...
+[USER  9941]: sending the created transaction to the node...
+[USER  9941]: transaction correctly sent to node.
+[USER  9941]: processing the transaction...
 [MASTER]: no node creation requests to be served.
-[USER 18793]: computing balance...
-[USER 18793]: current balance is  1.0
-[USER 18793]: not enough money to make a transaction...
-[USER 18793]: failed to create a transaction, increasing number of failure counter.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is 28.0
-[USER 18791]: generating a new transaction on event request...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction generated on event correctly sent to node.
-[USER 18791]: processing the transaction...
-[USER 18791]: computing balance...
-[USER 18791]: current balance is  4.0
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[NODE 18799]: dispatching transaction to friend...
-[USER 18794]: computing balance...
-[USER 18795]: computing balance...
-[USER 18794]: current balance is 54.5
-[USER 18795]: current balance is  2.0
-[USER 18794]: generating a new transaction...
-[USER 18795]: not enough money to make a transaction...
-[USER 18795]: failed to create a transaction, increasing number of failure counter.
-[USER 18794]: sending the created transaction to the node...
-[USER 18794]: transaction correctly sent to node.
-[USER 18794]: processing the transaction...
-[USER 18792]: computing balance...
-[USER 18792]: current balance is 169.5
-[USER 18792]: generating a new transaction...
-[USER 18792]: sending the created transaction to the node...
-[USER 18792]: transaction correctly sent to node.
-[USER 18792]: processing the transaction...
+[USER  9939]: computing balance...
+[USER  9939]: current balance is  3.0
+[USER  9939]: generating a new transaction on event request...
+[USER  9939]: sending the created transaction to the node...
+[USER  9939]: transaction generated on event correctly sent to node.
+[USER  9939]: processing the transaction...
+[USER  9939]: computing balance...
+[USER  9939]: current balance is -1.0
+[USER  9939]: generating a new transaction...
+[USER  9939]: not enough money to make a transaction...
+[USER  9939]: failed to create a transaction, increasing number of failure counter.
+[USER  9942]: computing balance...
+[USER  9942]: current balance is  1.0
+[USER  9942]: generating a new transaction...
+[USER  9942]: not enough money to make a transaction...
+[USER  9942]: failed to create a transaction, increasing number of failure counter.
+[USER  9938]: computing balance...
+[USER  9938]: current balance is  2.0
+[USER  9938]: generating a new transaction...
+[USER  9938]: not enough money to make a transaction...
+[USER  9938]: failed to create a transaction, increasing number of failure counter.
 [MASTER]: no node creation requests to be served.
-[USER 18793]: computing balance...
-[USER 18793]: current balance is -113.0
-[USER 18793]: not enough money to make a transaction...
-[USER 18793]: failed to create a transaction, increasing number of failure counter.
-[USER 18793]: detaching from register's partitions...
-[USER 18793]: detaching from users list...
-[USER 18793]: detaching from nodes list...
-[USER 18793]: detaching from partitions' number of readers shared variable...
-[USER 18793]: detaching from users list's number of readers shared variable...
-[USER 18793]: detaching from nodes list's number of readers shared variable...
-[USER 18793]: cleanup operations completed. Process is about to end its execution...
-[USER 18793]: starting lifecycle...
-[USER 18793]: checking if there are failed transactions...
-[USER 18793]: checking if there are failed transactions...
-[USER 18793]: checking if there are failed transactions...
-[USER 18793]: checking if there are failed transactions...
-[USER 18793]: checking if there are failed transactions...
-[USER 18793]: checking if there are failed transactions...
-[USER 18793]: checking if there are failed transactions...
-[USER 18793]: checking if there are failed transactions...
-[USER 18793]: checking if there are failed transactions...
-[USER 18795]: computing balance...
-[USER 18795]: current balance is  2.0
-[USER 18795]: not enough money to make a transaction...
-[USER 18795]: failed to create a transaction, increasing number of failure counter.
-[USER 18794]: computing balance...
-[USER 18794]: current balance is 34.5
-[USER 18794]: generating a new transaction...
-[USER 18794]: sending the created transaction to the node...
-[USER 18794]: transaction correctly sent to node.
-[USER 18794]: processing the transaction...
-[USER 18791]: computing balance...
-[USER 18791]: current balance is 299.1
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[MASTER]: no node creation requests to be served.
-TER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - USER PROCESS PID 18795: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18794: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1000.00
+[USER  9941]: computing balance...
+[USER  9941]: current balance is  1.0
+[USER  9941]: generating a new transaction...
+[USER  9941]: not enough money to make a transaction...
+[USER  9941]: failed to create a transaction, increasing number of failure counter.
+[USER  9939]: computing balance...
+[USER  9939]: current balance is -1.0
+[USER  9939]: generating a new transaction...
+[USER  9939]: not enough money to make a transaction...
+[USER  9939]: failed to create a transaction, increasing number of failure counter.
+[USER  9941]: computing balance...
+[USER  9941]: current balance is  1.0
+[USER  9941]: generating a new transaction on event request...
+[USER  9941]: not enough money to make a transaction...
+[USER  9941]: failed to create a transaction, increasing number of failure counter.
+[USER  9941]: computing balance...
+[USER  9941]: current balance is  1.0
+[USER  9941]: generating a new transaction...
+[USER  9941]: not enough money to make a transaction...
+[USER  9941]: failed to create a transaction, increasing number of failure counter.
+[USER  9942]: computing balance...
+[USER  9942]: current balance is  1.0
+[USER  9942]: generating a new transaction...
+[USER  9942]: not enough money to make a transaction...
+[USER  9942]: failed to create a transaction, increasing number of failure counter.
+[USER  9938]: computing balance...
+[USER  9938]: current balance is  2.0
+[USER  9938]: generating a new transaction...
+[USER  9938]: not enough money to make a transaction...
+[USER  9938]: failed to create a transaction, increasing number of failure counter.
+TER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 5
 [MASTER]: checking if there are node creation requests to be served...
@@ -463,19 +466,20 @@ TER]:  - NODE PROCESS PID 18800: actual budget 0.00
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - USER PROCESS PID 18795: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18794: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1000.00
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 5
 [MASTER]: checking if there are node creation requests to be served...
+[MASTER]: the user process with pid  9940 has terminated
 --------------- END OF CYCLE ---------------
 **** [MASTER]: starting a new lifecycle ****
 [MASTER]: checking if register's partitions are full...
@@ -484,139 +488,16 @@ TER]:  - NODE PROCESS PID 18800: actual budget 0.00
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - USER PROCESS PID 18793: actual budget 886.00
-[MASTER]:  - USER PROCESS PID 18791: actual budget 901.10
-[MASTER]:  - USER PROCESS PID 18795: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18794: actual budget 1050.46
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1144.48
-[MASTER]: Number of active nodes: 5
-[MASTER]: Number of active users: 5
-[MASTER]: checking if there are node creation requests to be served...
---------------- END OF CYCLE ---------------
-**** [MASTER]: starting a new lifecycle ****
-[MASTER]: checking if register's partitions are full...
-[MASTER]: updating budget list before printing...
-[MASTER]: gained access to 0-th partition of register
-[MASTER]: gained access to 1-th partition of register
-[MASTER]: gained access to 2-th partition of register
-[MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - USER PROCESS PID 18793: actual budget 886.00
-[MASTER]:  - USER PROCESS PID 18791: actual budget 901.10
-[MASTER]:  - USER PROCESS PID 18795: actual budget 1000.00
-[MASTER]:  - USER PROCESS PID 18794: actual budget 1050.46
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1144.48
-[MASTER]: Number of active nodes: 5
-[MASTER]: Number of active users: 5
-[MASTER]: checking if there are node creation requests to be served...
-[MASTER]: th[USER 18792]: computing balance...
-[USER 18792]: current balance is 24.5
-[USER 18792]: generating a new transaction...
-[USER 18792]: sending the created transaction to the node...
-[USER 18792]: transaction correctly sent to node.
-[USER 18792]: processing the transaction...
-[NODE 18798]: dispatching transaction to friend...
-[USER 18795]: computing balance...
-[USER 18795]: current balance is -396.2
-[USER 18795]: not enough money to make a transaction...
-[USER 18795]: failed to create a transaction, increasing number of failure counter.
-[MASTER]: no node creation requests to be served.
-[USER 18794]: computing balance...
-[USER 18794]: current balance is -492.5
-[USER 18794]: not enough money to make a transaction...
-[USER 18794]: failed to create a transaction, increasing number of failure counter.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is 302.3
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[USER 18792]: computing balance...
-[USER 18792]: current balance is -821.5
-[USER 18792]: not enough money to make a transaction...
-[USER 18792]: failed to create a transaction, increasing number of failure counter.
-[USER 18795]: computing balance...
-[USER 18795]: current balance is -396.2
-[USER 18795]: not enough money to make a transaction...
-[USER 18795]: failed to create a transaction, increasing number of failure counter.
-[USER 18795]: detaching from register's partitions...
-[USER 18795]: detaching from users list...
-[USER 18795]: detaching from nodes list...
-[USER 18795]: detaching from partitions' number of readers shared variable...
-[USER 18795]: detaching from users list's number of readers shared variable...
-[USER 18795]: detaching from nodes list's number of readers shared variable...
-[USER 18795]: cleanup operations completed. Process is about to end its execution...
-[USER 18795]: starting lifecycle...
-[USER 18795]: checking if there are failed transactions...
-[USER 18795]: checking if there are failed transactions...
-[USER 18795]: checking if there are failed transactions...
-[USER 18795]: checking if there are failed transactions...
-[USER 18795]: checking if there are failed transactions...
-[USER 18795]: checking if there are failed transactions...
-[USER 18795]: checking if there are failed transactions...
-[USER 18795]: checking if there are failed transactions...
-[USER 18795]: checking if there are failed transactions...
-[USER 18795]: checking if there are failed transactions...
-[USER 18795]: checking if there are failed transactions...
-[MASTER]: no node creation requests to be served.
-[USER 18794]: computing balance...
-[USER 18794]: current balance is -492.5
-[USER 18794]: not enough money to make a transaction...
-[USER 18794]: failed to create a transaction, increasing number of failure counter.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is 176.3
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[USER 18792]: computing balance...
-[USER 18792]: current balance is -821.5
-[USER 18792]: not enough money to make a transaction...
-[USER 18792]: failed to create a transaction, increasing number of failure counter.
-[MASTER]: no node creation requests to be served.
-[USER 18794]: computing balance...
-[USER 18794]: current balance is -492.5
-[USER 18794]: not enough money to make a transaction...
-[USER 18794]: failed to create a transaction, increasing number of failure counter.
-[USER 18792]: computing balance...
-[USER 18792]: current balance is -821.5
-[USER 18792]: not enough money to make a transaction...
-[USER 18792]: failed to create a transaction, increasing number of failure counter.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is 125.3
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[NODE 18796]: dispatching transaction to friend...
-e user process with pid 18793 has terminated
---------------- END OF CYCLE ---------------
-**** [MASTER]: starting a new lifecycle ****
-[MASTER]: checking if register's partitions are full...
-[MASTER]: updating budget list before printing...
-[MASTER]: gained access to 0-th partition of register
-[MASTER]: gained access to 1-th partition of register
-[MASTER]: gained access to 2-th partition of register
-[MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18792: actual budget 298.48
-[MASTER]:  - USER PROCESS PID 18794: actual budget 556.46
-[MASTER]:  - USER PROCESS PID 18795: actual budget 601.80
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1162.26
-[MASTER]:  - USER PROCESS PID 18793: actual budget 2316.80
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 4
 [MASTER]: checking if there are node creation requests to be served...
@@ -628,20 +509,131 @@ e user process with pid 18793 has terminated
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18792: actual budget 298.48
-[MASTER]:  - USER PROCESS PID 18794: actual budget 556.46
-[MASTER]:  - USER PROCESS PID 18795: actual budget 601.80
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1162.26
-[MASTER]:  - USER PROCESS PID 18793: actual budget 2316.80
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 4
+[MASTER]: checking if th[MASTER]: no node creation requests to be served.
+[USER  9939]: computing balance...
+[USER  9939]: current balance is -1.0
+[USER  9939]: generating a new transaction...
+[USER  9939]: not enough money to make a transaction...
+[USER  9939]: failed to create a transaction, increasing number of failure counter.
+[USER  9941]: computing balance...
+[USER  9941]: current balance is  1.0
+[USER  9941]: generating a new transaction...
+[USER  9941]: not enough money to make a transaction...
+[USER  9941]: failed to create a transaction, increasing number of failure counter.
+[USER  9942]: computing balance...
+[USER  9942]: current balance is  1.0
+[USER  9942]: generating a new transaction...
+[USER  9942]: not enough money to make a transaction...
+[USER  9942]: failed to create a transaction, increasing number of failure counter.
+[USER  9942]: detaching from register's partitions...
+[USER  9942]: detaching from users list...
+[USER  9942]: detaching from nodes list...
+[USER  9942]: detaching from partitions' number of readers shared variable...
+[USER  9942]: detaching from users list's number of readers shared variable...
+[USER  9942]: detaching from nodes list's number of readers shared variable...
+[USER  9942]: cleanup operations completed. Process is about to end its execution...
+[USER  9942]: starting lifecycle...
+[USER  9942]: checking if there are failed transactions...
+[USER  9942]: checking if there are failed transactions...
+[USER  9942]: checking if there are failed transactions...
+[USER  9942]: checking if there are failed transactions...
+[USER  9942]: checking if there are failed transactions...
+[USER  9942]: checking if there are failed transactions...
+[USER  9942]: checking if there are failed transactions...
+[USER  9942]: checking if there are failed transactions...
+[USER  9942]: checking if there are failed transactions...
+[USER  9942]: checking if there are failed transactions...
+[USER  9938]: computing balance...
+[USER  9938]: current balance is  2.0
+[USER  9938]: generating a new transaction...
+[USER  9938]: not enough money to make a transaction...
+[USER  9938]: failed to create a transaction, increasing number of failure counter.
+[MASTER]: no node creation requests to be served.
+[USER  9941]: computing balance...
+[USER  9941]: current balance is  1.0
+[USER  9941]: generating a new transaction...
+[USER  9941]: not enough money to make a transaction...
+[USER  9941]: failed to create a transaction, increasing number of failure counter.
+[USER  9941]: detaching from register's partitions...
+[USER  9941]: detaching from users list...
+[USER  9941]: detaching from nodes list...
+[USER  9941]: detaching from partitions' number of readers shared variable...
+[USER  9941]: detaching from users list's number of readers shared variable...
+[USER  9941]: detaching from nodes list's number of readers shared variable...
+[USER  9941]: cleanup operations completed. Process is about to end its execution...
+[USER  9941]: starting lifecycle...
+[USER  9941]: checking if there are failed transactions...
+[USER  9941]: checking if there are failed transactions...
+[USER  9941]: checking if there are failed transactions...
+[USER  9941]: checking if there are failed transactions...
+[USER  9941]: checking if there are failed transactions...
+[USER  9941]: checking if there are failed transactions...
+[USER  9941]: checking if there are failed transactions...
+[USER  9941]: checking if there are failed transactions...
+[USER  9941]: checking if there are failed transactions...
+[USER  9941]: checking if there are failed transactions...
+[USER  9941]: checking if there are failed transactions...
+[USER  9938]: computing balance...
+[USER  9938]: current balance is  2.0
+[USER  9938]: generating a new transaction...
+[USER  9938]: not enough money to make a transaction...
+[USER  9938]: failed to create a transaction, increasing number of failure counter.
+[USER  9938]: detaching from register's partitions...
+[USER  9938]: detaching from users list...
+[USER  9938]: detaching from nodes list...
+[USER  9938]: detaching from partitions' number of readers shared variable...
+[USER  9938]: detaching from users list's number of readers shared variable...
+[USER  9938]: detaching from nodes list's number of readers shared variable...
+[USER  9938]: cleanup operations completed. Process is about to end its execution...
+[USER  9938]: starting lifecycle...
+[USER  9938]: checking if there are failed transactions...
+[USER  9938]: checking if there are failed transactions...
+[USER  9938]: checking if there are failed transactions...
+[USER  9938]: checking if there are failed transactions...
+[USER  9938]: checking if there are failed transactions...
+[USER  9938]: checking if there are failed transactions...
+[USER  9938]: checking if there are failed transactions...
+[USER  9938]: checking if there are failed transactions...
+[USER  9938]: checking if there are failed transactions...
+[USER  9938]: checking if there are failed transactions...
+[USER  9938]: checking if there are failed transactions...
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+ere are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 4
 [MASTER]: checking if there are node creation requests to be served...
-[MASTER]: the user process with pid 18795 has terminated
+[MASTER]: the user process with pid  9942 has terminated
 --------------- END OF CYCLE ---------------
 **** [MASTER]: starting a new lifecycle ****
 [MASTER]: checking if register's partitions are full...
@@ -650,19 +642,21 @@ e user process with pid 18793 has terminated
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18792: actual budget 298.48
-[MASTER]:  - USER PROCESS PID 18794: actual budget 556.46
-[MASTER]:  - USER PROCESS PID 18795: actual budget 601.80
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1162.26
-[MASTER]:  - USER PROCESS PID 18793: actual budget 2316.80
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 3
 [MASTER]: checking if there are node creation requests to be served...
+[MASTER]: the user process with pid  9938 has terminated
+[MASTER]: the user process with pid  9941 has terminated
 --------------- END OF CYCLE ---------------
 **** [MASTER]: starting a new lifecycle ****
 [MASTER]: checking if register's partitions are full...
@@ -671,206 +665,16 @@ e user process with pid 18793 has terminated
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18796: actual budget[MASTER]: no node creation requests to be served.
-[USER 18794]: computing balance...
-[USER 18794]: current balance is -1000.5
-[USER 18794]: not enough money to make a transaction...
-[USER 18794]: failed to create a transaction, increasing number of failure counter.
-[USER 18792]: computing balance...
-[USER 18792]: current balance is -623.0
-[USER 18792]: not enough money to make a transaction...
-[USER 18792]: failed to create a transaction, increasing number of failure counter.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is 1018.3
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[MASTER]: no node creation requests to be served.
-[USER 18794]: computing balance...
-[USER 18794]: current balance is -1000.5
-[USER 18794]: not enough money to make a transaction...
-[USER 18794]: failed to create a transaction, increasing number of failure counter.
-[USER 18794]: detaching from register's partitions...
-[USER 18794]: detaching from users list...
-[USER 18794]: detaching from nodes list...
-[USER 18794]: detaching from partitions' number of readers shared variable...
-[USER 18794]: detaching from users list's number of readers shared variable...
-[USER 18794]: detaching from nodes list's number of readers shared variable...
-[USER 18794]: cleanup operations completed. Process is about to end its execution...
-[USER 18794]: starting lifecycle...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18794]: checking if there are failed transactions...
-[USER 18792]: computing balance...
-[USER 18792]: current balance is -623.0
-[USER 18792]: not enough money to make a transaction...
-[USER 18792]: failed to create a transaction, increasing number of failure counter.
-[USER 18792]: detaching from register's partitions...
-[USER 18792]: detaching from users list...
-[USER 18792]: detaching from nodes list...
-[USER 18792]: detaching from partitions' number of readers shared variable...
-[USER 18792]: detaching from users list's number of readers shared variable...
-[USER 18792]: detaching from nodes list's number of readers shared variable...
-[USER 18792]: cleanup operations completed. Process is about to end its execution...
-[USER 18792]: starting lifecycle...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18792]: checking if there are failed transactions...
-[USER 18791]: computing balance...
-[USER 18791]: current balance is 974.3
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[MASTER]: no node creation requests to be served.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is 871.3
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[MASTER]: no node creation requests to be served.
- 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18792: actual budget 497.02
-[MASTER]:  - USER PROCESS PID 18795: actual budget 606.80
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1571.78
-[MASTER]:  - USER PROCESS PID 18791: actual budget 2178.28
-[MASTER]: Number of active nodes: 5
-[MASTER]: Number of active users: 3
-[MASTER]: checking if there are node creation requests to be served...
---------------- END OF CYCLE ---------------
-**** [MASTER]: starting a new lifecycle ****
-[MASTER]: checking if register's partitions are full...
-[MASTER]: updating budget list before printing...
-[MASTER]: gained access to 0-th partition of register
-[MASTER]: gained access to 1-th partition of register
-[MASTER]: gained access to 2-th partition of register
-[MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18792: actual budget 497.02
-[MASTER]:  - USER PROCESS PID 18795: actual budget 606.80
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1571.78
-[MASTER]:  - USER PROCESS PID 18791: actual budget 2178.28
-[MASTER]: Number of active nodes: 5
-[MASTER]: Number of active users: 3
-[MASTER]: checking if there are node creation requests to be served...
---------------- END OF CYCLE ---------------
-**** [MASTER]: starting a new lifecycle ****
-[MASTER]: checking if register's partitions are full...
-[MASTER]: updating budget list before printing...
-[MASTER]: gained access to 0-th partition of register
-[MASTER]: gained access to 1-th partition of register
-[MASTER]: gained access to 2-th partition of register
-[MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18792: actual budget 497.02
-[MASTER]:  - USER PROCESS PID 18795: actual budget 606.80
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1571.78
-[MASTER]:  - USER PROCESS PID 18791: actual budget 2178.28
-[MASTER]: Number of active nodes: 5
-[MASTER]: Number of active users: 3
-[MASTER]: checking if there are node creation requests to be served...
-[MASTER]: the user process with pid 18792 has terminated
-[MASTER]: the user process with pid 18794 has terminated
---------------- END OF CYCLE ---------------
-**** [MASTER]: starting a new lifecycle ****
-[MASTER]: checking if register's partitions are full...
-[MASTER]: updating budget list before printing...
-[MASTER]: gained access to 0-th partition of register
-[MASTER]: gained access to 1-th partition of register
-[MASTER]: gained access to 2-th partition of register
-[MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18792: actual budget 497.02
-[MASTER]:  - USER PROCESS PID 18795: actual budget 606.80
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1571.78
-[MASTER]:  - USER PROCESS PID 18791: actual budget 2178.28
-[MASTER]: Number of active nodes: 5
-[MASTER]: Number of active users: 1
-[MASTER]: checking if there are node creation requests to be served...
---------------- END OF CYCLE ---------------
-**** [MASTER]: starting a new lifecycle ****
-[MASTER]: checking if reg[MASTER]: no node creation requests to be served.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is 30.3
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[MASTER]: no node creation requests to be served.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is 16.3
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[MASTER]: no node creation requests to be served.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is 10.3
-[USER 18791]: generating a new transaction...
-[USER 18791]: sending the created transaction to the node...
-[USER 18791]: transaction correctly sent to node.
-[USER 18791]: processing the transaction...
-[NODE 18800]: dispatching transaction to friend...
-ister's partitions are full...
-[MASTER]: updating budget list before printing...
-[MASTER]: gained access to 0-th partition of register
-[MASTER]: gained access to 1-th partition of register
-[MASTER]: gained access to 2-th partition of register
-[MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18792: actual budget 497.02
-[MASTER]:  - USER PROCESS PID 18795: actual budget 606.80
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1571.78
-[MASTER]:  - USER PROCESS PID 18791: actual budget 2178.28
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 1
 [MASTER]: checking if there are node creation requests to be served...
@@ -882,78 +686,20 @@ ister's partitions are full...
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18792: actual budget 497.02
-[MASTER]:  - USER PROCESS PID 18795: actual budget 606.80
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1571.78
-[MASTER]:  - USER PROCESS PID 18791: actual budget 2178.28
-[MASTER]: Number of active nodes: 5
-[MASTER]: Number of active users: 1
-[MASTER]: checking if there are node creation requests to be served...
---------------- END OF CYCLE ---------------
-**** [MASTER]: starting a new lifecycle ****
-[MASTER]: checking if register's partitions are full...
-[MASTER]: updating budget list before printing...
-[MASTER]: gained access to 0-th partition of register
-[MASTER]: gained access to 1-th partition of register
-[MASTER]: gained access to 2-th partition of register
-[MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18792: actual budget 497.02
-[MASTER]:  - USER PROCESS PID 18795: actual budget 606.80
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1571.78
-[MASTER]:  - USER PROCESS PID 18791: actual budget 2178.28
-[MASTER]: Number of active nodes: 5
-[MASTER]: Number of active users: 1
-[MASTER]: checking if there are node creation requests to be served...
---------------- END OF CYCLE ---------------
-**** [MASTER]: starting a new lifecycle ****
-[MASTER]: checking if register's partitions are full...
-[MASTER]: updating budget list before printing...
-[MASTER]: gained access to 0-th partition of register
-[MASTER]: gained access to 1-th partition of register
-[MASTER]: gained access to 2-th partition of register
-[MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 27.16
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18795: actual budget 697.98
-[MASTER]:  - USER PROCESS PID 18791: [MASTER]: no node creation requests to be served.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is -802.2
-[USER 18791]: not enough money to make a transaction...
-[USER 18791]: failed to create a transaction, increasing number of failure counter.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual [MASTER]: no node creation requests to be served.
 [MASTER]: no node creation requests to be served.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is -802.2
-[USER 18791]: not enough money to make a transaction...
-[USER 18791]: failed to create a transaction, increasing number of failure counter.
 [MASTER]: no node creation requests to be served.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is -802.2
-[USER 18791]: not enough money to make a transaction...
-[USER 18791]: failed to create a transaction, increasing number of failure counter.
 [MASTER]: no node creation requests to be served.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is -802.2
-[USER 18791]: not enough money to make a transaction...
-[USER 18791]: failed to create a transaction, increasing number of failure counter.
-actual budget 1242.76
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1295.20
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1590.78
+budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 1
 [MASTER]: checking if there are node creation requests to be served...
@@ -965,16 +711,16 @@ actual budget 1242.76
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 27.16
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18795: actual budget 697.98
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1242.76
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1295.20
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1590.78
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 1
 [MASTER]: checking if there are node creation requests to be served...
@@ -986,16 +732,16 @@ actual budget 1242.76
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 27.16
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18795: actual budget 697.98
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1242.76
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1295.20
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1590.78
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 1
 [MASTER]: checking if there are node creation requests to be served...
@@ -1007,77 +753,1715 @@ actual budget 1242.76
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 27.16
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18795: actual budget 697.98
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1242.76
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1295.20
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1590.78
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 1
 [MASTER]: checking if there are node creation requests to be served...
 --------------- END OF CYCLE ---------------
 **** [MASTER]: starting a new lifecycle ****
-[MASTER]: checking if register's partitions are full...
-[MASTER]: updating budget list before printing...
-[MASTER]: gained access to 0-th partition of register
-[MASTER]: gained access to 1-th partition of register
-[MASTER]: gained access to 2-th partition of register
-[MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18[MASTER]: no node creation requests to be served.
-[USER 18791]: computing balance...
-[USER 18791]: current balance is -802.2
-[USER 18791]: not enough money to make a transaction...
-[USER 18791]: failed to create a transaction, increasing number of failure counter.
-[USER 18791]: detaching from register's partitions...
-[USER 18791]: detaching from users list...
-[USER 18791]: detaching from nodes list...
-[USER 18791]: detaching from partitions' number of readers shared variable...
-[USER 18791]: detaching from users list's number of readers shared variable...
-[USER 18791]: detaching from nodes list's number of readers shared variable...
-[USER 18791]: cleanup operations completed. Process is about to end its execution...
-[USER 18791]: starting lifecycle...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
-[USER 18791]: checking if there are failed transactions...
+[MASTER]: checki[MASTER]: no node creation requests to be served.
 [MASTER]: no node creation requests to be served.
-[MASTER]: received signal -2
-[MASTER]: pid 18790
+[MASTER]: no node creation requests to be served.
+ng if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS [MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCES[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+S PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE -[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+--------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of regis[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+ter
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if the[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+re are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budg[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+et 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of a[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+ctive nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PI[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+D  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTE[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+R]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MAS[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+TER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER][MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's par[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+titions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual bu[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+dget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual [MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printi[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+ng budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+ requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  -[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: no node creation requests to be served.
+[MASTER]: received signal 2
+[MASTER]: pid  9937
 [MASTER]: trying to terminate simulation...
-797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 27.16
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18795: actual budget 697.98
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1242.76
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1295.20
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1590.78
+ USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 1
 [MASTER]: checking if there are node creation requests to be served...
@@ -1089,111 +2473,46 @@ actual budget 1242.76
 [MASTER]: gained access to 1-th partition of register
 [MASTER]: gained access to 2-th partition of register
 [MASTER]: Printing budget of all the processes.
-[MASTER]:  - NODE PROCESS PID 18797: actual budget 0.00
-[MASTER]:  - NODE PROCESS PID 18799: actual budget 17.96
-[MASTER]:  - NODE PROCESS PID 18800: actual budget 27.16
-[MASTER]:  - NODE PROCESS PID 18796: actual budget 33.46
-[MASTER]:  - NODE PROCESS PID 18798: actual budget 46.24
-[MASTER]:  - USER PROCESS PID 18794: actual budget 48.46
-[MASTER]:  - USER PROCESS PID 18795: actual budget 697.98
-[MASTER]:  - USER PROCESS PID 18791: actual budget 1242.76
-[MASTER]:  - USER PROCESS PID 18792: actual budget 1295.20
-[MASTER]:  - USER PROCESS PID 18793: actual budget 1590.78
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
 [MASTER]: Number of active nodes: 5
 [MASTER]: Number of active users: 1
 [MASTER]: checking if there are node creation requests to be served...
-[MASTER]: the user process with pid 18791 has terminated
+--------------- END OF CYCLE ---------------
+**** [MASTER]: starting a new lifecycle ****
+[MASTER]: checking if register's partitions are full...
+[MASTER]: updating budget list before printing...
+[MASTER]: gained access to 0-th partition of register
+[MASTER]: gained access to 1-th partition of register
+[MASTER]: gained access to 2-th partition of register
+[MASTER]: Printing budget of all the processes.
+[MASTER]:  - NODE PROCESS PID  9947: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9946: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9945: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9944: actual budget 0.00
+[MASTER]:  - NODE PROCESS PID  9943: actual budget 0.00
+[MASTER]:  - USER PROCESS PID  9942: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9941: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9940: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9939: actual budget 1000.00
+[MASTER]:  - USER PROCESS PID  9938: actual budget 1000.00
+[MASTER]: Number of active nodes: 5
+[MASTER]: Number of active users: 1
+[MASTER]: checking if there are node creation requests to be served...
 --------------- END OF CYCLE ---------------
 [MASTER]: end of simulation notified successfully to children.
 [MASTER]: waiting for children to terminate...
-[NODE 18800]: detaching from register's partitions...
-[NODE 18796]: detaching from register's partitions...
-[NODE 18798]: detaching from register's partitions...
-[NODE 18797]: detaching from register's partitions...
-[NODE 18799]: detaching from register's partitions...
-[NODE 18800]: detaching from nodes list...
-[NODE 18796]: detaching from nodes list...
-[NODE 18800]: detaching from nodes list's number of readers shared variable...
-[NODE 18797]: detaching from nodes list...
-[NODE 18800]: cleanup operations completed. Process is about to end its execution...
-[NODE 18796]: detaching from nodes list's number of readers shared variable...
-[NODE 18798]: detaching from nodes list...
-[NODE 18796]: cleanup operations completed. Process is about to end its execution...
-[NODE 18797]: detaching from nodes list's number of readers shared variable...
-[NODE 18800]: hooking up of IPC facilitites...
-[NODE 18800]: initializing IPC facilities...
-[NODE 18800]: reading friends from global queue...
-[NODE 18800]: waiting for simulation to start...
-[NODE 18800]: setting up signal mask...
-[NODE 18800]: performing setup operations...
-[NODE 18800]: starting lifecycle...
-[NODE 18800]: starting transactions' block creation...
-[NODE 18800]: transactions' block creation completed.
-[NODE 18800]: elaborating transactions' block...
-[NODE 18800]: trying to write transactions on register...
-[NODE 18800]: transaction inserted successfully!
-[NODE 18800]: releasing register's partition...
-[NODE 18800]: starting transactions' block creation...
-[NODE 18798]: detaching from nodes list's number of readers shared variable...
-[NODE 18796]: hooking up of IPC facilitites...
-[NODE 18796]: initializing IPC facilities...
-[NODE 18796]: reading friends from global queue...
-[NODE 18796]: waiting for simulation to start...
-[NODE 18796]: setting up signal mask...
-[NODE 18796]: performing setup operations...
-[NODE 18796]: starting lifecycle...
-[NODE 18796]: starting transactions' block creation...
-[NODE 18796]: transactions' block creation completed.
-[NODE 18796]: elaborating transactions' block...
-[NODE 18796]: trying to write transactions on register...
-[NODE 18796]: transaction inserted successfully!
-[NODE 18796]: releasing register's partition...
-[NODE 18796]: starting transactions' block creation...
-[NODE 18797]: cleanup operations completed. Process is about to end its execution...
-[NODE 18798]: cleanup operations completed. Process is about to end its execution...
-[NODE 18797]: hooking up of IPC facilitites...
-[NODE 18797]: initializing IPC facilities...
-[NODE 18797]: reading friends from global queue...
-[NODE 18797]: waiting for simulation to start...
-[NODE 18797]: setting up signal mask...
-[NODE 18797]: performing setup operations...
-[NODE 18797]: starting lifecycle...
-[NODE 18797]: starting transactions' block creation...
-[NODE 18799]: detaching from nodes list...
-[NODE 18798]: hooking up of IPC facilitites...
-[NODE 18798]: initializing IPC facilities...
-[NODE 18798]: reading friends from global queue...
-[NODE 18798]: waiting for simulation to start...
-[NODE 18798]: setting up signal mask...
-[NODE 18798]: performing setup operations...
-[NODE 18798]: starting lifecycle...
-[NODE 18798]: starting transactions' block creation...
-[NODE 18798]: transactions' block creation completed.
-[NODE 18798]: elaborating transactions' block...
-[NODE 18798]: trying to write transactions on register...
-[NODE 18798]: transaction inserted successfully!
-[NODE 18798]: releasing register's partition...
-[NODE 18798]: starting transactions' block creation...
-[NODE 18799]: detaching from nodes list's number of readers shared variable...
-[NODE 18799]: cleanup operations completed. Process is about to end its execution...
-[NODE 18799]: hooking up of IPC facilitites...
-[NODE 18799]: initializing IPC facilities...
-[NODE 18799]: reading friends from global queue...
-[NODE 18799]: waiting for simulation to start...
-[NODE 18799]: setting up signal mask...
-[NODE 18799]: performing setup operations...
-[NODE 18799]: starting lifecycle...
-[NODE 18799]: starting transactions' block creation...
-[NODE 18799]: transactions' block creation completed.
-[NODE 18799]: elaborating transactions' block...
-[NODE 18799]: trying to write transactions on register...
-[NODE 18799]: transaction inserted successfully!
-[NODE 18799]: releasing register's partition...
-[NODE 18799]: starting transactions' block creation...
 [MASTER]: simulation terminated successfully. Printing report...
-Processes terminated before end of simulation: 5
-There are 4 blocks in the register.
-Termination reason: no more users alive.
+Processes terminated before end of simulation: 4
+There are 0 blocks in the register.
 [MASTER]: report printed successfully. Deallocating IPC facilities...
 [MASTER]: deallocating register's paritions...
 [MASTER]: register's partition number 1 removed successfully.
@@ -1207,11 +2526,11 @@ Termination reason: no more users alive.
 [MASTER]: register's partition number 2 shared variable segment removed successfully.
 [MASTER]: register's partition number 3 shared variable segment removed successfully.
 [MASTER]: deallocating transaction pools...
-[MASTER]: transaction pool of node of PID 18796 successfully removed.
-[MASTER]: transaction pool of node of PID 18797 successfully removed.
-[MASTER]: transaction pool of node of PID 18798 successfully removed.
-[MASTER]: transaction pool of node of PID 18799 successfully removed.
-[MASTER]: transaction pool of node of PID 18800 successfully removed.
+[MASTER]: transaction pool of node of PID 9943 successfully removed.
+[MASTER]: transaction pool of node of PID 9944 successfully removed.
+[MASTER]: transaction pool of node of PID 9945 successfully removed.
+[MASTER]: transaction pool of node of PID 9946 successfully removed.
+[MASTER]: transaction pool of node of PID 9947 successfully removed.
 [MASTER]: deallocating global message queue...
 [MASTER]: global message queue successfully removed.
 [MASTER]: deallocating writing semaphores...

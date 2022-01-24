@@ -1026,7 +1026,8 @@ void deallocateIPCFacilities()
     write(STDOUT_FILENO, aus, msg_length);
 
     /* freeing the list of sent transactions */
-    freeTransList(transactionsSent);
+    if (transactionsSent != NULL)
+        freeTransList(transactionsSent);
 
     free(aus);
 }
@@ -1052,6 +1053,19 @@ void transactionGeneration(int sig)
 
     bilancio = computeBalance(transactionsSent); /* calcolo del bilancio */
 
+    if (sig == 0)
+    {
+        msg_length = sprintf(aus, "[USER %5ld]: generating a new transaction...\n", my_pid);
+        write(STDOUT_FILENO, aus, msg_length);
+        aus[0] = 0; /* resetting string's content */
+    }
+    else
+    {
+        msg_length = sprintf(aus, "[USER %5ld]: generating a new transaction on event request...\n", my_pid);
+        write(STDOUT_FILENO, aus, msg_length);
+        aus[0] = 0; /* resetting string's content */
+    }
+
     if (bilancio > 2)
     {
         /* deve essere globale */
@@ -1068,18 +1082,7 @@ void transactionGeneration(int sig)
         }
         else
         {
-            if (sig == 0)
-            {
-                msg_length = sprintf(aus, "[USER %5ld]: generating a new transaction...\n", my_pid);
-                write(STDOUT_FILENO, aus, msg_length);
-                aus[0] = 0;/* resetting string's content */
-            }
-            else
-            {
-                msg_length = sprintf(aus, "[USER %5ld]: generating a new transaction on event request...\n", my_pid);
-                write(STDOUT_FILENO, aus, msg_length);
-                aus[0] = 0;/* resetting string's content */
-            }
+            /*Controllo tipo transazione era qui*/
 
             /* getting nanoseconds to generate a random amount */
             clock_gettime(CLOCK_REALTIME, &randTime);
