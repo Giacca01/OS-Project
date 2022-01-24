@@ -164,7 +164,7 @@ double computeBalance(TransList *);
  * @param tList a pointer to the list of sent transactions to modify
  * @param t a pointer to the transaction to remove from list
  */
-void removeTransaction(TransList *, Transaction *);
+TransList * removeTransaction(TransList *, Transaction *);
 
 /**
  * @brief Function that computes the budget of the user, generates a transaction,
@@ -322,7 +322,7 @@ int main(int argc, char *argv[], char *envp[])
                                         {
                                             printf("[USER %5ld]: failed transaction found. Removing it from list...\n", my_pid);
                                             /* the transaction failed, so we remove it from the list of sent transactions */
-                                            removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
+                                            transactionsSent = removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
                                         }
                                         else
                                         {
@@ -720,7 +720,7 @@ double computeBalance(TransList *transSent)
                                         */
                                         balance -= (ptr->blockList[j].transList[k].amountSend) +
                                                    (ptr->blockList[j].transList[k].reward);
-                                        removeTransaction(transSent, &(ptr->blockList[j].transList[k]));
+                                        transactionsSent = removeTransaction(transSent, &(ptr->blockList[j].transList[k]));
                                     }
                                 }
                             }
@@ -822,8 +822,9 @@ double computeBalance(TransList *transSent)
  * @param tList a pointer to the list of sent transactions to modify
  * @param t a pointer to the transaction to remove from list
  */
-void removeTransaction(TransList *tList, Transaction *t)
+TransList * removeTransaction(TransList *tList, Transaction *t)
 {
+    TransList *headPointer = tList;
     TransList *prev = NULL;
     boolean done = FALSE;
 
@@ -846,19 +847,31 @@ void removeTransaction(TransList *tList, Transaction *t)
             }
             else
             {
-                /*
-                    Caso in cui la lista contiene un solo elemento
-                    (quindi tList->nextTrans è gia NULL)
-                */
-                /*tList->currTrans = NULL;*/
-                /* ora currTrans non è più un puntatore, quindi non può essere impostato a NULL;
-                   soluzione: impostiamo la testa della lista a NULL */
+                if(tList->nextTrans == NULL) 
+                {
+                    /*
+                        Caso in cui la lista contiene un solo elemento
+                        (quindi tList->nextTrans è gia NULL)
+                    */
+                    /*tList->currTrans = NULL;*/
+                    /* ora currTrans non è più un puntatore, quindi non può essere impostato a NULL;
+                    soluzione: impostiamo la testa della lista a NULL */
 
-                /*
-                    Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
-                */
-                free(tList);
-                tList = NULL;
+                    /*
+                        Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
+                    */
+                    free(tList);
+                    headPointer = NULL;
+                }
+                else
+                {
+                    /*
+                        Caso in cui la transazione da rimuovere è la cima della lista,
+                        dobbiamo restituire il nuovo puntatore
+                    */
+                    headPointer = tList->nextTrans;
+                    free(tList);
+                }
             }
 
             done = TRUE;
@@ -873,6 +886,8 @@ void removeTransaction(TransList *tList, Transaction *t)
             /*free(prev);*/
         }
     }
+
+    return headPointer;
 }
 
 /**
