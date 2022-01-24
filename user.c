@@ -177,7 +177,7 @@ void transactionGeneration(int);
 /**
  * @brief Function that ends the execution of the user; this can happen in three different ways,
  * rappresented by the values that the parameter might assume.
- * @param sig the parameters value are: 0 -> only end of execution; 1 -> end of execution and deallocation (called from error);
+ * @param sig the parameters value are: 0 -> only end of execution; -1 -> end of execution and deallocation (called from error);
  * SIGUSR1 -> end of execution and deallocation (called by signal from master)
  */
 void endOfExecution(int);
@@ -221,6 +221,14 @@ pid_t extractReceiver(pid_t);
  * @return Returns the pid of the selected user in the usersList shared array, -1 if the function generates an error.
  */
 pid_t extractNode();
+
+/**
+ * @brief Function that catches any segmentation fault error during execution and 
+ * avoids brutal termination.
+ * 
+ * @param sig signal that fired the handler
+ */
+void segmentationFaultHandler(int);
 #pragma endregion
 /*** END FUNCTIONS PROTOTYPES DECLARATION ***/
 
@@ -240,6 +248,7 @@ int main(int argc, char *argv[], char *envp[])
     /*TransList *transactionsSent = NULL;*/ /* spostato globalmente */
     struct sigaction actEndOfExec;
     struct sigaction actGenTrans;
+    struct sigaction actSegFaultHandler;
     sigset_t mask;
     MsgGlobalQueue msgCheckFailedTrans;
     char * printMsg;
@@ -259,7 +268,7 @@ int main(int argc, char *argv[], char *envp[])
                     sprintf(printMsg, "[USER %5ld]: failed to initialize signal mask. Error", my_pid);
                     unsafeErrorPrint(printMsg, __LINE__);
                     printMsg[0] = 0; /* resetting string's content */
-                    endOfExecution(1);
+                    endOfExecution(-1);
                 }
                 else
                 {
@@ -270,7 +279,7 @@ int main(int argc, char *argv[], char *envp[])
                         sprintf(printMsg, "[USER %5ld]: failed to set up end of simulation handler. Error", my_pid);
                         unsafeErrorPrint(printMsg, __LINE__);
                         printMsg[0] = 0;/* resetting string's content */
-                        endOfExecution(1);
+                        endOfExecution(-1);
                     }
                     else
                     {
@@ -281,53 +290,65 @@ int main(int argc, char *argv[], char *envp[])
                             sprintf(printMsg, "[USER %5ld]: failed to set up transaction generation handler. Error", my_pid);
                             unsafeErrorPrint(printMsg, __LINE__);
                             printMsg[0] = 0;/* resetting string's content */
-                            endOfExecution(1);
+                            endOfExecution(-1);
                         }
                         else
                         {
-                            printf("[USER %5ld]: starting lifecycle...\n", my_pid);
-
-                            /*
-                                User's lifecycle
-                            */
-                            while (TRUE)
+                            actSegFaultHandler.sa_handler = segmentationFaultHandler;
+                            actSegFaultHandler.sa_mask = mask;
+                            if (sigaction(SIGSEGV, &actSegFaultHandler, NULL) == -1)
                             {
-                                printf("[USER %5ld]: checking if there are failed transactions...\n", my_pid);
-                                /* check on global queue if a sent transaction failed */
-                                if (msgrcv(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
-                                {
+                                sprintf(printMsg, "[USER %5ld]: failed to set up segmentation fault handler. Error", my_pid);
+                                unsafeErrorPrint(printMsg, __LINE__);
+                                printMsg[0] = 0;/* resetting string's content */
+                                endOfExecution(-1);
+                            }
+                            else
+                            {
+                                printf("[USER %5ld]: starting lifecycle...\n", my_pid);
 
-                                    /* got a message for this user from global queue */
-                                    if (msgCheckFailedTrans.msgContent == FAILEDTRANS)
+                                /*
+                                    User's lifecycle
+                                */
+                                while (TRUE)
+                                {
+                                    printf("[USER %5ld]: checking if there are failed transactions...\n", my_pid);
+                                    /* check on global queue if a sent transaction failed */
+                                    if (msgrcv(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
                                     {
-                                        printf("[USER %5ld]: failed transaction found. Removing it from list...\n", my_pid);
-                                        /* the transaction failed, so we remove it from the list of sent transactions */
-                                        removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
-                                    }
-                                    else
-                                    {
-                                        printf("[USER %5ld]: no failed transactions found.\n", my_pid);
-                                        /* the message wasn't the one we were looking for, reinserting it on the global queue */
-                                        if (msgsnd(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), 0) == -1)
+
+                                        /* got a message for this user from global queue */
+                                        if (msgCheckFailedTrans.msgContent == FAILEDTRANS)
                                         {
-                                            sprintf(printMsg, "[USER %5ld]: failed to reinsert the message read from global queue while checking for failed transactions. Error", my_pid);
-                                            unsafeErrorPrint(printMsg, __LINE__);
-                                            printMsg[0] = 0;/* resetting string's content */
+                                            printf("[USER %5ld]: failed transaction found. Removing it from list...\n", my_pid);
+                                            /* the transaction failed, so we remove it from the list of sent transactions */
+                                            removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
+                                        }
+                                        else
+                                        {
+                                            printf("[USER %5ld]: no failed transactions found.\n", my_pid);
+                                            /* the message wasn't the one we were looking for, reinserting it on the global queue */
+                                            if (msgsnd(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), 0) == -1)
+                                            {
+                                                sprintf(printMsg, "[USER %5ld]: failed to reinsert the message read from global queue while checking for failed transactions. Error", my_pid);
+                                                unsafeErrorPrint(printMsg, __LINE__);
+                                                printMsg[0] = 0;/* resetting string's content */
+                                            }
                                         }
                                     }
-                                }
-                                else if (errno != ENOMSG)
-                                {
-                                    sprintf(printMsg, "[USER %5ld]: failed to check for failed transaction messages on global queue. Error", my_pid);
-                                    unsafeErrorPrint(printMsg, __LINE__);
-                                    printMsg[0] = 0;/* resetting string's content */
-                                }
-                                /* else errno == ENOMSG, so no transaction has failed */
+                                    else if (errno != ENOMSG)
+                                    {
+                                        sprintf(printMsg, "[USER %5ld]: failed to check for failed transaction messages on global queue. Error", my_pid);
+                                        unsafeErrorPrint(printMsg, __LINE__);
+                                        printMsg[0] = 0;/* resetting string's content */
+                                    }
+                                    /* else errno == ENOMSG, so no transaction has failed */
 
-                                /* generate a transaction */
-                                transactionGeneration(0);
+                                    /* generate a transaction */
+                                    transactionGeneration(0);
 
-                                sleep(1);
+                                    sleep(1);
+                                }
                             }
                         }
                     }
@@ -335,7 +356,7 @@ int main(int argc, char *argv[], char *envp[])
             }
             else
             {
-                endOfExecution(1);
+                endOfExecution(-1);
             }
         }
         else
@@ -857,7 +878,7 @@ void removeTransaction(TransList *tList, Transaction *t)
 /**
  * @brief Function that ends the execution of the user; this can happen in three different ways,
  * rappresented by the values that the parameter might assume.
- * @param sig the parameters value are: 0 -> only end of execution; 1 -> end of execution and deallocation (called from error);
+ * @param sig the parameters value are: 0 -> only end of execution; -1 -> end of execution and deallocation (called from error);
  * SIGUSR1 -> end of execution and deallocation (called by signal from master)
  */
 void endOfExecution(int sig)
@@ -1263,7 +1284,7 @@ void userFailure()
     if (num_failure == SO_RETRY)
     {
         /* non sono riuscito a mandare la transazione per SO_RETRY volte, devo terminare */
-        endOfExecution(1);
+        endOfExecution(-1);
     }
 }
 
@@ -1540,6 +1561,26 @@ pid_t extractNode()
     free(aus);
 
     return (pid_t)-1;
+}
+
+/**
+ * @brief Function that catches any segmentation fault error during execution and 
+ * avoids brutal termination.
+ * 
+ * @param sig signal that fired the handler
+ */
+void segmentationFaultHandler(int sig)
+{
+    char * aus = NULL;
+    int msg_length;
+    
+    aus = (char*)calloc(200, sizeof(char));
+
+    msg_length = sprintf(aus, "[USER %ld]: a segmentation fault error happened. Terminating...\n", my_pid);
+    write(STDOUT_FILENO, aus, msg_length);
+    free(aus);
+
+    endOfExecution(-1);
 }
 #pragma endregion
 /*** END FUNCTIONS IMPLEMENTATIONS ***/
