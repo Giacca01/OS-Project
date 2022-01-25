@@ -1029,7 +1029,8 @@ void deallocateIPCFacilities()
     if (transactionsSent != NULL)
         freeTransList(transactionsSent);
 
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 }
 
 /**

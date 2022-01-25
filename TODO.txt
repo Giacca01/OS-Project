@@ -62,4 +62,10 @@ boolean readConfigParameters()
 3) alrm vs settimer
 4) Handler per graceful termintation con SIGNT E SIGTERM
 5) SIstemare puntatori in modo da evitare segmentation fault: ok
-6) Capire perchè il balance degli users sia negativo
+6) Capire perchè il balance degli users sia negativo: Ok
+7) PERSISTENZA HANDLER
+8) Regolare dimensione coda globale in base a numero nodi ed utenti
+9) Risolvere bug seconda configurazione 
+10) Refactoring
+11) Regolare dimensione tp e controllare che i nodi bastardi chiedano di creare un amico
+12) Completare stampa in caso di terminazione: Quasi

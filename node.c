@@ -964,12 +964,15 @@ void reinsertTransactions(Block failedTrs)
     int msg_length;
     char *aus = NULL;
     MsgGlobalQueue temp;
+    MsgTP msg;
 
     aus = (char *)calloc(200, sizeof(char));
     while (failedTrs.bIndex == 0)
     {
         failedTrs.bIndex--;
-        if (msgsnd(tpId, &(failedTrs.transList[failedTrs.bIndex]), sizeof(Transaction), 0) == -1)
+        msg.mtype = my_pid;
+        msg.transaction = failedTrs.transList[failedTrs.bIndex];
+        if (msgsnd(tpId, &msg, sizeof(MsgTP) - sizeof(long), 0) == -1)
         {
             sprintf(aus, "[NODE %5ld]: failed to reinsert transaction number %d.", my_pid, failedTrs.bIndex);
             safeErrorPrint(aus, __LINE__);
@@ -1019,7 +1022,7 @@ void dispatchToFriend()
     write(STDOUT_FILENO, printMsg, msg_length);
     printMsg[0] = 0; /* resetting string's content */
 
-    if (msgrcv(tpId, &aus, sizeof(Transaction), my_pid, IPC_NOWAIT) == -1)
+    if (msgrcv(tpId, &aus, sizeof(MsgTP) - sizeof(long), my_pid, IPC_NOWAIT) == -1)
     {
         if (errno != ENOMSG && errno != EINTR)
         {
@@ -1080,7 +1083,7 @@ void dispatchToFriend()
                 else
                 {
                     aus.mtype = *(friends_node + i);
-                    if (msgsnd(friendTp, &aus, sizeof(Transaction), 0600) == -1)
+                    if (msgsnd(friendTp, &aus, sizeof(MsgTP) - sizeof(long), 0600) == -1)
                     {
                         sprintf(printMsg, "[NODE %5ld]: failed to dispatch transaction to friend. Error", my_pid);
                         safeErrorPrint(printMsg, __LINE__);
@@ -1185,7 +1188,7 @@ void sendTransaction()
             if (trans.hops == 0)
             {
                 /* Invio al master */
-                if (sendOnGlobalQueue(&trans, getppid(), NEWNODE, 0))
+                if (!sendOnGlobalQueue(&trans, getppid(), NEWNODE, 0))
                 {
                     sprintf(printMsg, "[NODE %5ld]: failed to dispatch transaction to master. Error", my_pid);
                     safeErrorPrint(printMsg, __LINE__);
@@ -1202,6 +1205,8 @@ void sendTransaction()
                 }
                 else
                 {
+                    printf("Node: new node transazione: %d\n", trans.msgContent);
+                    printf("Node: new node pid target: %ld\n", trans.mtype);
                     msg_length = sprintf(printMsg, "[NODE %5ld]: requested creation of a new node to serve a transaction...\n", my_pid);
                     write(STDOUT_FILENO, printMsg, msg_length);
                     printMsg[0] = 0; /* resetting string's content */
@@ -1297,7 +1302,7 @@ void sendTransaction()
                             /* Create a copy of the message read */
                             aus.transaction = trans.transaction;
                             aus.mtype = *(friends_node + i);
-                            if (msgsnd(friendTp, &aus, sizeof(Transaction), IPC_NOWAIT) == -1)
+                            if (msgsnd(friendTp, &aus, sizeof(MsgTP) - sizeof(long), IPC_NOWAIT) == -1)
                             {
                                 /*
                                     Reinserirla nella coda globale con un'operazione di rollback sarebbe inutile:

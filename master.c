@@ -188,6 +188,9 @@ void insert_ordered(budgetlist);
  * It returns -1 in case an error happens, otherwise it returns 0 on success.
  */
 int update_budget(pid_t, double);
+
+
+void printRemainedTransactions();
 /**************************************************/
 
 /*****  Momentary functions created for testing purposes  *****/
@@ -334,6 +337,8 @@ int main(int argc, char *argv[])
     /* declaring of variables for budget update */
     Block block;
     Transaction trans;
+
+    struct msqid_ds tpStruct;
 
     /* variables that keeps track of user terminated */
     /*int noUserTerminated = 0;*/
@@ -615,6 +620,17 @@ int main(int argc, char *argv[])
                                     {
                                         unsafeErrorPrint("[MASTER]: failed to initialize process' transaction pool. Error", __LINE__);
                                         endOfSimulation(-1);
+                                    }
+
+                                    if (msgctl(tpList[i].msgQId, IPC_STAT, &tpStruct) == -1){
+                                        unsafeErrorPrint("[MASTER]: failed to retrive proces transaction pool's size. Error", __LINE__);
+                                        endOfSimulation(-1);
+                                    } else {
+                                        tpStruct.msg_qbytes = sizeof(Transaction) * SO_TP_SIZE;
+                                        if (msgctl(tpList[i].msgQId, IPC_SET, &tpStruct) == -1){
+                                            unsafeErrorPrint("[MASTER]: failed to set proces transaction pool's size. Error", __LINE__);
+                                            endOfSimulation(-1);
+                                        }
                                     }
 
                                     tplLength++; /* updating tpList length */
@@ -1419,7 +1435,7 @@ boolean assignEnvironmentVariables()
 /************************************************************************/
 boolean readConfigParameters()
 {
-    char *filename = "params_3.txt";
+    char *filename = "params_2.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1514,6 +1530,8 @@ boolean initializeIPCFacilities()
     union semun arg;
     unsigned short aux[REG_PARTITION_COUNT] = {1, 1, 1};
     int res = -1;
+    struct msqid_ds globalQueueStruct;
+
     /* Initialization of semaphores*/
     key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during fair start semaphore creation. Error");
@@ -1581,8 +1599,25 @@ boolean initializeIPCFacilities()
     /* Creation of the global queue*/
     key = ftok(MSGFILEPATH, GLOBALMSGSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during global queue creation. Error");
-    globalQueueId = msgget(key, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
+    globalQueueId = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     MSG_TEST_ERROR(globalQueueId, "[MASTER]: msgget failed during global queue creation. Error");
+
+    /*
+    printf("[MASTER]: setting global queue size...\n");
+    if (msgctl(globalQueueId, IPC_STAT, &globalQueueStruct) == -1)
+    {
+        unsafeErrorPrint("[MASTER]: failed to retrive global queue size. Error", __LINE__);
+        endOfSimulation(-1);
+    }
+    else
+    {
+        globalQueueStruct.msg_qbytes = 2 * sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM);
+        if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
+        {
+            unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
+            endOfSimulation(-1);
+        }
+    }*/
 
     /* Creation of register's partitions */
     key = ftok(SHMFILEPATH, REGPARTONESEED);
@@ -1951,6 +1986,7 @@ void endOfSimulation(int sig)
 
                 /* Users and nodes budgets*/
                 /*printBudget();*/
+                printRemainedTransactions();
 
                 /*Per la stampa degli errori non si può usare perror, perchè non è elencata* tra la funzioni signal
                 in teoria non si può usare nemmno sprintf*/
@@ -2469,17 +2505,20 @@ void checkNodeCreationRequests()
 
     if (msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1)
     {
+        printf("Master: new node kekw\n");
         /*
             Su questa coda l'unico tipo di messaggio per il master è NEWNODE
         */
         /*printf("MSGCONT: %d\n", aus.terminatedPid);*/
+        printf("Master: new node tipo %d\n", aus.msgContent);
         if (aus.msgContent == NEWNODE)
         {
-
+            
             if (noAllTimesNodes + 1 < maxNumNode)
             {
                 noEffectiveNodes++;
                 noAllTimesNodes++;
+                
                 procPid = fork();
                 if (procPid == 0)
                 {
@@ -2727,5 +2766,36 @@ void checkNodeCreationRequests()
             write(STDOUT_FILENO, 
                 "[MASTER]: no node creation requests to be served.\n", 
                 strlen("[MASTER]: no node creation requests to be served.\n"));
+    }
+}
+
+void printRemainedTransactions(){
+    int i = 0;
+    int tpId = -1;
+    MsgTP aus;
+    boolean error = FALSE;
+    int cnt = 0;
+
+    for (i = 0; i < tplLength && !error; i++){
+        printf("[MASTER]: printing remaining transactions of Node of pid %ld...\n", (long)tpList[i].procId);
+        tpId = tpList[i].msgQId;
+        cnt = 0;
+        while (msgrcv(tpId, &aus, sizeof(aus)-sizeof(long), 0, IPC_NOWAIT) != -1)
+        {
+            printf("[MASTER]:  - Timestamp: %ld\n [MASTER]:  - Sender: %ld\n [MASTER]:  - Receiver: %ld\n [MASTER]:  -  Amount sent: %f\n [MASTER]:  - Reward: %f\n",
+                   aus.transaction.timestamp.tv_nsec,
+                   aus.transaction.sender,
+                   aus.transaction.receiver,
+                   aus.transaction.amountSend,
+                   aus.transaction.reward);
+            cnt++;
+        }
+        
+        if (errno != ENOMSG){
+            unsafeErrorPrint("[MASTER]: an error occurred while printing remaining transactions. Error: ", __LINE__);
+            error = TRUE;
+        } else if (cnt == 0)
+            printf("[MASTER]: no transactions left.\n");
+        
     }
 }
