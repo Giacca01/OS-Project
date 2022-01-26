@@ -172,9 +172,9 @@ void endOfExecution(int);
 void deallocateIPCFacilities();
 
 /**
- * @brief Function that catches any segmentation fault error during execution and 
+ * @brief Function that catches any segmentation fault error during execution and
  * avoids brutal termination.
- * 
+ *
  * @param sig signal that fired the handler
  */
 void segmentationFaultHandler(int);
@@ -220,7 +220,6 @@ int main(int argc, char *argv[], char *envp[])
     /* initializing print string message */
     printMsg = (char *)calloc(200, sizeof(char));
     my_pid = (long)getpid();
-    
 
     /* Assigns the values ​​of the environment variables to the global variables */
     if (assignEnvironmentVariables())
@@ -274,11 +273,12 @@ int main(int argc, char *argv[], char *envp[])
                         }
                     }
                     /* If an error occurred (error == TRUE) while initializing friends' list, the node terminates. */
-                    if (!error){
+                    if (!error)
+                    {
                         /*
-                        * argv[1] is the type of node, if NODE it has to wait for simulation to start,
-                        * so we set the sops varriabile to access to the fairStartSem semaphore
-                        */
+                         * argv[1] is the type of node, if NODE it has to wait for simulation to start,
+                         * so we set the sops varriabile to access to the fairStartSem semaphore
+                         */
                         if (strcmp(argv[1], "NORMAL") == 0)
                         {
                             /* Wait all processes are ready to start the simulation */
@@ -423,10 +423,10 @@ int main(int argc, char *argv[], char *envp[])
                                                                 }
 
                                                                 /*
-                                                                    * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
-                                                                    * and waits for a message on queue; it will exit this cycle when it reads the requested
-                                                                    * number of transactions (put in extractedBlock.transList)
-                                                                    */
+                                                                 * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
+                                                                 * and waits for a message on queue; it will exit this cycle when it reads the requested
+                                                                 * number of transactions (put in extractedBlock.transList)
+                                                                 */
                                                             }
 
                                                             /* putting reward transaction in extracted block */
@@ -447,9 +447,9 @@ int main(int argc, char *argv[], char *envp[])
                                                             simTime.tv_nsec = (simTime.tv_nsec % (SO_MAX_TRANS_PROC_NSEC + 1 - SO_MIN_TRANS_PROC_NSEC)) + SO_MIN_TRANS_PROC_NSEC;
 
                                                             /*
-                                                                * Adjusting wait time, if number of nanoseconds is greater or equal to 1 second (10^9 nanoseconds)
-                                                                * we increase the number of seconds.
-                                                                */
+                                                             * Adjusting wait time, if number of nanoseconds is greater or equal to 1 second (10^9 nanoseconds)
+                                                             * we increase the number of seconds.
+                                                             */
                                                             while (simTime.tv_nsec >= 1000000000)
                                                             {
                                                                 simTime.tv_sec++;
@@ -689,11 +689,11 @@ int main(int argc, char *argv[], char *envp[])
                                                             */
 
                                                     /*
-                                                        * now the node process must wait for end of simulation signal; we do it
-                                                        * with pause, but a signal could wake it up. We only want the end of simulation
-                                                        * signal to wake up the process, so we must ignore the SIGALRM signal that
-                                                        * might arrive for the periodic sending of a transaction to a friend node.
-                                                        */
+                                                     * now the node process must wait for end of simulation signal; we do it
+                                                     * with pause, but a signal could wake it up. We only want the end of simulation
+                                                     * signal to wake up the process, so we must ignore the SIGALRM signal that
+                                                     * might arrive for the periodic sending of a transaction to a friend node.
+                                                     */
                                                     if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
                                                     {
                                                         sprintf(printMsg, "[NODE %5ld]: failed to set ignoring of SIGALRM signal before pause of process. Error", my_pid);
@@ -1171,14 +1171,13 @@ safeErrorPrint(printMsg, __LINE__);
 void sendTransaction()
 {
     MsgGlobalQueue trans;
+    MsgGlobalQueue msg_to_master;
     int i = 0, msg_length;
     key_t key = -1;
     int friendTp = -1;
     MsgTP aus;
     boolean found = FALSE;
     char *printMsg;
-
-    printMsg = (char *)calloc(200, sizeof(char));
 
     /*
         Fare ciclo per tutte le transazioni ???
@@ -1187,6 +1186,8 @@ void sendTransaction()
         in un'invocazione e molto poco nella altre.
         Così invece le system call vengono meglio distribuite
     */
+    printMsg = (char *)calloc(200, sizeof(char));
+
     if (msgrcv(globalQueueId, &trans, sizeof(MsgGlobalQueue) - sizeof(long), my_pid, IPC_NOWAIT) == -1)
     {
         if (errno != ENOMSG && errno != EINTR)
@@ -1207,7 +1208,6 @@ void sendTransaction()
             */
             if (trans.hops == 0)
             {
-                /* Invio al master */
                 if (!sendOnGlobalQueue(&trans, getppid(), NEWNODE, 0))
                 {
                     sprintf(printMsg, "[NODE %5ld]: failed to dispatch transaction to master. Error", my_pid);
@@ -1425,7 +1425,9 @@ boolean sendOnGlobalQueue(MsgGlobalQueue *trans, pid_t pid, GlobalMsgContent cnt
     trans->mtype = pid;
     trans->msgContent = cnt;
     trans->hops += hp;
-    if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+    if (trans->msgContent == NEWNODE)
+        printf("AL PID %ld, PID DEL MASTER: %ld\n", (long)pid, (long)trans->mtype);
+    if (msgsnd(globalQueueId, trans, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
     {
         ret = FALSE;
     }
@@ -1550,12 +1552,12 @@ int extractFriendNode()
 void endOfExecution(int sig)
 {
     MsgGlobalQueue msgOnGQueue;
-    char * aus;
+    char *aus;
 
     aus = (char *)calloc(200, sizeof(char));
 
     deallocateIPCFacilities();
-    
+
     /* notify master that user process terminated before expected */
     msgOnGQueue.mtype = getppid();
     msgOnGQueue.msgContent = TERMINATEDNODE;
@@ -1565,7 +1567,7 @@ void endOfExecution(int sig)
         sprintf(aus, "[NODE %5ld]: failed to inform master of my termination. Error", my_pid);
         unsafeErrorPrint(aus, __LINE__);
     }
-    
+
     free(aus);
 
     exit(EXIT_SUCCESS);
@@ -1655,17 +1657,17 @@ void deallocateIPCFacilities()
 }
 
 /**
- * @brief Function that catches any segmentation fault error during execution and 
+ * @brief Function that catches any segmentation fault error during execution and
  * avoids brutal termination.
- * 
+ *
  * @param sig signal that fired the handler
  */
 void segmentationFaultHandler(int sig)
 {
-    char * aus = NULL;
+    char *aus = NULL;
     int msg_length;
-    
-    aus = (char*)calloc(200, sizeof(char));
+
+    aus = (char *)calloc(200, sizeof(char));
 
     msg_length = sprintf(aus, "[NODE %ld]: a segmentation fault error happened. Terminating...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);

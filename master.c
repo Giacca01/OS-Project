@@ -168,8 +168,8 @@ void printBudget();
 boolean deallocateFacilities(int *);
 void checkNodeCreationRequests();
 
-/* 
- * Function to frees the space dedicated to the budget list p passed as argument 
+/*
+ * Function to frees the space dedicated to the budget list p passed as argument
  */
 void budgetlist_free(budgetlist);
 
@@ -188,7 +188,6 @@ void insert_ordered(budgetlist);
  * It returns -1 in case an error happens, otherwise it returns 0 on success.
  */
 int update_budget(pid_t, double);
-
 
 void printRemainedTransactions();
 /**************************************************/
@@ -278,9 +277,9 @@ void estrai(int k)
 void tmpHandler(int sig);
 
 /**
- * @brief Function that catches any segmentation fault error during execution and 
+ * @brief Function that catches any segmentation fault error during execution and
  * avoids brutal termination.
- * 
+ *
  * @param sig signal that fired the handler
  */
 void segmentationFaultHandler(int);
@@ -325,6 +324,7 @@ int main(int argc, char *argv[])
 
     /* declaring message structures used with global queue */
     MsgGlobalQueue msg_from_node, msg_from_user, msg_to_node;
+    MsgGlobalQueue msg_new_node;
 
     /* declaring counter for transactions read from global queue */
     /*int c_msg_read;*/
@@ -638,6 +638,21 @@ int main(int argc, char *argv[])
                                             endOfSimulation(-1);
                                         }
 
+                                        if (msgctl(tpList[i].msgQId, IPC_STAT, &tpStruct) == -1)
+                                        {
+                                            unsafeErrorPrint("[MASTER]: failed to retrive proces transaction pool's size. Error", __LINE__);
+                                            endOfSimulation(-1);
+                                        }
+                                        else
+                                        {
+                                            tpStruct.msg_qbytes = sizeof(Transaction) * SO_TP_SIZE;
+                                            if (msgctl(tpList[i].msgQId, IPC_SET, &tpStruct) == -1)
+                                            {
+                                                unsafeErrorPrint("[MASTER]: failed to set proces transaction pool's size. Error", __LINE__);
+                                                endOfSimulation(-1);
+                                            }
+                                        }
+
                                         tplLength++; /* updating tpList length */
 
                                         /* Save users processes pid and state into usersList*/
@@ -671,19 +686,6 @@ int main(int argc, char *argv[])
                                 /********************************************/
                                 /********************************************/
 
-                                    if (msgctl(tpList[i].msgQId, IPC_STAT, &tpStruct) == -1){
-                                        unsafeErrorPrint("[MASTER]: failed to retrive proces transaction pool's size. Error", __LINE__);
-                                        endOfSimulation(-1);
-                                    } else {
-                                        tpStruct.msg_qbytes = sizeof(Transaction) * SO_TP_SIZE;
-                                        if (msgctl(tpList[i].msgQId, IPC_SET, &tpStruct) == -1){
-                                            unsafeErrorPrint("[MASTER]: failed to set proces transaction pool's size. Error", __LINE__);
-                                            endOfSimulation(-1);
-                                        }
-                                    }
-
-                                    tplLength++; /* updating tpList length */
-
                                 /* we enter the critical section for the noUserSegReadersPtr variabile */
                                 sops[0].sem_op = -1;
                                 sops[0].sem_num = 0;
@@ -706,12 +708,12 @@ int main(int argc, char *argv[])
                                         endOfSimulation(-1);
                                     }
                                     /*
-                                    * se lo scrittore sta scrivendo, allora il primo lettore che entrerà in questo
-                                    * ramo si addormenterà su questo semaforo.
-                                    * se lo scrittore non sta scrivendo, allora il primo lettore decrementerà di 1 il
-                                    * valore semaforico, in modo tale se lo scrittore vuole scrivere, si addormenterà
-                                    * sul semaforo
-                                    */
+                                     * se lo scrittore sta scrivendo, allora il primo lettore che entrerà in questo
+                                     * ramo si addormenterà su questo semaforo.
+                                     * se lo scrittore non sta scrivendo, allora il primo lettore decrementerà di 1 il
+                                     * valore semaforico, in modo tale se lo scrittore vuole scrivere, si addormenterà
+                                     * sul semaforo
+                                     */
                                 }
                                 /* we exit the critical section for the noUserSegReadersPtr variabile */
                                 sops[0].sem_num = 0;
@@ -757,9 +759,9 @@ int main(int argc, char *argv[])
                                         endOfSimulation(-1);
                                     }
                                     /*
-                                    * se sono l'ultimo lettore e smetto di leggere, allora devo riportare a 0
-                                    * il valore semaforico in modo che se lo scrittore vuole scrivere possa farlo.
-                                    */
+                                     * se sono l'ultimo lettore e smetto di leggere, allora devo riportare a 0
+                                     * il valore semaforico in modo che se lo scrittore vuole scrivere possa farlo.
+                                     */
                                 }
 
                                 /* we exit the critical section for the noUserSegReadersPtr variabile */
@@ -1012,14 +1014,14 @@ int main(int argc, char *argv[])
                                                         {
                                                             ct_updates++;
                                                             /*
-                                                            * se il sender è -1, rappresenta transazione di pagamento reward del nodo,
-                                                            * quindi non bisogna aggiornare il budget del sender, ma solo del receiver.
-                                                            */
+                                                             * se il sender è -1, rappresenta transazione di pagamento reward del nodo,
+                                                             * quindi non bisogna aggiornare il budget del sender, ma solo del receiver.
+                                                             */
                                                         }
 
                                                         /* update budget of sender of transaction, the amount is negative */
                                                         /* error checking not needed, already done in function */
-                                                        else if (update_budget(trans.sender, -(trans.amountSend+trans.reward)) == 0)
+                                                        else if (update_budget(trans.sender, -(trans.amountSend + trans.reward)) == 0)
                                                             ct_updates++;
 
                                                         /* update budget of receiver of transaction, the amount is positive */
@@ -1027,7 +1029,7 @@ int main(int argc, char *argv[])
                                                         if (update_budget(trans.receiver, trans.amountSend) == 0)
                                                             ct_updates++;
 
-    #if 0
+#if 0
                                                         for(el_list = bud_list; el_list != NULL; el_list = el_list->next)
                                                         {
                                                             /* guardo sender --> devo decrementare di amountSend il suo budget */
@@ -1054,7 +1056,7 @@ int main(int argc, char *argv[])
                                                             if(ct_updates == 2)
                                                                 break;
                                                         }
-    #endif
+#endif
                                                         /* if we have done two updates, we can switch to next block, otherwise we stay on this */
                                                         if (ct_updates == 2)
                                                         {
@@ -1125,9 +1127,9 @@ int main(int argc, char *argv[])
                                     if (noAllTimesNodes + noAllTimesUsers <= MAX_PRINT_PROCESSES)
                                     {
                                         /*
-                                        * the number of effective processes is lower or equal than the maximum we established,
-                                        * so we print budget of all processes
-                                        */
+                                         * the number of effective processes is lower or equal than the maximum we established,
+                                         * so we print budget of all processes
+                                         */
                                         printf("[MASTER]: Printing budget of all the processes.\n");
 
                                         for (el_list = bud_list_head; el_list != NULL; el_list = el_list->next)
@@ -1141,9 +1143,9 @@ int main(int argc, char *argv[])
                                     else
                                     {
                                         /*
-                                        * the number of effective processes is bigger than the maximum we established, so
-                                        * we print only the maximum and minimum budget in the list
-                                        */
+                                         * the number of effective processes is bigger than the maximum we established, so
+                                         * we print only the maximum and minimum budget in the list
+                                         */
 
                                         printf("[MASTER]: There are too many processes. Printing only minimum and maximum budgets.\n");
 
@@ -1265,15 +1267,15 @@ int main(int argc, char *argv[])
                                     {
                                         unsafeErrorPrint("[MASTER]: failed to retrieve user termination messages from global queue. Error", __LINE__);
                                         /*
-                                        * DEVO FARE EXIT?????
-                                        * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
-                                        * è necessario fare la exit, ma se si verifica un errore a tutti i cicli non è possibile
-                                        * leggere messaggi dalla coda, quindi si finisce con il non creare un nuovo nodo, non processare
-                                        * alcune transazioni e si può riempire la coda globale, rischiando di mandare in wait tutti i
-                                        * restanti processi nodi e utenti. Quindi sarebbe opportuno fare exit appena si verifica un errore
-                                        * oppure utilizzare un contatore (occorre stabilire una soglia di ripetizione dell'errore). Per
-                                        * ora lo lasciamo.
-                                        */
+                                         * DEVO FARE EXIT?????
+                                         * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
+                                         * è necessario fare la exit, ma se si verifica un errore a tutti i cicli non è possibile
+                                         * leggere messaggi dalla coda, quindi si finisce con il non creare un nuovo nodo, non processare
+                                         * alcune transazioni e si può riempire la coda globale, rischiando di mandare in wait tutti i
+                                         * restanti processi nodi e utenti. Quindi sarebbe opportuno fare exit appena si verifica un errore
+                                         * oppure utilizzare un contatore (occorre stabilire una soglia di ripetizione dell'errore). Per
+                                         * ora lo lasciamo.
+                                         */
                                         endOfSimulation(-1);
                                     }
 
@@ -1348,15 +1350,15 @@ int main(int argc, char *argv[])
                                     {
                                         unsafeErrorPrint("[MASTER]: failed to retrieve node termination messages from global queue. Error", __LINE__);
                                         /*
-                                        * DEVO FARE EXIT?????
-                                        * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
-                                        * è necessario fare la exit, ma se si verifica un errore a tutti i cicli non è possibile
-                                        * leggere messaggi dalla coda, quindi si finisce con il non creare un nuovo nodo, non processare
-                                        * alcune transazioni e si può riempire la coda globale, rischiando di mandare in wait tutti i
-                                        * restanti processi nodi e utenti. Quindi sarebbe opportuno fare exit appena si verifica un errore
-                                        * oppure utilizzare un contatore (occorre stabilire una soglia di ripetizione dell'errore). Per
-                                        * ora lo lasciamo.
-                                        */
+                                         * DEVO FARE EXIT?????
+                                         * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
+                                         * è necessario fare la exit, ma se si verifica un errore a tutti i cicli non è possibile
+                                         * leggere messaggi dalla coda, quindi si finisce con il non creare un nuovo nodo, non processare
+                                         * alcune transazioni e si può riempire la coda globale, rischiando di mandare in wait tutti i
+                                         * restanti processi nodi e utenti. Quindi sarebbe opportuno fare exit appena si verifica un errore
+                                         * oppure utilizzare un contatore (occorre stabilire una soglia di ripetizione dell'errore). Per
+                                         * ora lo lasciamo.
+                                         */
                                         endOfSimulation(-1);
                                     }
 
@@ -1368,7 +1370,8 @@ int main(int argc, char *argv[])
                                     if (noEffectiveUsers == 0)
                                     {
                                         endOfSimulation(-2);
-                                    } else if (noEffectiveNodes == 0)
+                                    }
+                                    else if (noEffectiveNodes == 0)
                                         endOfSimulation(-3);
 
                                     /* now sleep for 1 second */
@@ -1448,7 +1451,7 @@ boolean assignEnvironmentVariables()
 /************************************************************************/
 boolean readConfigParameters()
 {
-    char *filename = "params_2.txt";
+    char *filename = "params_3.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1922,7 +1925,7 @@ void endOfSimulation(int sig)
             CORREGGERE: reimpostare maschera ed associazione segnaliip
         */
         signal(SIGUSR1, SIG_IGN);
-        
+
         ret = sprintf(aus, "[MASTER]: received signal %d\n", sig);
         write(STDOUT_FILENO, aus, ret);
 
@@ -1937,9 +1940,9 @@ void endOfSimulation(int sig)
         /*if (noTerminatedUsers + noTerminatedNodes <= noEffectiveNodes + noEffectiveUsers)*/
         if (noEffectiveNodes > 0 || noEffectiveUsers > 0)
         {
-        	/*
-        		Caso in cui non tutti i processi sono terminati prima della fine della simulazione
-        	*/
+            /*
+                Caso in cui non tutti i processi sono terminati prima della fine della simulazione
+            */
             /*
                 There are still active children that need
                 to be notified the end of simulation
@@ -2037,9 +2040,9 @@ void endOfSimulation(int sig)
             {
                 safeErrorPrint("[MASTER]: an error occurred while waiting for children. Error", __LINE__);
             }
-            write(STDOUT_FILENO, 
-                "[MASTER]: simulation terminated successfully!\n", 
-                strlen("[MASTER]: simulation terminated successfully!\n"));
+            write(STDOUT_FILENO,
+                  "[MASTER]: simulation terminated successfully!\n",
+                  strlen("[MASTER]: simulation terminated successfully!\n"));
         }
         else
         {
@@ -2516,6 +2519,8 @@ void checkNodeCreationRequests()
     struct sembuf sops[3];
     long childPid = -1;
 
+    printf("CHECCKO IL NODO\n");
+
     if (msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1)
     {
         printf("Master: new node kekw\n");
@@ -2526,12 +2531,12 @@ void checkNodeCreationRequests()
         printf("Master: new node tipo %d\n", aus.msgContent);
         if (aus.msgContent == NEWNODE)
         {
-            
+            printf("STO CREANDO IL NUOVO NODO!\n");
             if (noAllTimesNodes + 1 < maxNumNode)
             {
                 noEffectiveNodes++;
                 noAllTimesNodes++;
-                
+
                 procPid = fork();
                 if (procPid == 0)
                 {
@@ -2545,6 +2550,7 @@ void checkNodeCreationRequests()
                     3) Assegnazione amici: Ok
                     4) Eseguire codice nodo (opportunamente modificato): Ok
                     */
+                    printf("SONO IL NUOVO NODO!\n");
                     childPid = getpid();
                     newNode.procId = childPid;
                     newNode.procState = ACTIVE;
@@ -2758,10 +2764,10 @@ void checkNodeCreationRequests()
         }
         else
         {
-            write(STDOUT_FILENO, 
-                "[MASTER]: no node creation requests to be served.\n", 
-                strlen("[MASTER]: no node creation requests to be served.\n"));
-            
+            write(STDOUT_FILENO,
+                  "[MASTER]: no node creation requests to be served.\n",
+                  strlen("[MASTER]: no node creation requests to be served.\n"));
+
             /* Reinserting the message that we have consumed from the global queue */
             if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), IPC_NOWAIT) == -1)
             {
@@ -2771,29 +2777,31 @@ void checkNodeCreationRequests()
             }
         }
     }
-    else
+    /*else
     {
-        if(errno != ENOMSG)
+        if (errno != ENOMSG)
             safeErrorPrint("[MASTER]: failed to check for node creation requests on global queue. Error", __LINE__);
         else
-            write(STDOUT_FILENO, 
-                "[MASTER]: no node creation requests to be served.\n", 
-                strlen("[MASTER]: no node creation requests to be served.\n"));
-    }
+            write(STDOUT_FILENO,
+                  "[MASTER]: no node creation requests to be served.\n",
+                  strlen("[MASTER]: no node creation requests to be served.\n"));
+    }*/
 }
 
-void printRemainedTransactions(){
+void printRemainedTransactions()
+{
     int i = 0;
     int tpId = -1;
     MsgTP aus;
     boolean error = FALSE;
     int cnt = 0;
 
-    for (i = 0; i < tplLength && !error; i++){
+    for (i = 0; i < tplLength && !error; i++)
+    {
         printf("[MASTER]: printing remaining transactions of Node of pid %ld...\n", (long)tpList[i].procId);
         tpId = tpList[i].msgQId;
         cnt = 0;
-        while (msgrcv(tpId, &aus, sizeof(aus)-sizeof(long), 0, IPC_NOWAIT) != -1)
+        while (msgrcv(tpId, &aus, sizeof(aus) - sizeof(long), 0, IPC_NOWAIT) != -1)
         {
             printf("[MASTER]:  - Timestamp: %ld\n [MASTER]:  - Sender: %ld\n [MASTER]:  - Receiver: %ld\n [MASTER]:  -  Amount sent: %f\n [MASTER]:  - Reward: %f\n",
                    aus.transaction.timestamp.tv_nsec,
@@ -2803,27 +2811,28 @@ void printRemainedTransactions(){
                    aus.transaction.reward);
             cnt++;
         }
-        
-        if (errno != ENOMSG){
+
+        if (errno != ENOMSG)
+        {
             unsafeErrorPrint("[MASTER]: an error occurred while printing remaining transactions. Error: ", __LINE__);
             error = TRUE;
-        } else if (cnt == 0)
+        }
+        else if (cnt == 0)
             printf("[MASTER]: no transactions left.\n");
-        
     }
 }
 /**
- * @brief Function that catches any segmentation fault error during execution and 
+ * @brief Function that catches any segmentation fault error during execution and
  * avoids brutal termination.
- * 
+ *
  * @param sig signal that fired the handler
  */
 void segmentationFaultHandler(int sig)
 {
-    char * aus = NULL;
+    char *aus = NULL;
     int msg_length;
-    
-    aus = (char*)calloc(200, sizeof(char));
+
+    aus = (char *)calloc(200, sizeof(char));
 
     msg_length = sprintf(aus, "[MASTER]: a segmentation fault error happened. Terminating...\n");
     write(STDOUT_FILENO, aus, msg_length);
