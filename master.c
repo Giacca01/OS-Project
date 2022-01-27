@@ -27,9 +27,10 @@
 /**** End of Headers inclusion ****/
 
 /**** Constants definition ****/
-#define NO_ATTEMPS_TERM 3           /* Maximum number of attemps to terminate the simulation*/
-#define MAX_PRINT_PROCESSES 15      /* Maximum number of processes of which we show budget, if noEffectiveNodes + noEffectiveUsers > MAX_PRINT_PROCESSES we only print max and min budget */
-#define NO_ATTEMPTS_UPDATE_BUDGET 3 /* Number of attempts to update budget reading a block on register */
+#define NO_ATTEMPS_TERM 3                /* Maximum number of attemps to terminate the simulation*/
+#define MAX_PRINT_PROCESSES 15           /* Maximum number of processes of which we show budget, if noEffectiveNodes + noEffectiveUsers > MAX_PRINT_PROCESSES we only print max and min budget */
+#define NO_ATTEMPTS_UPDATE_BUDGET 3      /* Number of attempts to update budget reading a block on register */
+#define NO_ATTEMPTS_NEW_NODE_REQUESTS 10 /* Number of attempts to check for new node requests */
 /**** End of Constants definition ****/
 
 /*****        Global structures        *****/
@@ -640,7 +641,7 @@ int main(int argc, char *argv[])
 
                                         if (msgctl(tpList[i].msgQId, IPC_STAT, &tpStruct) == -1)
                                         {
-                                            unsafeErrorPrint("[MASTER]: failed to retrive proces transaction pool's size. Error", __LINE__);
+                                            unsafeErrorPrint("[MASTER]: failed to retrive process transaction pool's size. Error", __LINE__);
                                             endOfSimulation(-1);
                                         }
                                         else
@@ -648,7 +649,7 @@ int main(int argc, char *argv[])
                                             tpStruct.msg_qbytes = sizeof(Transaction) * SO_TP_SIZE;
                                             if (msgctl(tpList[i].msgQId, IPC_SET, &tpStruct) == -1)
                                             {
-                                                unsafeErrorPrint("[MASTER]: failed to set proces transaction pool's size. Error", __LINE__);
+                                                unsafeErrorPrint("[MASTER]: failed to set process transaction pool's size. Error", __LINE__);
                                                 endOfSimulation(-1);
                                             }
                                         }
@@ -1154,28 +1155,40 @@ int main(int argc, char *argv[])
                                                 Here we take advantage of the sorted budget list: finding the minimum budget
                                                 is just a matter of checking if it's equal tot that on top of the list
                                             */
-                                        el_list = bud_list_head;
+                                        /*el_list = bud_list_head;
                                         while (el_list != NULL && el_list->budget == bud_list_head->budget)
                                         {
-                                            if (el_list->p_type) /* Budget of node process */
+                                            if (el_list->p_type) *//* Budget of node process *//*
                                                 printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-                                            else /* Budget of user process */
+                                            else *//* Budget of user process *//*
                                                 printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
 
                                             el_list = el_list->next;
-                                        }
+                                        }*/
+                                        
+                                        /* Printing budget of process with minimum budget */
+                                        if (bud_list_head->p_type) /* Budget of node process */
+                                            printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_head->proc_pid, bud_list_head->budget);
+                                        else /* Budget of user process */
+                                            printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_head->proc_pid, bud_list_head->budget);
 
                                         /* printing maximum budget in budgetlist - we print all processes' budget that is maximum */
-                                        el_list = bud_list_tail;
+                                        /*el_list = bud_list_tail;
                                         while (el_list != NULL && el_list->budget == bud_list_tail->budget)
                                         {
-                                            if (el_list->p_type) /* Budget of node process */
+                                            if (el_list->p_type) *//* Budget of node process *//*
                                                 printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-                                            else /* Budget of user process */
+                                            else *//* Budget of user process *//*
                                                 printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
 
                                             el_list = el_list->prev;
-                                        }
+                                        }*/
+
+                                        /* Printing budget of process with maximum budget */
+                                        if (bud_list_tail->p_type) /* Budget of node process */
+                                            printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_tail->proc_pid, bud_list_tail->budget);
+                                        else /* Budget of user process */
+                                            printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_tail->proc_pid, bud_list_tail->budget);
                                     }
 
                                     printf("[MASTER]: Number of active nodes: %ld\n", noEffectiveNodes);
@@ -2514,242 +2527,306 @@ void checkNodeCreationRequests()
     int tpId = -1, j = 0;
     pid_t currPid = getpid();
     MsgTP firstTrans;
-    ProcListElem newNode;
     budgetlist new_el;
     struct sembuf sops[3];
     long childPid = -1;
+    int attempts = 0;
+    int msg_length;
+    char * printMsg;
+    union semun arg;
+    struct msqid_ds tpStruct;
 
-    printf("CHECCKO IL NODO\n");
+    printMsg = (char *)calloc(200, sizeof(char));
 
-    if (msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1)
+    /* Siamo passati dall'if al while per aumentare il numero di richieste servite ad ogni ciclo del master */
+    while (msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1 && attempts < NO_ATTEMPTS_NEW_NODE_REQUESTS)
     {
-        printf("Master: new node kekw\n");
+        /* Increasing the number of attempts to check for new node requests*/
+        attempts++;
+        
         /*
             Su questa coda l'unico tipo di messaggio per il master è NEWNODE
         */
-        /*printf("MSGCONT: %d\n", aus.terminatedPid);*/
-        printf("Master: new node tipo %d\n", aus.msgContent);
         if (aus.msgContent == NEWNODE)
         {
-            printf("STO CREANDO IL NUOVO NODO!\n");
             if (noAllTimesNodes + 1 < maxNumNode)
             {
                 noEffectiveNodes++;
                 noAllTimesNodes++;
 
-                procPid = fork();
-                if (procPid == 0)
+                /* imposto il semaforo per far aspettare a partire il nuovo nodo */
+                arg.val = 2;
+                semctl(fairStartSem, 0, SETVAL, arg);
+                if(fairStartSem == -1)
+                    safeErrorPrint("[MASTER]: semctl failed while initializing fair start semaphore for new node creation. Error", __LINE__);
+                else
                 {
-                    /*
-                        CORREGERE: Queste operazioni andrebber ofatte nel master??
-                        Il punto è che si manipolano dati normalmente scrivibili solo dal master
-                    */
-                    /*
-                    1) Creazione tp: Ok
-                    2) aggiunta messaggio: Ok
-                    3) Assegnazione amici: Ok
-                    4) Eseguire codice nodo (opportunamente modificato): Ok
-                    */
-                    printf("SONO IL NUOVO NODO!\n");
-                    childPid = getpid();
-                    newNode.procId = childPid;
-                    newNode.procState = ACTIVE;
-
-                    sops[0].sem_flg = 0;
-                    sops[0].sem_num = 1;
-                    sops[0].sem_op = -1;
-                    sops[1].sem_flg = 0;
-                    sops[1].sem_num = 2;
-                    sops[1].sem_op = -1;
-                    if (semop(nodeListSem, sops, 2) == -1)
+                    procPid = fork();
+                    if (procPid == 0)
                     {
-                        safeErrorPrint("[MASTER]: failed to reserve nodes' list semphore. Error", __LINE__);
-                        endOfSimulation(-1);
-                    }
-
-                    nodesList[noAllTimesNodes - 1] = newNode;
-
-                    sops[0].sem_flg = 0;
-                    sops[0].sem_num = 2;
-                    sops[0].sem_op = -1;
-                    sops[1].sem_flg = 0;
-                    sops[1].sem_num = 1;
-                    sops[1].sem_op = -1;
-
-                    if (semop(nodeListSem, sops, 2) == -1)
-                    {
-                        safeErrorPrint("[MASTER]: failed to release nodes' list semphore. Error", __LINE__);
-                        endOfSimulation(-1);
-                    }
-
-                    /* Adding new node to budgetlist */
-                    new_el = malloc(sizeof(*new_el));
-                    new_el->proc_pid = childPid;
-                    new_el->budget = 0;
-                    new_el->p_type = 1;
-                    insert_ordered(new_el);
-
-                    tpId = msgget(ftok("msgfile.txt", currPid), IPC_EXCL | IPC_CREAT);
-                    if (tpId == -1)
-                        safeErrorPrint("[MASTER]: failed to create additional node's transaction pool. Error", __LINE__);
-                    else
-                    {
-                        /* add a new entry to the tpList array */
-                        tplLength++;
-                        tpList = (TPElement *)realloc(tpList, sizeof(TPElement) * tplLength);
-                        /* Initialize messages queue for transactions pools */
-                        tpList[tplLength - 1].procId = childPid;
-                        tpList[tplLength - 1].msgQId = tpId;
-
-                        if (tpList[tplLength - 1].msgQId == -1)
+                        sops[0].sem_op = 0;
+                        sops[0].sem_num = 0;
+                        sops[0].sem_flg = 0;
+                        if (semop(fairStartSem, &sops[0], 1) == -1)
                         {
-                            safeErrorPrint("[MASTER]: failed to create the message queue for the transaction pool of the new node process. Error", __LINE__);
-                            endOfSimulation(-1);
-                        }
-
-                        /*
-                            CORREGGERE:
-                            MsgTP è inutile
-                            Toglierlo
-                        */
-                        firstTrans.mtype = childPid;
-                        firstTrans.transaction = aus.transaction;
-
-                        if (msgsnd(tpId, &(aus.transaction), sizeof(MsgTP) - sizeof(long), 0) == -1)
-                        {
-                            safeErrorPrint("[MASTER]: failed to initialize additional node's transaction pool. Error", __LINE__);
+                            /*
+                                See comment above (**)
+                            */
+                            sprintf(printMsg, "[NODE %5ld]: failed to wait for zero on start semaphore. Error", (long)getpid());
+                            safeErrorPrint(printMsg, __LINE__);
+                            exit(EXIT_FAILURE);
                         }
                         else
                         {
-                            aus.mtype = childPid;
-                            aus.msgContent = FRIENDINIT;
-                            estrai(noAllTimesNodes - 1);
-                            for (j = 0; j < SO_FRIENDS_NUM; j++)
+                            if (execle("node.out", "node", "ADDITIONAL", NULL, environ) == -1)
+                                        safeErrorPrint("[MASTER]: failed to load node's code. Error", __LINE__);
+                        }
+                    }
+                    else if (procPid > 0)
+                    {
+                        /*
+                            CORREGERE: Queste operazioni andrebber ofatte nel master??
+                            Il punto è che si manipolano dati normalmente scrivibili solo dal master
+                        */
+                        /*
+                        1) Creazione tp: Ok
+                        2) aggiunta messaggio: Ok
+                        3) Assegnazione amici: Ok
+                        4) Eseguire codice nodo (opportunamente modificato): Ok
+                        */
+
+                        sops[0].sem_flg = 0;
+                        sops[0].sem_num = 1;
+                        sops[0].sem_op = -1;
+                        sops[1].sem_flg = 0;
+                        sops[1].sem_num = 2;
+                        sops[1].sem_op = -1;
+                        if (semop(nodeListSem, sops, 2) == -1)
+                        {
+                            safeErrorPrint("[MASTER]: failed to reserve nodes' list semphore. Error", __LINE__);
+                            endOfSimulation(-1);
+                        }
+
+                        nodesList[noAllTimesNodes - 1].procId = (long)procPid;
+                        nodesList[noAllTimesNodes - 1].procState = ACTIVE;
+
+                        sops[0].sem_flg = 0;
+                        sops[0].sem_num = 2;
+                        sops[0].sem_op = 1;
+                        sops[1].sem_flg = 0;
+                        sops[1].sem_num = 1;
+                        sops[1].sem_op = 1;
+
+                        if (semop(nodeListSem, sops, 2) == -1)
+                        {
+                            safeErrorPrint("[MASTER]: failed to release nodes' list semphore. Error", __LINE__);
+                            endOfSimulation(-1);
+                        }
+
+                        /* Adding new node to budgetlist */
+                        new_el = malloc(sizeof(*new_el));
+                        new_el->proc_pid = procPid;
+                        new_el->budget = 0;
+                        new_el->p_type = 1;
+                        insert_ordered(new_el);
+
+                        tpId = msgget(ftok(MSGFILEPATH, (int)procPid), IPC_CREAT | IPC_EXCL | MASTERPERMITS);
+                        if (tpId == -1)
+                            safeErrorPrint("[MASTER]: failed to create additional node's transaction pool. Error", __LINE__);
+                        else
+                        {
+                            /* add a new entry to the tpList array */
+                            tplLength++;
+                            tpList = (TPElement *)realloc(tpList, sizeof(TPElement) * tplLength);
+                            /* Initialize messages queue for transactions pools */
+                            tpList[tplLength - 1].procId = (long)procPid;
+                            tpList[tplLength - 1].msgQId = tpId;
+
+                            /* Questo controllo non è quello che si fa già sopra ? */
+                            if (tpList[tplLength - 1].msgQId == -1)
                             {
-                                aus.friend = nodesList[extractedFriendsIndex[j]].procId;
-                                if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                                safeErrorPrint("[MASTER]: failed to create the message queue for the transaction pool of the new node process. Error", __LINE__);
+                                endOfSimulation(-1);
+                            }
+
+                            if (msgctl(tpList[tplLength - 1].msgQId, IPC_STAT, &tpStruct) == -1)
+                            {
+                                unsafeErrorPrint("[MASTER]: failed to retrive new node transaction pool's size. Error", __LINE__);
+                                endOfSimulation(-1);
+                            }
+                            else
+                            {
+                                tpStruct.msg_qbytes = sizeof(Transaction) * SO_TP_SIZE;
+                                if (msgctl(tpList[tplLength - 1].msgQId, IPC_SET, &tpStruct) == -1)
                                 {
-                                    /*
-                                        CORREGGERE: segnalazione fallimento trasazione a sender
-                                    */
-                                    safeErrorPrint("[MASTER]: failed to send a friend to new node. Error", __LINE__);
+                                    unsafeErrorPrint("[MASTER]: failed to set new node transaction pool's size. Error", __LINE__);
+                                    endOfSimulation(-1);
                                 }
                             }
 
-                            if (execle("node.out", "node", "ADDITIONAL", NULL, environ) == -1)
-                                safeErrorPrint("[MASTER]: failed to load node's code. Error", __LINE__);
-                        }
-                    }
-                }
-                else if (procPid > 0)
-                {
-                    /*
-                    1) Chiedere ad altri nodi
-                    di aggiungere il nuovo processo agli amici:Ok
-               */
-                    /*
-                CORREGGERE: è giusto passare noEffectiveNodes????
-              */
-                    sops[0].sem_flg = 0;
-                    sops[0].sem_num = 1;
-                    sops[0].sem_op = -1;
-                    sops[1].sem_flg = 0;
-                    sops[1].sem_num = 0;
-                    sops[1].sem_op = -1;
-                    if (semop(nodeListSem, sops, 2) == -1)
-                    {
-                        safeErrorPrint("[MASTER]: failed to reserve nodes' list read/mutex semphore. Error", __LINE__);
-                        endOfSimulation(-1);
-                    }
+                            firstTrans.mtype = (long)procPid;
+                            firstTrans.transaction = aus.transaction;
 
-                    *(noNodeSegReadersPtr)++;
-                    if (*(noNodeSegReadersPtr) == 1)
-                    {
-                        sops[2].sem_flg = 0;
-                        sops[2].sem_num = 2;
-                        sops[2].sem_op = -1;
-                        if (semop(nodeListSem, sops, 1) == -1)
+                            if (msgsnd(tpId, &(firstTrans.transaction), sizeof(MsgTP) - sizeof(long), 0) == -1)
+                            {
+                                safeErrorPrint("[MASTER]: failed to send transaction to new node's transaction pool . Error", __LINE__);
+
+                                /* informing sender of transaction that it wasn't processed */
+                                aus.mtype = firstTrans.transaction.sender;
+                                aus.msgContent = FAILEDTRANS;
+                                aus.transaction = firstTrans.transaction;
+
+                                if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                                {
+                                    /* Che facciamo in questo caso ???*/
+                                    safeErrorPrint("[MASTER]: failed to inform sender of transaction that the transaction wasn't processed. Error", __LINE__);
+                                }
+                            }
+                            else
+                            {
+                                /* friend node's generation */
+                                aus.mtype = (long)procPid;
+                                aus.msgContent = FRIENDINIT;
+                                estrai(noAllTimesNodes - 1);
+                                for (j = 0; j < SO_FRIENDS_NUM; j++)
+                                {
+                                    aus.friend = nodesList[extractedFriendsIndex[j]].procId;
+                                    if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                                    {
+                                        safeErrorPrint("[MASTER]: failed to send a friend to new node. Error", __LINE__);
+                                        /* informing sender of transaction that it wasn't processed */
+                                        aus.mtype = firstTrans.transaction.sender;
+                                        aus.msgContent = FAILEDTRANS;
+                                        aus.transaction = firstTrans.transaction;
+
+                                        if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                                        {
+                                            /* Che facciamo in questo caso ???*/
+                                            safeErrorPrint("[MASTER]: failed to inform sender of transaction that the transaction wasn't processed. Error", __LINE__);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        
+                        /*
+                        1) Chiedere ad altri nodi
+                        di aggiungere il nuovo processo agli amici:Ok
+                */
+                        /*
+                    CORREGGERE: è giusto passare noEffectiveNodes????
+                */
+                        sops[0].sem_flg = 0;
+                        sops[0].sem_num = 1;
+                        sops[0].sem_op = -1;
+                        sops[1].sem_flg = 0;
+                        sops[1].sem_num = 0;
+                        sops[1].sem_op = -1;
+                        if (semop(nodeListSem, sops, 2) == -1)
                         {
-                            safeErrorPrint("[MASTER]: failed to reserve nodes' list write semphore. Error", __LINE__);
+                            safeErrorPrint("[MASTER]: failed to reserve nodes' list read/mutex semphore. Error", __LINE__);
                             endOfSimulation(-1);
                         }
-                    }
 
-                    sops[0].sem_flg = 0;
-                    sops[0].sem_num = 0;
-                    sops[0].sem_op = 1;
-                    sops[1].sem_flg = 0;
-                    sops[1].sem_num = 1;
-                    sops[1].sem_op = 1;
-                    if (semop(nodeListSem, sops, 2) == -1)
-                    {
-                        safeErrorPrint("[MASTER]: failed to release nodes' list mutex/read semphore. Error", __LINE__);
-                        endOfSimulation(-1);
-                    }
-
-                    newNode.procId = procPid;
-                    newNode.procState = ACTIVE;
-
-                    aus.friend = newNode.procId;
-                    aus.msgContent = NEWFRIEND;
-                    estrai(noEffectiveNodes);
-                    for (j = 0; j < SO_FRIENDS_NUM; j++)
-                    {
-                        aus.mtype = nodesList[extractedFriendsIndex[j]].procId;
-                        if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                        (*noNodeSegReadersPtr)++;
+                        if (*noNodeSegReadersPtr == 1)
                         {
-                            /*
-                                        CORREGGERE: possiamo semplicemente segnalare l'errore senza fare nulla?
-                                        Io direi di sì, non mi sembra che gestioni più complicate siano utili
-                                    */
-                            safeErrorPrint("[MASTER]: failed to ask a node to add the new process to its fiends' list. Error", __LINE__);
+                            sops[2].sem_flg = 0;
+                            sops[2].sem_num = 2;
+                            sops[2].sem_op = -1;
+                            if (semop(nodeListSem, &sops[2], 1) == -1)
+                            {
+                                safeErrorPrint("[MASTER]: failed to reserve nodes' list write semphore. Error", __LINE__);
+                                endOfSimulation(-1);
+                            }
                         }
-                    }
 
-                    sops[0].sem_flg = 0;
-                    sops[0].sem_num = 0;
-                    sops[0].sem_op = -1;
-                    if (semop(nodeListSem, sops, 1) == -1)
-                    {
-                        safeErrorPrint("[MASTER]: failed to reserve nodes' list mutex semphore. Error", __LINE__);
-                        endOfSimulation(-1);
-                    }
-
-                    if (*noNodeSegReadersPtr == 0)
-                    {
-                        sops[2].sem_flg = 0;
-                        sops[2].sem_num = 2;
-                        sops[2].sem_op = 1;
-                        if (semop(nodeListSem, sops, 1) == -1)
+                        sops[0].sem_flg = 0;
+                        sops[0].sem_num = 0;
+                        sops[0].sem_op = 1;
+                        sops[1].sem_flg = 0;
+                        sops[1].sem_num = 1;
+                        sops[1].sem_op = 1;
+                        if (semop(nodeListSem, sops, 2) == -1)
                         {
-                            safeErrorPrint("[MASTER]: failed to release nodes' list write semphore. Error", __LINE__);
+                            safeErrorPrint("[MASTER]: failed to release nodes' list mutex/read semphore. Error", __LINE__);
                             endOfSimulation(-1);
                         }
-                    }
 
-                    sops[0].sem_flg = 0;
-                    sops[0].sem_num = 0;
-                    sops[0].sem_op = 1;
-                    if (semop(nodeListSem, sops, 1) == -1)
+                        aus.friend = procPid;
+                        aus.msgContent = NEWFRIEND;
+                        estrai(noEffectiveNodes);
+                        for (j = 0; j < SO_FRIENDS_NUM; j++)
+                        {
+                            aus.mtype = nodesList[extractedFriendsIndex[j]].procId;
+                            if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                            {
+                                /*
+                                            CORREGGERE: possiamo semplicemente segnalare l'errore senza fare nulla?
+                                            Io direi di sì, non mi sembra che gestioni più complicate siano utili
+                                        */
+                                safeErrorPrint("[MASTER]: failed to ask a node to add the new process to its friends' list. Error", __LINE__);
+                            }
+                        }
+
+                        sops[0].sem_flg = 0;
+                        sops[0].sem_num = 0;
+                        sops[0].sem_op = -1;
+                        if (semop(nodeListSem, sops, 1) == -1)
+                        {
+                            safeErrorPrint("[MASTER]: failed to reserve nodes' list mutex semphore. Error", __LINE__);
+                            endOfSimulation(-1);
+                        }
+
+                        (*noNodeSegReadersPtr)--;
+                        if (*noNodeSegReadersPtr == 0)
+                        {
+                            sops[2].sem_flg = 0;
+                            sops[2].sem_num = 2;
+                            sops[2].sem_op = 1;
+                            if (semop(nodeListSem, &sops[2], 1) == -1)
+                            {
+                                safeErrorPrint("[MASTER]: failed to release nodes' list write semphore. Error", __LINE__);
+                                endOfSimulation(-1);
+                            }
+                        }
+
+                        sops[0].sem_flg = 0;
+                        sops[0].sem_num = 0;
+                        sops[0].sem_op = 1;
+                        if (semop(nodeListSem, sops, 1) == -1)
+                        {
+                            safeErrorPrint("[MASTER]: failed to release nodes' list mutex semphore. Error", __LINE__);
+                            endOfSimulation(-1);
+                        }
+
+                        /* faccio partire il nodo appena creato */
+                        sops[0].sem_op = -1;
+                        sops[0].sem_num = 0;
+                        sops[0].sem_flg = 0;
+                        semop(fairStartSem, &sops[0], 1);
+
+                        msg_length = sprintf(printMsg, "[MASTER]: created new node on request with pid %5ld\n", (long)procPid);
+                        write(STDOUT_FILENO, printMsg, msg_length);
+                        free(printMsg);
+                    }
+                    else
                     {
-                        safeErrorPrint("[MASTER]: failed to release nodes' list mutex semphore. Error", __LINE__);
+                        safeErrorPrint("[MASTER]: no more resources for new node. Simulation will be terminated.", __LINE__);
+                        /*
+                    Sono finite le risorse, cosa facciamo?
+                        1) Segnaliamo stampando la cosa a video e basta (del resto
+                        nodi ed utenti esistenti possono continuare, però una transazione viene scartata
+                        quindi sarebbe carino segnalarlo al sender)
+                        2) Terminiamo la simulazione: mi sembra eccessivo
+
+                        Io propenderei per la prima soluzione, cercando anche di segnalare il fallimento
+                        al sender
+                */
                         endOfSimulation(-1);
                     }
-                }
-                else
-                {
-                    safeErrorPrint("[MASTER]: no more resources for new node. Simulation will be terminated.", __LINE__);
-                    /*
-                Sono finite le risorse, cosa facciamo?
-                    1) Segnaliamo stampando la cosa a video e basta (del resto
-                    nodi ed utenti esistenti possono continuare, però una transazione viene scartata
-                    quindi sarebbe carino segnalarlo al sender)
-                    2) Terminiamo la simulazione: mi sembra eccessivo
 
-                    Io propenderei per la prima soluzione, cercando anche di segnalare il fallimento
-                    al sender
-               */
-                    endOfSimulation(-1);
                 }
             }
             else
@@ -2761,6 +2838,7 @@ void checkNodeCreationRequests()
                 */
                 endOfSimulation(-1);
             }
+
         }
         else
         {
@@ -2769,7 +2847,7 @@ void checkNodeCreationRequests()
                   strlen("[MASTER]: no node creation requests to be served.\n"));
 
             /* Reinserting the message that we have consumed from the global queue */
-            if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), IPC_NOWAIT) == -1)
+            if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
             {
                 /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
                 safeErrorPrint("[MASTER]: failed to reinsert the message read from the global queue while checking for new node creation requests. Error", __LINE__);
@@ -2777,15 +2855,17 @@ void checkNodeCreationRequests()
             }
         }
     }
-    /*else
-    {
+    
         if (errno != ENOMSG)
             safeErrorPrint("[MASTER]: failed to check for node creation requests on global queue. Error", __LINE__);
-        else
+        else if(attempts == 0)
             write(STDOUT_FILENO,
                   "[MASTER]: no node creation requests to be served.\n",
                   strlen("[MASTER]: no node creation requests to be served.\n"));
-    }*/
+        else if(attempts > 0)
+            write(STDOUT_FILENO,
+                  "[MASTER]: no more node creation requests to be served.\n",
+                  strlen("[MASTER]: no more node creation requests to be served.\n"));
 }
 
 void printRemainedTransactions()

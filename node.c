@@ -287,6 +287,8 @@ int main(int argc, char *argv[], char *envp[])
                             sops[0].sem_num = 0;
                             sops[0].sem_flg = 0;
                         }
+                        else
+                            printf("[NODE %5ld]: additional node initializing...\n", my_pid);
 
                         /* if node is of type NORMAL, it has to wait the simulation to start, otherwise no */
                         if (strcmp(argv[1], "NORMAL") == 0 && semop(fairStartSem, &sops[0], 1) == -1)
@@ -842,10 +844,10 @@ boolean assignEnvironmentVariables()
 boolean createIPCFacilties()
 {
     regPtrs = (Register **)malloc(REG_PARTITION_COUNT * sizeof(Register *));
-    TEST_MALLOC_ERROR(regPtrs, "Node: failed to allocate register paritions' pointers array. Error");
+    TEST_MALLOC_ERROR(regPtrs, "[NODE]: failed to allocate register paritions' pointers array. Error");
 
     regPartsIds = (int *)malloc(REG_PARTITION_COUNT * sizeof(int));
-    TEST_MALLOC_ERROR(regPartsIds, "Node: failed to allocate register paritions' ids array. Error");
+    TEST_MALLOC_ERROR(regPartsIds, "[NODE]: failed to allocate register paritions' ids array. Error");
 
     return TRUE;
 }
@@ -858,81 +860,81 @@ boolean initializeIPCFacilities()
 {
     /* Initialization of semaphores*/
     key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
-    FTOK_TEST_ERROR(key, "Node: ftok failed during fair start semaphore creation. Error");
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during fair start semaphore creation. Error");
 
     fairStartSem = semget(key, 1, 0600);
-    SEM_TEST_ERROR(fairStartSem, "Node: semget failed during fair start semaphore creation. Error");
+    SEM_TEST_ERROR(fairStartSem, "[NODE]: semget failed during fair start semaphore creation. Error");
 
     key = ftok(SEMFILEPATH, WRPARTSEED);
-    FTOK_TEST_ERROR(key, "Node: ftok failed during partitions writing semaphores creation. Error");
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during partitions writing semaphores creation. Error");
     wrPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(wrPartSem, "Node: semget failed during partitions writing semaphores creation. Error");
+    SEM_TEST_ERROR(wrPartSem, "[NODE]: semget failed during partitions writing semaphores creation. Error");
 
     key = ftok(SEMFILEPATH, RDPARTSEED);
-    FTOK_TEST_ERROR(key, "Node: ftok failed during partitions reading semaphores creation. Error");
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during partitions reading semaphores creation. Error");
     rdPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(rdPartSem, "Node: semget failed during partitions reading semaphores creation. Error");
+    SEM_TEST_ERROR(rdPartSem, "[NODE]: semget failed during partitions reading semaphores creation. Error");
 
     key = ftok(SEMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key, "Node: ftok failed during nodes list semaphore creation. Error");
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during nodes list semaphore creation. Error");
     nodeListSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(nodeListSem, "Node: semget failed during nodes list semaphore creation. Error");
+    SEM_TEST_ERROR(nodeListSem, "[NODE]: semget failed during nodes list semaphore creation. Error");
 
     key = ftok(SEMFILEPATH, PARTMUTEXSEED);
-    FTOK_TEST_ERROR(key, "Node: ftok failed during partitions mutex semaphores creation. Error");
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during partitions mutex semaphores creation. Error");
     mutexPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(mutexPartSem, "Node: semget failed during partitions mutex semaphores creation. Error");
+    SEM_TEST_ERROR(mutexPartSem, "[NODE]: semget failed during partitions mutex semaphores creation. Error");
 
     /*****  Creates and initialize the messages queues  *****/
     /********************************************************/
     /* Creates the global queue*/
     key = ftok(MSGFILEPATH, GLOBALMSGSEED);
-    FTOK_TEST_ERROR(key, "Node: ftok failed during global queue creation. Error");
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during global queue creation. Error");
     globalQueueId = msgget(key, 0600);
-    MSG_TEST_ERROR(globalQueueId, "Node: msgget failed during global queue creation. Error");
+    MSG_TEST_ERROR(globalQueueId, "[NODE]: msgget failed during global queue creation. Error");
     /********************************************************/
     /********************************************************/
 
     /*****  Initialization of shared memory segments    *****/
     /********************************************************/
     key = ftok(SHMFILEPATH, REGPARTONESEED);
-    FTOK_TEST_ERROR(key, "Node: ftok failed during register parition one creation. Error");
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during register parition one creation. Error");
     regPartsIds[0] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[0], "Node: shmget failed during partition one creation. Error");
+    SHM_TEST_ERROR(regPartsIds[0], "[NODE]: shmget failed during partition one creation. Error");
 
     key = ftok(SHMFILEPATH, REGPARTTWOSEED);
-    FTOK_TEST_ERROR(key, "Node: ftok failed during register parition two creation. Error");
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during register parition two creation. Error");
     regPartsIds[1] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[1], "Node: shmget failed during partition two creation. Error");
+    SHM_TEST_ERROR(regPartsIds[1], "[NODE]: shmget failed during partition two creation. Error");
 
     key = ftok(SHMFILEPATH, REGPARTTHREESEED);
-    FTOK_TEST_ERROR(key, "Node: ftok failed during register parition three creation. Error");
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during register parition three creation. Error");
     regPartsIds[2] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[2], "Node: shmget failed during partition three creation. Error");
+    SHM_TEST_ERROR(regPartsIds[2], "[NODE]: shmget failed during partition three creation. Error");
 
     regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
-    TEST_SHMAT_ERROR(regPtrs[0], "Node: failed to attach to partition one's memory segment. Error");
+    TEST_SHMAT_ERROR(regPtrs[0], "[NODE]: failed to attach to partition one's memory segment. Error");
     regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
-    TEST_SHMAT_ERROR(regPtrs[1], "Node: failed to attach to partition two's memory segment. Error");
+    TEST_SHMAT_ERROR(regPtrs[1], "[NODE]: failed to attach to partition two's memory segment. Error");
     regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
-    TEST_SHMAT_ERROR(regPtrs[2], "Node: failed to attach to partition three's memory segment. Error");
+    TEST_SHMAT_ERROR(regPtrs[2], "[NODE]: failed to attach to partition three's memory segment. Error");
 
     key = ftok(SHMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key, "Node: ftok failed during nodes list creation. Error");
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during nodes list creation. Error");
     nodesListId = shmget(key, SO_NODES_NUM * sizeof(ProcListElem), 0600);
-    SHM_TEST_ERROR(nodesListId, "Node: shmget failed during nodes list creation. Error");
+    SHM_TEST_ERROR(nodesListId, "[NODE]: shmget failed during nodes list creation. Error");
     nodesList = (ProcListElem *)shmat(nodesListId, NULL, SHM_RDONLY);
-    TEST_SHMAT_ERROR(nodesList, "Node: failed to attach to nodes list's memory segment. Error");
+    TEST_SHMAT_ERROR(nodesList, "[NODE]: failed to attach to nodes list's memory segment. Error");
 
     noNodeSegReaders = shmget(ftok(SHMFILEPATH, NONODESEGRDERSSEED), sizeof(SO_NODES_NUM), 0600);
-    SHM_TEST_ERROR(noNodeSegReaders, "Node: ftok failed during nodes list's shared variable creation. Error");
+    SHM_TEST_ERROR(noNodeSegReaders, "[NODE]: ftok failed during nodes list's shared variable creation. Error");
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
-    TEST_SHMAT_ERROR(noNodeSegReadersPtr, "Node: shmget failed during nodes list's shared variable creation. Error");
+    TEST_SHMAT_ERROR(noNodeSegReadersPtr, "[NODE]: shmget failed during nodes list's shared variable creation. Error");
 
     key = ftok(MSGFILEPATH, (int)my_pid);
-    FTOK_TEST_ERROR(key, "Node: ftok failed during transaction pool creation. Error");
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during transaction pool creation. Error");
     tpId = msgget(key, 0600);
-    MSG_TEST_ERROR(tpId, "Node: msgget failed during transaction pool creation. Error");
+    MSG_TEST_ERROR(tpId, "[NODE]: msgget failed during transaction pool creation. Error");
 
     return TRUE;
 }
