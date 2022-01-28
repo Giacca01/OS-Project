@@ -1464,7 +1464,7 @@ boolean assignEnvironmentVariables()
 /************************************************************************/
 boolean readConfigParameters()
 {
-    char *filename = "params_3.txt";
+    char *filename = "params.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1631,7 +1631,6 @@ boolean initializeIPCFacilities()
     globalQueueId = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     MSG_TEST_ERROR(globalQueueId, "[MASTER]: msgget failed during global queue creation. Error");
 
-    /*
     printf("[MASTER]: setting global queue size...\n");
     if (msgctl(globalQueueId, IPC_STAT, &globalQueueStruct) == -1)
     {
@@ -1646,7 +1645,7 @@ boolean initializeIPCFacilities()
             unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
             endOfSimulation(-1);
         }
-    }*/
+    }
 
     /* Creation of register's partitions */
     key = ftok(SHMFILEPATH, REGPARTONESEED);

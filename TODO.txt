@@ -67,5 +67,13 @@ boolean readConfigParameters()
 8) Regolare dimensione coda globale in base a numero nodi ed utenti
 9) Risolvere bug seconda configurazione 
 10) Refactoring
-11) Regolare dimensione tp e controllare che i nodi bastardi chiedano di creare un amico
-12) Completare stampa in caso di terminazione: Quasi
+11) Regolare dimensione tp: Ok 
+12) controllare che i nodi bastardi chiedano di creare un amico: Ok
+13) Completare stampa in caso di terminazione: ok (?)
+14) Controllare il comportamento dei nodi creati dal master su richiesta di un altro nodo
+15) Risolvere segmentation fault nodi
+16) Risolvere problema abort
+17) Testare configurazione 2
+18) Capire perchè l'utente si blocchi poco prima di terminare
+19) Capire perchè ci sia la double free
+20) Capire perchè il ctrl + c non funzioni con tanti processi
