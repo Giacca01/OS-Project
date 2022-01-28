@@ -67,6 +67,7 @@ int tpId = -1;
 
 /* List of node friends */
 pid_t *friends_node;
+int friends_node_len = 0;
 
 long my_pid; /* current node's pid */
 
@@ -257,6 +258,7 @@ int main(int argc, char *argv[], char *envp[])
                             if (friendFromList.msgContent == FRIENDINIT)
                             {
                                 friends_node[contMex] = friendFromList.friend;
+                                friends_node_len++;
                                 contMex++;
                             }
                             else
@@ -1381,13 +1383,16 @@ void sendTransaction()
                 friends_node[i] = trans.friend;
             else
             {
-                /*
-                        CORREGGERE: Come gestiamo questo caso?
-                        Estendiamo il vettore degli amici oppure segnaliamo un errore??
-                    */
-                sprintf(printMsg, "[NODE %5ld]: maximun number of friends reached. New friend is discarded.", my_pid);
-                safeErrorPrint(printMsg, __LINE__);
-                printMsg[0] = 0;
+                friends_node_len++;
+                friends_node = (pid_t *)realloc(friends_node, sizeof(pid_t) * friends_node_len);
+                if (friends_node != NULL)
+                    friends_node[i] = trans.friend;
+                else
+                {
+                    sprintf(printMsg, "[NODE %5ld]: failed to reallocate friends' array. Error", my_pid);
+                    unsafeErrorPrint(printMsg, __LINE__);
+                    printMsg[0] = 0; /* resetting string's content */
+                }
             }
             /*
                     CORREGGERE: dovremmo testare lo stato??
