@@ -646,12 +646,27 @@ int main(int argc, char *argv[])
                                         }
                                         else
                                         {
-                                            tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;
+                                            /*
+                                                tpStruct.msg_qbytes was set to the maximum possible value
+                                                during the msgget
+                                            */
+                                            
+                                            if (tpStruct.msg_qbytes < sizeof(MsgTP) * SO_TP_SIZE){
+                                                tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;
+                                                printf("Master: impostata nuova dimensione coda.\n");
+                                                
+                                            }
+
+                                            /*tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;*/
                                             if (msgctl(tpList[i].msgQId, IPC_SET, &tpStruct) == -1)
                                             {
                                                 unsafeErrorPrint("[MASTER]: failed to set process transaction pool's size. Error", __LINE__);
                                                 endOfSimulation(-1);
                                             }
+                                            /*
+                                                Se la dimensione è maggiore della dimensione massima allora
+                                                non facciamo alcuna modifica
+                                            */
                                         }
 
                                         tplLength++; /* updating tpList length */
@@ -1464,7 +1479,7 @@ boolean assignEnvironmentVariables()
 /************************************************************************/
 boolean readConfigParameters()
 {
-    char *filename = "params.txt";
+    char *filename = "params_2.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1515,7 +1530,8 @@ boolean readConfigParameters()
         }
 
         /* frees the auxiliary char array */
-        free(aus);
+        if (aus != NULL)
+            free(aus);
     }
 
     return ret;
@@ -1639,12 +1655,29 @@ boolean initializeIPCFacilities()
     }
     else
     {
-        globalQueueStruct.msg_qbytes = 2 * sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM);
+        globalQueueStruct.msg_qbytes = sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM);
         if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
         {
             unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
             endOfSimulation(-1);
         }
+        /*
+        printf("Master: dimensione coda globale: %ld\n", globalQueueStruct.msg_qbytes);
+        globalQueueStruct.msg_qbytes = 65536;
+        if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
+        {
+            unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
+            endOfSimulation(-1);
+        }*/
+        /*
+        if (sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM) < globalQueueStruct.msg_qbytes){
+            globalQueueStruct.msg_qbytes = sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM);
+            if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
+            {
+                unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
+                endOfSimulation(-1);
+            }
+        }*/
     }
 
     /* Creation of register's partitions */
@@ -1750,7 +1783,9 @@ void budgetlist_free(budgetlist p)
         return;
 
     budgetlist_free(p->next);
-    free(p);
+
+    if (p != NULL)
+        free(p);
 }
 
 /*
@@ -2066,7 +2101,8 @@ void endOfSimulation(int sig)
         }
     }
     /* Releasing local variables' memory*/
-    free(terminationMessage);
+    if (terminationMessage != NULL)
+        free(terminationMessage);
     /*
                 CORREGGERE: perchè la free va in errore ??
                 (Forse è per strcat)
@@ -2507,7 +2543,8 @@ boolean deallocateFacilities(int *exitCode)
     }
 
     /* Releasing local variables' memory*/
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 
     return TRUE;
 }
@@ -2808,7 +2845,9 @@ void checkNodeCreationRequests()
 
                         msg_length = sprintf(printMsg, "[MASTER]: created new node on request with pid %5ld\n", (long)procPid);
                         write(STDOUT_FILENO, printMsg, msg_length);
-                        free(printMsg);
+
+                        if (printMsg != NULL)
+                            free(printMsg);
                     }
                     else
                     {
@@ -2915,7 +2954,9 @@ void segmentationFaultHandler(int sig)
 
     msg_length = sprintf(aus, "[MASTER]: a segmentation fault error happened. Terminating...\n");
     write(STDOUT_FILENO, aus, msg_length);
-    free(aus);
+
+    if (aus != NULL)
+        free(aus);
 
     endOfSimulation(-1);
 }
