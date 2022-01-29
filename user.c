@@ -921,9 +921,12 @@ void endOfExecution(int sig)
         msgOnGQueue.mtype = getppid();
         msgOnGQueue.msgContent = TERMINATEDUSER;
         msgOnGQueue.terminatedPid = (pid_t)my_pid;
-        if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
+        if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), IPC_NOWAIT) == -1)
         {
-            sprintf(aus, "[USER %5ld]: failed to inform master of my termination. Error", my_pid);
+            if(errno == EAGAIN)
+                sprintf(aus, "[USER %5ld]: failed to inform master of my termination (global queue was full). Error", my_pid);
+            else
+                sprintf(aus, "[USER %5ld]: failed to inform master of my termination. Error", my_pid);
             safeErrorPrint(aus, __LINE__);
         }
     }

@@ -646,7 +646,7 @@ int main(int argc, char *argv[])
                                         }
                                         else
                                         {
-                                            tpStruct.msg_qbytes = sizeof(Transaction) * SO_TP_SIZE;
+                                            tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;
                                             if (msgctl(tpList[i].msgQId, IPC_SET, &tpStruct) == -1)
                                             {
                                                 unsafeErrorPrint("[MASTER]: failed to set process transaction pool's size. Error", __LINE__);
@@ -2655,7 +2655,7 @@ void checkNodeCreationRequests()
                             }
                             else
                             {
-                                tpStruct.msg_qbytes = sizeof(Transaction) * SO_TP_SIZE;
+                                tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;
                                 if (msgctl(tpList[tplLength - 1].msgQId, IPC_SET, &tpStruct) == -1)
                                 {
                                     unsafeErrorPrint("[MASTER]: failed to set new node transaction pool's size. Error", __LINE__);

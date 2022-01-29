@@ -771,9 +771,12 @@ int main(int argc, char *argv[], char *envp[])
     msgOnGQueue.mtype = getppid();
     msgOnGQueue.msgContent = TERMINATEDNODE;
     msgOnGQueue.terminatedPid = (pid_t)my_pid;
-    if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
+    if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), IPC_NOWAIT) == -1)
     {
-        sprintf(printMsg, "[NODE %5ld]: failed to inform master of my termination. Error", my_pid);
+        if(errno == EAGAIN)
+            sprintf(printMsg, "[NODE %5ld]: failed to inform master of my termination (global queue was full). Error", my_pid);
+        else
+            sprintf(printMsg, "[NODE %5ld]: failed to inform master of my termination. Error", my_pid);
         unsafeErrorPrint(printMsg, __LINE__);
     }
 
@@ -1569,9 +1572,12 @@ void endOfExecution(int sig)
     msgOnGQueue.mtype = getppid();
     msgOnGQueue.msgContent = TERMINATEDNODE;
     msgOnGQueue.terminatedPid = (pid_t)my_pid;
-    if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
+    if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), IPC_NOWAIT) == -1)
     {
-        sprintf(aus, "[NODE %5ld]: failed to inform master of my termination. Error", my_pid);
+        if(errno == EAGAIN)
+            sprintf(aus, "[NODE %5ld]: failed to inform master of my termination (global queue was full). Error", my_pid);
+        else
+            sprintf(aus, "[NODE %5ld]: failed to inform master of my termination. Error", my_pid);
         unsafeErrorPrint(aus, __LINE__);
     }
 
