@@ -157,6 +157,7 @@ budgetlist bud_list_head = NULL;
 /* initialization of the budgetlist tail - array to maintain budgets read from ledger */
 budgetlist bud_list_tail = NULL;
 long masterPid = -1;
+boolean simTerminated = FALSE;
 
 /**********  Function prototypes  *****************/
 boolean assignEnvironmentVariables();
@@ -1430,8 +1431,8 @@ int main(int argc, char *argv[])
         l'handler di fine simulazione è già stato eseguito*/
     
     /* freeing dynamically allocated space */
-    free(extractedFriendsIndex);
-    free(aus);
+    /*free(extractedFriendsIndex);
+    free(aus);*/
 
     exit(exitCode);
 }
@@ -2107,6 +2108,8 @@ void endOfSimulation(int sig)
             write(STDOUT_FILENO,
                   "[MASTER]: simulation terminated successfully!\n",
                   strlen("[MASTER]: simulation terminated successfully!\n"));
+
+            simTerminated = TRUE;
         }
         else
         {
@@ -2118,15 +2121,15 @@ void endOfSimulation(int sig)
         }
     }
     /* Releasing local variables' memory*/
-    if (terminationMessage != NULL)
-        free(terminationMessage);
+    /*if (terminationMessage != NULL)
+        free(terminationMessage);*/
     
-    if (aus != NULL)
-        free(aus);
     /*
                 CORREGGERE: perchè la free va in errore ??
                 (Forse è per strcat)
             */
+    /*if (aus != NULL)
+        free(aus);*/
     exit(exitCode);
 }
 
@@ -2984,5 +2987,8 @@ void segmentationFaultHandler(int sig)
     if (aus != NULL)
         free(aus);
 
-    endOfSimulation(-1);
+    if(!simTerminated)
+        endOfSimulation(-1);
+    else
+        exit(EXIT_FAILURE);
 }
