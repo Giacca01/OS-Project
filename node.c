@@ -404,10 +404,10 @@ int main(int argc, char *argv[], char *envp[])
                                                                 {
                                                                     /* now receiving the message (transaction from TP) */
                                                                     num_bytes = msgrcv(tpId, &new_trans, sizeof(new_trans) - sizeof(long), my_pid, 0);
-                                                                    
+
                                                                     if (num_bytes >= 0)
                                                                     {
-                                                                        
+
                                                                         /* read transaction from tpList */
                                                                         extractedBlock.transList[i] = new_trans.transaction;
                                                                         /* adding reward of transaction in amountSend of reward_transaction */
@@ -438,10 +438,10 @@ int main(int argc, char *argv[], char *envp[])
                                                                     }
 
                                                                     /*
-                                                                    * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
-                                                                    * and waits for a message on queue; it will exit this cycle when it reads the requested
-                                                                    * number of transactions (put in extractedBlock.transList)
-                                                                    */
+                                                                     * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
+                                                                     * and waits for a message on queue; it will exit this cycle when it reads the requested
+                                                                     * number of transactions (put in extractedBlock.transList)
+                                                                     */
                                                                 }
 
                                                                 /* putting reward transaction in extracted block */
@@ -462,9 +462,9 @@ int main(int argc, char *argv[], char *envp[])
                                                                 simTime.tv_nsec = (simTime.tv_nsec % (SO_MAX_TRANS_PROC_NSEC + 1 - SO_MIN_TRANS_PROC_NSEC)) + SO_MIN_TRANS_PROC_NSEC;
 
                                                                 /*
-                                                                * Adjusting wait time, if number of nanoseconds is greater or equal to 1 second (10^9 nanoseconds)
-                                                                * we increase the number of seconds.
-                                                                */
+                                                                 * Adjusting wait time, if number of nanoseconds is greater or equal to 1 second (10^9 nanoseconds)
+                                                                 * we increase the number of seconds.
+                                                                 */
                                                                 while (simTime.tv_nsec >= 1000000000)
                                                                 {
                                                                     simTime.tv_sec++;
@@ -704,11 +704,11 @@ int main(int argc, char *argv[], char *envp[])
                                                                 */
 
                                                         /*
-                                                        * now the node process must wait for end of simulation signal; we do it
-                                                        * with pause, but a signal could wake it up. We only want the end of simulation
-                                                        * signal to wake up the process, so we must ignore the SIGALRM signal that
-                                                        * might arrive for the periodic sending of a transaction to a friend node.
-                                                        */
+                                                         * now the node process must wait for end of simulation signal; we do it
+                                                         * with pause, but a signal could wake it up. We only want the end of simulation
+                                                         * signal to wake up the process, so we must ignore the SIGALRM signal that
+                                                         * might arrive for the periodic sending of a transaction to a friend node.
+                                                         */
                                                         if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
                                                         {
                                                             snprintf(printMsg, 199, "[NODE %5ld]: failed to set ignoring of SIGALRM signal before pause of process. Error: ", my_pid);
@@ -785,7 +785,7 @@ int main(int argc, char *argv[], char *envp[])
     msgOnGQueue.terminatedPid = (pid_t)my_pid;
     if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), IPC_NOWAIT) == -1)
     {
-        if(errno == EAGAIN)
+        if (errno == EAGAIN)
             snprintf(printMsg, 199, "[NODE %5ld]: failed to inform master of my termination (global queue was full). Error: ", my_pid);
         else
             snprintf(printMsg, 199, "[NODE %5ld]: failed to inform master of my termination. Error: ", my_pid);
@@ -1212,15 +1212,7 @@ void sendTransaction()
     */
     printMsg = (char *)calloc(200, sizeof(char));
 
-    if (msgrcv(globalQueueId, &trans, sizeof(MsgGlobalQueue) - sizeof(long), my_pid, IPC_NOWAIT) == -1)
-    {
-        if (errno != ENOMSG && errno != EINTR)
-        {
-            snprintf(printMsg, 199, "[NODE %5ld]: failed to check existence of transactions on global queue. Error: ", my_pid);
-            safeErrorPrint(printMsg, __LINE__);
-        }
-    }
-    else
+    while (msgrcv(globalQueueId, &trans, sizeof(MsgGlobalQueue) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
     {
         /*
             Ora trans contiene il messaggio letto dalla coda globale, dobbiamo verificare il contenuto del messaggio
@@ -1433,6 +1425,12 @@ void sendTransaction()
         }
     }
 
+    if (errno != ENOMSG && errno != EINTR)
+    {
+        snprintf(printMsg, 199, "[NODE %5ld]: failed to check existence of transactions on global queue. Error: ", my_pid);
+        safeErrorPrint(printMsg, __LINE__);
+    }
+
     if (printMsg != NULL)
         free(printMsg);
 }
@@ -1593,7 +1591,7 @@ void endOfExecution(int sig)
     msgOnGQueue.terminatedPid = (pid_t)my_pid;
     if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
     {
-        if(errno == EAGAIN)
+        if (errno == EAGAIN)
             snprintf(aus, 199, "[NODE %5ld]: failed to inform master of my termination (global queue was full). Error: ", my_pid);
         else
             snprintf(aus, 199, "[NODE %5ld]: failed to inform master of my termination. Error: ", my_pid);
@@ -1631,7 +1629,7 @@ void deallocateIPCFacilities()
     write(STDOUT_FILENO, printMsg, msg_length);
     printMsg[0] = 0; /* resetting string's content */
 
-    if(regPtrs != NULL)
+    if (regPtrs != NULL)
     {
         for (i = 0; i < REG_PARTITION_COUNT; i++)
         {
@@ -1655,7 +1653,7 @@ void deallocateIPCFacilities()
         free(regPtrs);
     }
 
-    if(regPartsIds != NULL)
+    if (regPartsIds != NULL)
         free(regPartsIds);
 
     msg_length = snprintf(printMsg, 199, "[NODE %5ld]: detaching from nodes list...\n", my_pid);
@@ -1714,7 +1712,7 @@ void segmentationFaultHandler(int sig)
     if (aus != NULL)
         free(aus);
 
-    if(sig == SIGSEGV)
+    if (sig == SIGSEGV)
         endOfExecution(-1);
     else
         exit(EXIT_FAILURE);
