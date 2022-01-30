@@ -64,7 +64,14 @@ boolean readConfigParameters()
 5) SIstemare puntatori in modo da evitare segmentation fault: ok
 6) Capire perchè il balance degli users sia negativo: Ok
 7) PERSISTENZA HANDLER
-8) Regolare dimensione coda globale in base a numero nodi ed utenti
+8) Regolare dimensione coda globale in base a numero nodi ed utenti:
+    -nella seconda simulazione è troppo alta, quindi va settata al : oK
+    -nella terza simulazione per ora è troppo piccola
+    -sistemare dimensione tp: Ok
+    -vedere perchè l'hadler del ctrl + c non funzioni
+    Il problema è che la singola tp in alcune configurazioni è troppo piccola 
+    e non contiene abbastanza transazioni da poter creare un blocco della dimensione richiesta
+    mentre nelle configurazioni con tanti processi la coda globale è troppo piccola
 9) Risolvere bug seconda configurazione 
 10) Refactoring
 11) Regolare dimensione tp: Ok 
@@ -74,6 +81,8 @@ boolean readConfigParameters()
 15) Risolvere segmentation fault nodi
 16) Risolvere problema abort
 17) Testare configurazione 2
-18) Capire perchè l'utente si blocchi poco prima di terminare
+18) Capire perchè l'utente si blocchi poco prima di terminare: perchè la coda globale è piena
 19) Capire perchè ci sia la double free
 20) Capire perchè il ctrl + c non funzioni con tanti processi
+21) Sistemare stampa transazioni rimanenti
+22) Capire perchè i nuovi nodi non facciano nulla

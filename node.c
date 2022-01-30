@@ -404,9 +404,10 @@ int main(int argc, char *argv[], char *envp[])
                                                                 {
                                                                     /* now receiving the message (transaction from TP) */
                                                                     num_bytes = msgrcv(tpId, &new_trans, sizeof(new_trans) - sizeof(long), my_pid, 0);
-
+                                                                    
                                                                     if (num_bytes >= 0)
                                                                     {
+                                                                        
                                                                         /* read transaction from tpList */
                                                                         extractedBlock.transList[i] = new_trans.transaction;
                                                                         /* adding reward of transaction in amountSend of reward_transaction */
@@ -421,7 +422,7 @@ int main(int argc, char *argv[], char *envp[])
                                                                     {
                                                                         if (errno != EINTR)
                                                                         {
-                                                                            snprintf(printMsg, 199, "[NODE %5ld]: failed to retrieve transaction from Transaction Pool. Error: ", my_pid);
+                                                                            sprintf(printMsg, "[NODE %5ld]: failed to retrieve transaction from Transaction Pool. Error", my_pid);
                                                                             unsafeErrorPrint(printMsg, __LINE__);
                                                                             printMsg[0] = 0; /* resetting string's content */
                                                                         }
@@ -792,7 +793,9 @@ int main(int argc, char *argv[], char *envp[])
     }
 
     /* freeing print string message */
-    free(printMsg);
+
+    if (printMsg != NULL)
+        free(printMsg);
 
     exit(exitCode);
 }
@@ -987,7 +990,8 @@ boolean sembufInit(struct sembuf *sops, int op)
         ret = TRUE;
     }
 
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 
     return ret;
 }
@@ -1031,7 +1035,8 @@ void reinsertTransactions(Block failedTrs)
     msg_length = snprintf(aus, 199, "[NODE %5ld]: transactions successfully reinserted on queue!\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
 
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 }
 
 /**
@@ -1177,7 +1182,8 @@ safeErrorPrint(printMsg, __LINE__);
 }
 }*/
 
-    free(printMsg);
+    if (printMsg != NULL)
+        free(printMsg);
 }
 
 /**
@@ -1427,7 +1433,8 @@ void sendTransaction()
         }
     }
 
-    free(printMsg);
+    if (printMsg != NULL)
+        free(printMsg);
 }
 
 /**
@@ -1561,7 +1568,8 @@ int extractFriendNode()
         /* do we need to end execution ? */
     }
 
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 
     return -1;
 }
@@ -1583,7 +1591,7 @@ void endOfExecution(int sig)
     msgOnGQueue.mtype = getppid();
     msgOnGQueue.msgContent = TERMINATEDNODE;
     msgOnGQueue.terminatedPid = (pid_t)my_pid;
-    if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), IPC_NOWAIT) == -1)
+    if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
     {
         if(errno == EAGAIN)
             snprintf(aus, 199, "[NODE %5ld]: failed to inform master of my termination (global queue was full). Error: ", my_pid);
@@ -1592,7 +1600,8 @@ void endOfExecution(int sig)
         safeErrorPrint(aus, __LINE__);
     }
 
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 
     exit(EXIT_SUCCESS);
 }
@@ -1682,7 +1691,8 @@ void deallocateIPCFacilities()
     msg_length = snprintf(printMsg, 199, "[NODE %5ld]: cleanup operations completed. Process is about to end its execution...\n", my_pid);
     write(STDOUT_FILENO, printMsg, msg_length);
 
-    free(printMsg);
+    if (printMsg != NULL)
+        free(printMsg);
 }
 
 /**
@@ -1700,7 +1710,9 @@ void segmentationFaultHandler(int sig)
 
     msg_length = snprintf(aus, 199, "[NODE %5ld]: a segmentation fault error happened. Terminating...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
-    free(aus);
+
+    if (aus != NULL)
+        free(aus);
 
     if(sig == SIGSEGV)
         endOfExecution(-1);

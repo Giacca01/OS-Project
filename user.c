@@ -382,7 +382,8 @@ int main(int argc, char *argv[], char *envp[])
     }
 
     /* freeing print string message */
-    free(printMsg);
+    if (printMsg != NULL)
+        free(printMsg);
     
     return 0;
 }
@@ -824,7 +825,8 @@ double computeBalance(TransList *transSent)
     msg_length = snprintf(aus, 199, "[USER %5ld]: current balance is %4.1f\n", my_pid, balance);
     write(STDOUT_FILENO, aus, msg_length);
 
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 
     return balance;
 }
@@ -855,7 +857,8 @@ TransList * removeTransaction(TransList *tList, Transaction *t)
                 /*
                     Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
                 */
-                free(tList);
+                if (tList != NULL)
+                    free(tList);
             }
             else
             {
@@ -872,7 +875,8 @@ TransList * removeTransaction(TransList *tList, Transaction *t)
                     /*
                         Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
                     */
-                    free(tList);
+                    if (tList != NULL)
+                        free(tList);
                     headPointer = NULL;
                 }
                 else
@@ -882,7 +886,8 @@ TransList * removeTransaction(TransList *tList, Transaction *t)
                         dobbiamo restituire il nuovo puntatore
                     */
                     headPointer = tList->nextTrans;
-                    free(tList);
+                    if (tList != NULL)
+                        free(tList);
                 }
             }
 
@@ -943,8 +948,9 @@ void endOfExecution(int sig)
             safeErrorPrint(aus, __LINE__); 
         }
     }
-
-    free(aus);
+    
+    if (aus)
+        free(aus);
     exit(exitCode);
 }
 
@@ -1301,7 +1307,8 @@ void transactionGeneration(int sig)
         userFailure();
     }
 
-    free(aus);
+    if (aus)
+        free(aus);
 }
 
 /**
@@ -1317,7 +1324,8 @@ void userFailure()
 
     msg_length = snprintf(aus, 199, "[USER %5ld]: failed to create a transaction, increasing number of failure counter.\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 
     num_failure++; /* incremento il numero consecutivo di volte che non riesco a mandare una transazione */
     if (num_failure == SO_RETRY)
@@ -1354,7 +1362,8 @@ TransList *addTransaction(TransList *transSent, Transaction *t)
     new_el->nextTrans = transSent;
     transSent = new_el;
 
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 
     return transSent;
 }
@@ -1369,7 +1378,9 @@ void freeTransList(TransList *transSent)
         return;
 
     freeTransList(transSent->nextTrans);
-    free(transSent);
+
+    if (transSent != NULL)
+        free(transSent);
 }
 
 /**
@@ -1485,7 +1496,8 @@ pid_t extractReceiver(pid_t pid)
         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
     }
 
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 
     return (pid_t)-1;
 }
@@ -1597,7 +1609,8 @@ pid_t extractNode()
         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
     }
 
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 
     return (pid_t)-1;
 }
@@ -1617,7 +1630,8 @@ void segmentationFaultHandler(int sig)
 
     msg_length = snprintf(aus, 199, "[USER %5ld]: a segmentation fault error happened. Terminating...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
-    free(aus);
+    if (aus != NULL)
+        free(aus);
 
     if(sig == SIGSEGV)
         endOfExecution(-1);
