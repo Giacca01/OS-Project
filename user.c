@@ -265,7 +265,7 @@ int main(int argc, char *argv[], char *envp[])
             {
                 if (sigfillset(&mask) == -1)
                 {
-                    sprintf(printMsg, "[USER %5ld]: failed to initialize signal mask. Error", my_pid);
+                    snprintf(printMsg, 199, "[USER %5ld]: failed to initialize signal mask. Error: ", my_pid);
                     unsafeErrorPrint(printMsg, __LINE__);
                     printMsg[0] = 0; /* resetting string's content */
                     endOfExecution(-1);
@@ -276,7 +276,7 @@ int main(int argc, char *argv[], char *envp[])
                     actEndOfExec.sa_mask = mask;
                     if (sigaction(SIGUSR1, &actEndOfExec, NULL) == -1)
                     {
-                        sprintf(printMsg, "[USER %5ld]: failed to set up end of simulation handler. Error", my_pid);
+                        snprintf(printMsg, 199, "[USER %5ld]: failed to set up end of simulation handler. Error: ", my_pid);
                         unsafeErrorPrint(printMsg, __LINE__);
                         printMsg[0] = 0;/* resetting string's content */
                         endOfExecution(-1);
@@ -287,7 +287,7 @@ int main(int argc, char *argv[], char *envp[])
                         actGenTrans.sa_mask = mask;
                         if (sigaction(SIGUSR2, &actGenTrans, NULL) == -1)
                         {
-                            sprintf(printMsg, "[USER %5ld]: failed to set up transaction generation handler. Error", my_pid);
+                            snprintf(printMsg, 199, "[USER %5ld]: failed to set up transaction generation handler. Error: ", my_pid);
                             unsafeErrorPrint(printMsg, __LINE__);
                             printMsg[0] = 0;/* resetting string's content */
                             endOfExecution(-1);
@@ -298,56 +298,68 @@ int main(int argc, char *argv[], char *envp[])
                             actSegFaultHandler.sa_mask = mask;
                             if (sigaction(SIGSEGV, &actSegFaultHandler, NULL) == -1)
                             {
-                                sprintf(printMsg, "[USER %5ld]: failed to set up segmentation fault handler. Error", my_pid);
+                                snprintf(printMsg, 199, "[USER %5ld]: failed to set up segmentation fault handler. Error: ", my_pid);
                                 unsafeErrorPrint(printMsg, __LINE__);
                                 printMsg[0] = 0;/* resetting string's content */
                                 endOfExecution(-1);
                             }
                             else
                             {
-                                printf("[USER %5ld]: starting lifecycle...\n", my_pid);
-
-                                /*
-                                    User's lifecycle
-                                */
-                                while (TRUE)
+                                actSegFaultHandler.sa_handler = segmentationFaultHandler;
+                                actSegFaultHandler.sa_mask = mask;
+                                if (sigaction(SIGABRT, &actSegFaultHandler, NULL) == -1)
                                 {
-                                    printf("[USER %5ld]: checking if there are failed transactions...\n", my_pid);
-                                    /* check on global queue if a sent transaction failed */
-                                    if (msgrcv(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
-                                    {
+                                    snprintf(printMsg, 199, "[USER %5ld]: failed to set up abort signal handler. Error: ", my_pid);
+                                    unsafeErrorPrint(printMsg, __LINE__);
+                                    printMsg[0] = 0;/* resetting string's content */
+                                    endOfExecution(-1);
+                                }
+                                else
+                                {
+                                    printf("[USER %5ld]: starting lifecycle...\n", my_pid);
 
-                                        /* got a message for this user from global queue */
-                                        if (msgCheckFailedTrans.msgContent == FAILEDTRANS)
+                                    /*
+                                        User's lifecycle
+                                    */
+                                    while (TRUE)
+                                    {
+                                        printf("[USER %5ld]: checking if there are failed transactions...\n", my_pid);
+                                        /* check on global queue if a sent transaction failed */
+                                        if (msgrcv(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
                                         {
-                                            printf("[USER %5ld]: failed transaction found. Removing it from list...\n", my_pid);
-                                            /* the transaction failed, so we remove it from the list of sent transactions */
-                                            transactionsSent = removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
-                                        }
-                                        else
-                                        {
-                                            printf("[USER %5ld]: no failed transactions found.\n", my_pid);
-                                            /* the message wasn't the one we were looking for, reinserting it on the global queue */
-                                            if (msgsnd(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), 0) == -1)
+
+                                            /* got a message for this user from global queue */
+                                            if (msgCheckFailedTrans.msgContent == FAILEDTRANS)
                                             {
-                                                sprintf(printMsg, "[USER %5ld]: failed to reinsert the message read from global queue while checking for failed transactions. Error", my_pid);
-                                                unsafeErrorPrint(printMsg, __LINE__);
-                                                printMsg[0] = 0;/* resetting string's content */
+                                                printf("[USER %5ld]: failed transaction found. Removing it from list...\n", my_pid);
+                                                /* the transaction failed, so we remove it from the list of sent transactions */
+                                                transactionsSent = removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
+                                            }
+                                            else
+                                            {
+                                                printf("[USER %5ld]: no failed transactions found.\n", my_pid);
+                                                /* the message wasn't the one we were looking for, reinserting it on the global queue */
+                                                if (msgsnd(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), 0) == -1)
+                                                {
+                                                    snprintf(printMsg, 199, "[USER %5ld]: failed to reinsert the message read from global queue while checking for failed transactions. Error: ", my_pid);
+                                                    unsafeErrorPrint(printMsg, __LINE__);
+                                                    printMsg[0] = 0;/* resetting string's content */
+                                                }
                                             }
                                         }
-                                    }
-                                    else if (errno != ENOMSG)
-                                    {
-                                        sprintf(printMsg, "[USER %5ld]: failed to check for failed transaction messages on global queue. Error", my_pid);
-                                        unsafeErrorPrint(printMsg, __LINE__);
-                                        printMsg[0] = 0;/* resetting string's content */
-                                    }
-                                    /* else errno == ENOMSG, so no transaction has failed */
+                                        else if (errno != ENOMSG)
+                                        {
+                                            snprintf(printMsg, 199, "[USER %5ld]: failed to check for failed transaction messages on global queue. Error: ", my_pid);
+                                            unsafeErrorPrint(printMsg, __LINE__);
+                                            printMsg[0] = 0;/* resetting string's content */
+                                        }
+                                        /* else errno == ENOMSG, so no transaction has failed */
 
-                                    /* generate a transaction */
-                                    transactionGeneration(0);
+                                        /* generate a transaction */
+                                        transactionGeneration(0);
 
-                                    sleep(1);
+                                        sleep(1);
+                                    }
                                 }
                             }
                         }
@@ -438,10 +450,10 @@ boolean readParams()
 boolean allocateMemory()
 {
     regPtrs = (Register **)calloc(REG_PARTITION_COUNT, sizeof(Register *));
-    TEST_MALLOC_ERROR(regPtrs, "[USER]: failed to allocate register paritions' pointers array. Error");
+    TEST_MALLOC_ERROR(regPtrs, "[USER]: failed to allocate register paritions' pointers array. Error: ");
 
     regPartsIds = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(regPartsIds, "[USER]: failed to allocate register paritions' ids array. Error");
+    TEST_MALLOC_ERROR(regPartsIds, "[USER]: failed to allocate register paritions' ids array. Error: ");
 
     /*
         noReadersPartitions e noReadersPartitionsPtrs vanno allocati
@@ -449,14 +461,14 @@ boolean allocateMemory()
         abbastanza grande da contenere REG_PARTITION_COUNT interi/puntatori ad interi
     */
     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(noReadersPartitions, "[USER]: failed to allocate registers partitions' shared variables ids. Error");
+    TEST_MALLOC_ERROR(noReadersPartitions, "[USER]: failed to allocate registers partitions' shared variables ids. Error: ");
 
     /*
     Non allochiamo il noReadersPartitionsPtrs[i] perchè esso dovrà
     contenere un puntatore alla shared memory
     */
     noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
-    TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "[USER]: failed to allocate registers partitions' shared variables pointers. Error");
+    TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "[USER]: failed to allocate registers partitions' shared variables pointers. Error: ");
 
     return TRUE;
 }
@@ -473,128 +485,128 @@ boolean initializeFacilities()
         testare errori shmat
     */
     key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during fair start semaphore creation. Error")
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during fair start semaphore creation. Error: ")
     fairStartSem = semget(key, 1, 0600);
-    SEM_TEST_ERROR(fairStartSem, "[USER]: semget failed during fair start semaphore creation. Error");
+    SEM_TEST_ERROR(fairStartSem, "[USER]: semget failed during fair start semaphore creation. Error: ");
 
     key = ftok(SEMFILEPATH, WRPARTSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during partitions writing semaphores creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during partitions writing semaphores creation. Error: ");
     wrPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(wrPartSem, "[USER]: semget failed during partitions writing semaphores creation. Error");
+    SEM_TEST_ERROR(wrPartSem, "[USER]: semget failed during partitions writing semaphores creation. Error: ");
 
     key = ftok(SEMFILEPATH, RDPARTSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during partitions reading semaphores creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during partitions reading semaphores creation. Error: ");
     rdPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(rdPartSem, "[USER]: semget failed during partitions reading semaphores creation. Error");
+    SEM_TEST_ERROR(rdPartSem, "[USER]: semget failed during partitions reading semaphores creation. Error: ");
 
     key = ftok(SEMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during user list semaphore creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during user list semaphore creation. Error: ");
     userListSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(userListSem, "[USER]: semget failed during user list semaphore creation. Error");
+    SEM_TEST_ERROR(userListSem, "[USER]: semget failed during user list semaphore creation. Error: ");
 
     key = ftok(SEMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during nodes list semaphore creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during nodes list semaphore creation. Error: ");
     nodeListSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(nodeListSem, "[USER]: semget failed during nodes list semaphore creation. Error");
+    SEM_TEST_ERROR(nodeListSem, "[USER]: semget failed during nodes list semaphore creation. Error: ");
 
     key = ftok(SEMFILEPATH, PARTMUTEXSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during partitions mutex semaphores creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during partitions mutex semaphores creation. Error: ");
     mutexPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(mutexPartSem, "[USER]: semget failed during partitions mutex semaphores creation. Error");
+    SEM_TEST_ERROR(mutexPartSem, "[USER]: semget failed during partitions mutex semaphores creation. Error: ");
 
     /*****  Creates and initialize the messages queues  *****/
     /********************************************************/
     /* Creates the global queue*/
     key = ftok(MSGFILEPATH, GLOBALMSGSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during global queue creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during global queue creation. Error: ");
     globalQueueId = msgget(key, 0600);
-    MSG_TEST_ERROR(globalQueueId, "[USER]: msgget failed during global queue creation. Error");
+    MSG_TEST_ERROR(globalQueueId, "[USER]: msgget failed during global queue creation. Error: ");
     /********************************************************/
     /********************************************************/
 
     /*****  Initialization of shared memory segments    *****/
     /********************************************************/
     key = ftok(SHMFILEPATH, REGPARTONESEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during register parition one creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during register parition one creation. Error: ");
     regPartsIds[0] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[0], "[USER]: shmget failed during partition one creation. Error");
+    SHM_TEST_ERROR(regPartsIds[0], "[USER]: shmget failed during partition one creation. Error: ");
 
     key = ftok(SHMFILEPATH, REGPARTTWOSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during register parition two creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during register parition two creation. Error: ");
     regPartsIds[1] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[1], "[USER]: shmget failed during partition two creation. Error");
+    SHM_TEST_ERROR(regPartsIds[1], "[USER]: shmget failed during partition two creation. Error: ");
 
     key = ftok(SHMFILEPATH, REGPARTTHREESEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during register parition three creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during register parition three creation. Error: ");
     regPartsIds[2] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), 0600);
-    SHM_TEST_ERROR(regPartsIds[2], "[USER]: shmget failed during partition three creation. Error");
+    SHM_TEST_ERROR(regPartsIds[2], "[USER]: shmget failed during partition three creation. Error: ");
 
     regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, 0);
     /*SHMAT_TEST_ERROR(regPtrs[0], "User");*/
-    TEST_SHMAT_ERROR(regPtrs[0], "[USER]: failed to attach to partition one's memory segment. Error");
+    TEST_SHMAT_ERROR(regPtrs[0], "[USER]: failed to attach to partition one's memory segment. Error: ");
     regPtrs[1] = (Register *)shmat(regPartsIds[1], NULL, 0);
     /*SHMAT_TEST_ERROR(regPtrs[1], "User");*/
-    TEST_SHMAT_ERROR(regPtrs[1], "[USER]: failed to attach to partition two's memory segment. Error");
+    TEST_SHMAT_ERROR(regPtrs[1], "[USER]: failed to attach to partition two's memory segment. Error: ");
     regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, 0);
     /*SHMAT_TEST_ERROR(regPtrs[2], "User");*/
-    TEST_SHMAT_ERROR(regPtrs[2], "[USER]: failed to attach to partition three's memory segment. Error");
+    TEST_SHMAT_ERROR(regPtrs[2], "[USER]: failed to attach to partition three's memory segment. Error: ");
 
     key = ftok(SHMFILEPATH, USERLISTSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during users list creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during users list creation. Error: ");
     usersListId = shmget(key, SO_USERS_NUM * sizeof(ProcListElem), 0600);
-    SHM_TEST_ERROR(usersListId, "[USER]: shmget failed during users list creation. Error");
+    SHM_TEST_ERROR(usersListId, "[USER]: shmget failed during users list creation. Error: ");
     usersList = (ProcListElem *)shmat(usersListId, NULL, SHM_RDONLY);
     /*SHMAT_TEST_ERROR(usersList, "User");*/
-    TEST_SHMAT_ERROR(usersList, "[USER]: failed to attach to users list's memory segment. Error")
+    TEST_SHMAT_ERROR(usersList, "[USER]: failed to attach to users list's memory segment. Error: ")
 
     key = ftok(SHMFILEPATH, NODESLISTSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during nodes list creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during nodes list creation. Error: ");
     nodesListId = shmget(key, SO_NODES_NUM * sizeof(ProcListElem), 0600);
-    SHM_TEST_ERROR(nodesListId, "[USER]: shmget failed during nodes list creation. Error");
+    SHM_TEST_ERROR(nodesListId, "[USER]: shmget failed during nodes list creation. Error: ");
     nodesList = (ProcListElem *)shmat(nodesListId, NULL, SHM_RDONLY);
     /*SHMAT_TEST_ERROR(nodesList, "User");*/
-    TEST_SHMAT_ERROR(nodesList, "[USER]: failed to attach to nodes list's memory segment. Error");
+    TEST_SHMAT_ERROR(nodesList, "[USER]: failed to attach to nodes list's memory segment. Error: ");
 
     /* Aggancio segmenti per variabili condivise*/
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition one's shared variable creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition one's shared variable creation. Error: ");
     noReadersPartitions[0] = shmget(key, sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(nodesListId, "[USER]: shmget failed during parition one's shared variable creation. Error");
+    SHM_TEST_ERROR(nodesListId, "[USER]: shmget failed during parition one's shared variable creation. Error: ");
     noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[0], "User");*/
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "[USER]: failed to attach to parition one's shared variable segment. Error");
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "[USER]: failed to attach to parition one's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition two's shared variable creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition two's shared variable creation. Error: ");
     noReadersPartitions[1] = shmget(key, sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noReadersPartitions[1], "[USER]: shmget failed during parition two's shared variable creation. Error")
+    SHM_TEST_ERROR(noReadersPartitions[1], "[USER]: shmget failed during parition two's shared variable creation. Error: ")
     noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[1], "User");*/
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "[USER]: failed to attach to parition rwo's shared variable segment. Error");
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "[USER]: failed to attach to parition rwo's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition three's shared variable creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition three's shared variable creation. Error: ");
     noReadersPartitions[2] = shmget(key, sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noReadersPartitions[2], "[USER]: shmget failed during parition three's shared variable creation. Error")
+    SHM_TEST_ERROR(noReadersPartitions[2], "[USER]: shmget failed during parition three's shared variable creation. Error: ")
     noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[2], "User");*/
-    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "[USER]: failed to attach to parition three's shared variable segment. Error");
+    TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "[USER]: failed to attach to parition three's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOUSRSEGRDERSSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during users list's shared variable creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during users list's shared variable creation. Error: ");
     noUserSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noUserSegReaders, "[USER]: shmget failed during users list's shared variable creation. Error")
+    SHM_TEST_ERROR(noUserSegReaders, "[USER]: shmget failed during users list's shared variable creation. Error: ")
     noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
     /*SHMAT_TEST_ERROR(noUserSegReadersPtr, "User");*/
-    TEST_SHMAT_ERROR(noUserSegReadersPtr, "[USER]: failed to attach to users list's shared variable segment. Error");
+    TEST_SHMAT_ERROR(noUserSegReadersPtr, "[USER]: failed to attach to users list's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during nodes list's shared variable creation. Error");
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during nodes list's shared variable creation. Error: ");
     noNodeSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
-    SHM_TEST_ERROR(noNodeSegReaders, "[USER]: shmget failed during nodes list's shared variable creation. Error")
+    SHM_TEST_ERROR(noNodeSegReaders, "[USER]: shmget failed during nodes list's shared variable creation. Error: ")
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
     /*SHMAT_TEST_ERROR(noNodeSegReadersPtr, "User");*/
-    TEST_SHMAT_ERROR(noNodeSegReadersPtr, "[USER]: failed to attach to nodes list's shared variable segment. Error");
+    TEST_SHMAT_ERROR(noNodeSegReadersPtr, "[USER]: failed to attach to nodes list's shared variable segment. Error: ");
 
     return TRUE;
 }
@@ -626,7 +638,7 @@ double computeBalance(TransList *transSent)
         la starvation degli scrittori o dei lettori.
     */
     
-    msg_length = sprintf(aus, "[USER %5ld]: computing balance...\n", my_pid);
+    msg_length = snprintf(aus, 199, "[USER %5ld]: computing balance...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
     aus[0] = 0;/* resetting string's content */
 
@@ -645,7 +657,7 @@ double computeBalance(TransList *transSent)
         */
         if (semop(rdPartSem, &op, 1) == -1)
         {
-            sprintf(aus, "[USER %5ld]: failed to reserve register partition reading semaphore. Error", my_pid);
+            snprintf(aus, 199, "[USER %5ld]: failed to reserve register partition reading semaphore. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
             aus[0] = 0;/* resetting string's content */
             errBeforeComputing = TRUE;
@@ -654,7 +666,7 @@ double computeBalance(TransList *transSent)
         {
             if (semop(mutexPartSem, &op, 1) == -1)
             {
-                sprintf(aus, "[USER %5ld]: failed to reserve register partition mutex semaphore. Error", my_pid);
+                snprintf(aus, 199, "[USER %5ld]: failed to reserve register partition mutex semaphore. Error: ", my_pid);
                 safeErrorPrint(aus, __LINE__);
                 aus[0] = 0;/* resetting string's content */
                 errBeforeComputing = TRUE;
@@ -666,7 +678,7 @@ double computeBalance(TransList *transSent)
                 {
                     if (semop(wrPartSem, &op, 1) == -1)
                     {
-                        sprintf(aus, "[USER %5ld]: failed to reserve register partition writing semaphore. Error", my_pid);
+                        snprintf(aus, 199, "[USER %5ld]: failed to reserve register partition writing semaphore. Error: ", my_pid);
                         safeErrorPrint(aus, __LINE__);
                         aus[0] = 0;/* resetting string's content */
                         errBeforeComputing = TRUE;
@@ -679,7 +691,7 @@ double computeBalance(TransList *transSent)
 
                 if (semop(mutexPartSem, &op, 1) == -1)
                 {
-                    sprintf(aus, "[USER %5ld]: failed to release register partition mutex semaphore. Error", my_pid);
+                    snprintf(aus, 199, "[USER %5ld]: failed to release register partition mutex semaphore. Error: ", my_pid);
                     safeErrorPrint(aus, __LINE__);
                     aus[0] = 0;/* resetting string's content */
                     errBeforeComputing = TRUE;
@@ -688,7 +700,7 @@ double computeBalance(TransList *transSent)
                 {
                     if (semop(rdPartSem, &op, 1) == -1)
                     {
-                        sprintf(aus, "[USER %5ld]: failed to release register partition reading semaphore. Error", my_pid);
+                        snprintf(aus, 199, "[USER %5ld]: failed to release register partition reading semaphore. Error: ", my_pid);
                         safeErrorPrint(aus, __LINE__);
                         aus[0] = 0;/* resetting string's content */
                         errBeforeComputing = TRUE;
@@ -733,7 +745,7 @@ double computeBalance(TransList *transSent)
                         if (semop(mutexPartSem, &op, 1) == -1)
                         {
                             balance = 0;
-                            sprintf(aus, "[USER %5ld]: failed to reserve register partition mutex semaphore. Error", my_pid);
+                            snprintf(aus, 199, "[USER %5ld]: failed to reserve register partition mutex semaphore. Error: ", my_pid);
                             safeErrorPrint(aus, __LINE__);
                             aus[0] = 0;/* resetting string's content */
                             userFailure();
@@ -751,7 +763,7 @@ double computeBalance(TransList *transSent)
                                 if (semop(wrPartSem, &op, 1) == -1)
                                 {
                                     balance = 0;
-                                    sprintf(aus, "[USER %5ld]: failed to release register partition writing semaphore. Error", my_pid);
+                                    snprintf(aus, 199, "[USER %5ld]: failed to release register partition writing semaphore. Error: ", my_pid);
                                     safeErrorPrint(aus, __LINE__);
                                     aus[0] = 0;/* resetting string's content */
                                     errAfterComputing = TRUE;
@@ -765,7 +777,7 @@ double computeBalance(TransList *transSent)
                             if (semop(mutexPartSem, &op, 1) == -1)
                             {
                                 balance = 0;
-                                sprintf(aus, "[USER %5ld]: failed to release register partition mutex semaphore. Error", my_pid);
+                                snprintf(aus, 199, "[USER %5ld]: failed to release register partition mutex semaphore. Error: ", my_pid);
                                 safeErrorPrint(aus, __LINE__);
                                 aus[0] = 0;/* resetting string's content */
                                 userFailure();
@@ -809,7 +821,7 @@ double computeBalance(TransList *transSent)
     }
 
     /* print the user's balance */
-    msg_length = sprintf(aus, "[USER %5ld]: current balance is %4.1f\n", my_pid, balance);
+    msg_length = snprintf(aus, 199, "[USER %5ld]: current balance is %4.1f\n", my_pid, balance);
     write(STDOUT_FILENO, aus, msg_length);
 
     free(aus);
@@ -899,7 +911,7 @@ TransList * removeTransaction(TransList *tList, Transaction *t)
 void endOfExecution(int sig)
 {
     int exitCode = EXIT_FAILURE;
-    char * aus;
+    char * aus = NULL;
     MsgGlobalQueue msgOnGQueue;
     
     aus = (char *)calloc(200, sizeof(char));
@@ -913,6 +925,7 @@ void endOfExecution(int sig)
          * se il metodo viene chiamato in risposta alla ricezione del segnale SIGUSR1, allora è stato
          * il master a richiedere la terminazione dello user, quindi impostiamo come stato di
          * terminazione EXIT_SUCCESS; in caso contrario l'esecuzione termina con un fallimento.
+         * Non serve inoltre segnalare la terminazione al master perché è stato lui a chiedere di terminare
          */
     }
     else
@@ -924,10 +937,10 @@ void endOfExecution(int sig)
         if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), IPC_NOWAIT) == -1)
         {
             if(errno == EAGAIN)
-                sprintf(aus, "[USER %5ld]: failed to inform master of my termination (global queue was full). Error", my_pid);
+                snprintf(aus, 199, "[USER %5ld]: failed to inform master of my termination (global queue was full). Error: ", my_pid);
             else
-                sprintf(aus, "[USER %5ld]: failed to inform master of my termination. Error", my_pid);
-            safeErrorPrint(aus, __LINE__);
+                snprintf(aus, 199, "[USER %5ld]: failed to inform master of my termination. Error: ", my_pid);
+            safeErrorPrint(aus, __LINE__); 
         }
     }
 
@@ -955,113 +968,120 @@ void deallocateIPCFacilities()
         CORREGGERE CON NUOVO MECCANISMO DI RILEVAZIONE ERRORI
     */
 
-    msg_length = sprintf(aus, "[USER %5ld]: detaching from register's partitions...\n", my_pid);
+    msg_length = snprintf(aus, 199, "[USER %5ld]: detaching from register's partitions...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
     aus[0] = 0;/* resetting string's content */
 
-    for (i = 0; i < REG_PARTITION_COUNT; i++)
+    if(regPtrs != NULL)
     {
-        if (shmdt(regPtrs[i]) == -1)
+        for (i = 0; i < REG_PARTITION_COUNT; i++)
         {
-            if (errno != EINVAL)
+            if (shmdt(regPtrs[i]) == -1)
             {
-                /*
-                    Implementare un meccanismo di retry??
-                    Contando che non è un errore così frequente si potrebbe anche ignorare...
-                    Non vale la pena, possiamo limitarci a proseguire la deallocazione
-                    riducendo al minimo il memory leak
-                */
-                sprintf(aus, "[USER %5ld]: failed to detach from register's partition. Error", my_pid);
-                safeErrorPrint(aus, __LINE__);
-                aus[0] = 0;/* resetting string's content */
+                if (errno != EINVAL)
+                {
+                    /*
+                        Implementare un meccanismo di retry??
+                        Contando che non è un errore così frequente si potrebbe anche ignorare...
+                        Non vale la pena, possiamo limitarci a proseguire la deallocazione
+                        riducendo al minimo il memory leak
+                    */
+                    snprintf(aus, 199, "[USER %5ld]: failed to detach from register's partition. Error: ", my_pid);
+                    safeErrorPrint(aus, __LINE__);
+                    aus[0] = 0;/* resetting string's content */
+                }
             }
         }
-    }
-    if (regPtrs != NULL)
+
         free(regPtrs);
+
+    }
 
     if (regPartsIds != NULL)
         free(regPartsIds);
 
-    msg_length = sprintf(aus, "[USER %5ld]: detaching from users list...\n", my_pid);
+    msg_length = snprintf(aus, 199, "[USER %5ld]: detaching from users list...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
     aus[0] = 0;/* resetting string's content */
-
-    if (shmdt(usersList) == -1)
+ 
+    if (usersList != NULL && shmdt(usersList) == -1)
     {
         if (errno != EINVAL)
         {
-            sprintf(aus, "[USER %5ld]: failed to detach from users list. Error", my_pid);
+            snprintf(aus, 199, "[USER %5ld]: failed to detach from users list. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
             aus[0] = 0;/* resetting string's content */
         }
     }
 
-    msg_length = sprintf(aus, "[USER %5ld]: detaching from nodes list...\n", my_pid);
+    msg_length = snprintf(aus, 199, "[USER %5ld]: detaching from nodes list...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
     aus[0] = 0;/* resetting string's content */
 
-    if (shmdt(nodesList) == -1)
+    if (nodesList != NULL && shmdt(nodesList) == -1)
     {
         if (errno != EINVAL)
         {
-            sprintf(aus, "[USER %5ld]: failed to detach from nodes list. Error", my_pid);
+            snprintf(aus, 199, "[USER %5ld]: failed to detach from nodes list. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
             aus[0] = 0;/* resetting string's content */
         }
     }
 
-    msg_length = sprintf(aus, "[USER %5ld]: detaching from partitions' number of readers shared variable...\n", my_pid);
+    msg_length = snprintf(aus, 199, "[USER %5ld]: detaching from partitions' number of readers shared variable...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
     aus[0] = 0;/* resetting string's content */
 
-    for (i = 0; i < REG_PARTITION_COUNT; i++)
+    if(noReadersPartitionsPtrs != NULL)
     {
-        if (shmdt(noReadersPartitionsPtrs[i]) == -1)
+        for (i = 0; i < REG_PARTITION_COUNT; i++)
         {
-            if (errno != EINVAL)
+            if (shmdt(noReadersPartitionsPtrs[i]) == -1)
             {
-                sprintf(aus, "[USER %5ld]: failed to detach from partitions' number of readers shared variable. Error", my_pid);
-                safeErrorPrint(aus, __LINE__);
-                aus[0] = 0;/* resetting string's content */
+                if (errno != EINVAL)
+                {
+                    snprintf(aus, 199, "[USER %5ld]: failed to detach from partitions' number of readers shared variable. Error: ", my_pid);
+                    safeErrorPrint(aus, __LINE__);
+                    aus[0] = 0;/* resetting string's content */
+                }
             }
         }
-    }
-    if (noReadersPartitions != NULL)
+        
         free(noReadersPartitions);
+    }
 
     if (noReadersPartitionsPtrs != NULL)
         free(noReadersPartitionsPtrs);
 
-    msg_length = sprintf(aus, "[USER %5ld]: detaching from users list's number of readers shared variable...\n", my_pid);
+    msg_length = snprintf(aus, 199, "[USER %5ld]: detaching from users list's number of readers shared variable...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
     aus[0] = 0;/* resetting string's content */
 
-    if (shmdt(noUserSegReadersPtr) == -1)
+    if (noUserSegReadersPtr != NULL && shmdt(noUserSegReadersPtr) == -1)
     {
         if (errno != EINVAL)
         {
-            sprintf(aus, "[USER %5ld]: failed to detach from users list's number of readers shared variable. Error", my_pid);
+            snprintf(aus, 199, "[USER %5ld]: failed to detach from users list's number of readers shared variable. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
             aus[0] = 0;/* resetting string's content */
         }
     }
 
-    msg_length = sprintf(aus, "[USER %5ld]: detaching from nodes list's number of readers shared variable...\n", my_pid);
+    msg_length = snprintf(aus, 199, "[USER %5ld]: detaching from nodes list's number of readers shared variable...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
     aus[0] = 0;/* resetting string's content */
 
-    if (shmdt(noNodeSegReadersPtr) == -1)
+    if (noNodeSegReadersPtr != NULL && shmdt(noNodeSegReadersPtr) == -1)
     {
         if (errno != EINVAL)
         {
-            sprintf(aus, "[USER %5ld]: failed to detach from nodes list's number of readers shared variable. Error", my_pid);
+            snprintf(aus, 199, "[USER %5ld]: failed to detach from nodes list's number of readers shared variable. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
             aus[0] = 0;/* resetting string's content */
         }
     }
 
-    msg_length = sprintf(aus, "[USER %5ld]: cleanup operations completed. Process is about to end its execution...\n", my_pid);
+    msg_length = snprintf(aus, 199, "[USER %5ld]: cleanup operations completed. Process is about to end its execution...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
 
     /* freeing the list of sent transactions */
@@ -1095,13 +1115,13 @@ void transactionGeneration(int sig)
 
     if (sig == 0)
     {
-        msg_length = sprintf(aus, "[USER %5ld]: generating a new transaction...\n", my_pid);
+        msg_length = snprintf(aus, 199, "[USER %5ld]: generating a new transaction...\n", my_pid);
         write(STDOUT_FILENO, aus, msg_length);
         aus[0] = 0; /* resetting string's content */
     }
     else
     {
-        msg_length = sprintf(aus, "[USER %5ld]: generating a new transaction on event request...\n", my_pid);
+        msg_length = snprintf(aus, 199, "[USER %5ld]: generating a new transaction on event request...\n", my_pid);
         write(STDOUT_FILENO, aus, msg_length);
         aus[0] = 0; /* resetting string's content */
     }
@@ -1115,7 +1135,7 @@ void transactionGeneration(int sig)
         receiver_user = extractReceiver((pid_t)my_pid);
         if (receiver_user == -1)
         {
-            sprintf(aus, "[USER %5ld]: failed to extract user receiver. Error", my_pid);
+            snprintf(aus, 199, "[USER %5ld]: failed to extract user receiver. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
             aus[0] = 0;/* resetting string's content */
             userFailure();
@@ -1144,7 +1164,7 @@ void transactionGeneration(int sig)
             receiver_node = extractNode();
             if (receiver_node == -1)
             {
-                sprintf(aus, "[USER %5ld]: failed to extract node which to send transaction on TP. Error", my_pid);
+                snprintf(aus, 199, "[USER %5ld]: failed to extract node which to send transaction on TP. Error: ", my_pid);
                 safeErrorPrint(aus, __LINE__);
                 aus[0] = 0;/* resetting string's content */
                 userFailure();
@@ -1159,7 +1179,7 @@ void transactionGeneration(int sig)
                 key = ftok(MSGFILEPATH, receiver_node);
                 if (key == -1)
                 {
-                    sprintf(aus, "[USER %5ld]: ftok failed during node's queue retrieving. Error", my_pid);
+                    snprintf(aus, 199, "[USER %5ld]: ftok failed during node's queue retrieving. Error: ", my_pid);
                     safeErrorPrint(aus, __LINE__);
                     aus[0] = 0;/* resetting string's content */
                     userFailure();
@@ -1170,7 +1190,7 @@ void transactionGeneration(int sig)
                     queueId = msgget(key, 0600);
                     if (queueId == -1)
                     {
-                        sprintf(aus, "[USER %5ld]: failed to connect to node's transaction pool. Error", my_pid);
+                        snprintf(aus, 199, "[USER %5ld]: failed to connect to node's transaction pool. Error: ", my_pid);
                         safeErrorPrint(aus, __LINE__);
                         aus[0] = 0; /* resetting string's content */
                         userFailure();
@@ -1181,7 +1201,7 @@ void transactionGeneration(int sig)
                         transactionsSent = addTransaction(transactionsSent, &new_trans);
 
                         /* sending the transaction to node */
-                        msg_length = sprintf(aus, "[USER %5ld]: sending the created transaction to the node...\n", my_pid);
+                        msg_length = snprintf(aus, 199, "[USER %5ld]: sending the created transaction to the node...\n", my_pid);
                         write(STDOUT_FILENO, aus, msg_length);
                         aus[0] = 0;/* resetting string's content */
 
@@ -1190,7 +1210,7 @@ void transactionGeneration(int sig)
                             if (errno == EAGAIN)
                             {
                                 /* TP of Selected Node was full, we need to send the message on the global queue */
-                                msg_length = sprintf(aus, "[USER %5ld]: transaction pool of selected node was full. Sending transaction on global queue...\n", my_pid);
+                                msg_length = snprintf(aus, 199, "[USER %5ld]: transaction pool of selected node was full. Sending transaction on global queue...\n", my_pid);
                                 write(STDOUT_FILENO, aus, msg_length);
                                 aus[0] = 0;/* resetting string's content */
 
@@ -1200,7 +1220,7 @@ void transactionGeneration(int sig)
                                 msgOnGQueue.hops = 0;
                                 if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
                                 {
-                                    sprintf(aus, "[USER %5ld]: failed to send transaction on global queue. Error", my_pid);
+                                    snprintf(aus, 199, "[USER %5ld]: failed to send transaction on global queue. Error: ", my_pid);
                                     safeErrorPrint(aus, __LINE__);
                                     aus[0] = 0;/* resetting string's content */
                                     userFailure();
@@ -1210,13 +1230,13 @@ void transactionGeneration(int sig)
                             {
                                 if (sig == 0)
                                 {
-                                    sprintf(aus, "[USER %5ld]: failed to send transaction to node. Error", my_pid);
+                                    snprintf(aus, 199, "[USER %5ld]: failed to send transaction to node. Error: ", my_pid);
                                     safeErrorPrint(aus, __LINE__);
                                     aus[0] = 0;/* resetting string's content */
                                 }
                                 else
                                 {
-                                    sprintf(aus, "[USER %5ld]: failed to send transaction generated on event to node. Error", my_pid);
+                                    snprintf(aus, 199, "[USER %5ld]: failed to send transaction generated on event to node. Error: ", my_pid);
                                     safeErrorPrint(aus, __LINE__);
                                     aus[0] = 0;/* resetting string's content */
                                 }
@@ -1228,13 +1248,13 @@ void transactionGeneration(int sig)
                         {
                             if (sig == 0)
                             {
-                                msg_length = sprintf(aus, "[USER %5ld]: transaction correctly sent to node.\n", my_pid);
+                                msg_length = snprintf(aus, 199, "[USER %5ld]: transaction correctly sent to node.\n", my_pid);
                                 write(STDOUT_FILENO, aus, msg_length);
                                 aus[0] = 0;/* resetting string's content */
                             }
                             else
                             {
-                                msg_length = sprintf(aus, "[USER %5ld]: transaction generated on event correctly sent to node.\n", my_pid);
+                                msg_length = snprintf(aus, 199, "[USER %5ld]: transaction generated on event correctly sent to node.\n", my_pid);
                                 write(STDOUT_FILENO, aus, msg_length);
                                 aus[0] = 0;/* resetting string's content */
                             }
@@ -1253,13 +1273,13 @@ void transactionGeneration(int sig)
                                 request.tv_nsec -= 1000000000;
                             }
                             
-                            msg_length = sprintf(aus, "[USER %5ld]: processing the transaction...\n", my_pid);
+                            msg_length = snprintf(aus, 199, "[USER %5ld]: processing the transaction...\n", my_pid);
                             write(STDOUT_FILENO, aus, msg_length);
                             aus[0] = 0;/* resetting string's content */
                             
                             if (nanosleep(&request, &remaining) == -1)
                             {
-                                sprintf(aus, "[USER %5ld]: failed to simulate wait for processing the transaction. Error", my_pid);
+                                snprintf(aus, 199, "[USER %5ld]: failed to simulate wait for processing the transaction. Error: ", my_pid);
                                 safeErrorPrint(aus, __LINE__);
                                 aus[0] = 0;/* resetting string's content */
                             }
@@ -1276,7 +1296,7 @@ void transactionGeneration(int sig)
     }
     else
     {
-        msg_length = sprintf(aus, "[USER %5ld]: not enough money to make a transaction...\n", my_pid);
+        msg_length = snprintf(aus, 199, "[USER %5ld]: not enough money to make a transaction...\n", my_pid);
         write(STDOUT_FILENO, aus, msg_length);
         userFailure();
     }
@@ -1295,7 +1315,7 @@ void userFailure()
 
     aus = (char *)calloc(200, sizeof(char));
 
-    msg_length = sprintf(aus, "[USER %5ld]: failed to create a transaction, increasing number of failure counter.\n", my_pid);
+    msg_length = snprintf(aus, 199, "[USER %5ld]: failed to create a transaction, increasing number of failure counter.\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
     free(aus);
 
@@ -1323,7 +1343,7 @@ TransList *addTransaction(TransList *transSent, Transaction *t)
 
     if (t == NULL)
     {
-        sprintf(aus, "[USER %5ld]: error: transaction passed to function addTransaction is a NULL pointer.", my_pid);
+        snprintf(aus, 199, "[USER %5ld]: error: transaction passed to function addTransaction is a NULL pointer.", my_pid);
         safeErrorPrint(aus, __LINE__);
         return NULL;
     }
@@ -1381,7 +1401,7 @@ pid_t extractReceiver(pid_t pid)
             sops.sem_op = -1;
             if (semop(userListSem, &sops, 1) == -1)
             {
-                sprintf(aus, "[USER %5ld]: failed to reserve write usersList semaphore. Error", my_pid);
+                snprintf(aus, 199, "[USER %5ld]: failed to reserve write usersList semaphore. Error: ", my_pid);
                 safeErrorPrint(aus, __LINE__);
                 aus[0] = 0;/* resetting string's content */
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1419,7 +1439,7 @@ pid_t extractReceiver(pid_t pid)
                     sops.sem_op = 1;
                     if (semop(userListSem, &sops, 1) == -1)
                     {
-                        sprintf(aus, "[USER %5ld]: failed to release write usersList semaphore. Error", my_pid);
+                        snprintf(aus, 199, "[USER %5ld]: failed to release write usersList semaphore. Error: ", my_pid);
                         safeErrorPrint(aus, __LINE__);
                         aus[0] = 0;/* resetting string's content */
                         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1435,7 +1455,7 @@ pid_t extractReceiver(pid_t pid)
                 }
                 else
                 {
-                    sprintf(aus, "[USER %5ld]: failed to release mutex usersList semaphore. Error", my_pid);
+                    snprintf(aus, 199, "[USER %5ld]: failed to release mutex usersList semaphore. Error: ", my_pid);
                     safeErrorPrint(aus, __LINE__);
                     aus[0] = 0;/* resetting string's content */
                     /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1443,7 +1463,7 @@ pid_t extractReceiver(pid_t pid)
             }
             else
             {
-                sprintf(aus, "[USER %5ld]: failed to reserve mutex usersList semaphore. Error", my_pid);
+                snprintf(aus, 199, "[USER %5ld]: failed to reserve mutex usersList semaphore. Error: ", my_pid);
                 safeErrorPrint(aus, __LINE__);
                 aus[0] = 0;/* resetting string's content */
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1451,7 +1471,7 @@ pid_t extractReceiver(pid_t pid)
         }
         else
         {
-            sprintf(aus, "[USER %5ld]: failed to release mutex usersList semaphore. Error", my_pid);
+            snprintf(aus, 199, "[USER %5ld]: failed to release mutex usersList semaphore. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
             aus[0] = 0;/* resetting string's content */
             /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1459,7 +1479,7 @@ pid_t extractReceiver(pid_t pid)
     }
     else
     {
-        sprintf(aus, "[USER %5ld]: failed to reserve mutex usersList semaphore. Error", my_pid);
+        snprintf(aus, 199, "[USER %5ld]: failed to reserve mutex usersList semaphore. Error: ", my_pid);
         safeErrorPrint(aus, __LINE__);
         aus[0] = 0;/* resetting string's content */
         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1496,7 +1516,7 @@ pid_t extractNode()
             sops.sem_op = -1;
             if (semop(nodeListSem, &sops, 1) == -1)
             {
-                sprintf(aus, "[USER %5ld]: failed to reserve write nodesList semaphore. Error", my_pid);
+                snprintf(aus, 199, "[USER %5ld]: failed to reserve write nodesList semaphore. Error: ", my_pid);
                 safeErrorPrint(aus, __LINE__);
                 aus[0] = 0;/* resetting string's content */
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1531,7 +1551,7 @@ pid_t extractNode()
                     sops.sem_op = 1;
                     if (semop(nodeListSem, &sops, 1) == -1)
                     {
-                        sprintf(aus, "[USER %5ld]: failed to release write nodesList semaphore. Error", my_pid);
+                        snprintf(aus, 199, "[USER %5ld]: failed to release write nodesList semaphore. Error: ", my_pid);
                         safeErrorPrint(aus, __LINE__);
                         aus[0] = 0;/* resetting string's content */
                         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1547,7 +1567,7 @@ pid_t extractNode()
                 }
                 else
                 {
-                    sprintf(aus, "[USER %5ld]: failed to release mutex nodesList semaphore. Error", my_pid);
+                    snprintf(aus, 199, "[USER %5ld]: failed to release mutex nodesList semaphore. Error: ", my_pid);
                     safeErrorPrint(aus, __LINE__);
                     aus[0] = 0;/* resetting string's content */
                     /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1555,7 +1575,7 @@ pid_t extractNode()
             }
             else
             {
-                sprintf(aus, "[USER %5ld]: failed to reserve mutex nodesList semaphore. Error", my_pid);
+                snprintf(aus, 199, "[USER %5ld]: failed to reserve mutex nodesList semaphore. Error: ", my_pid);
                 safeErrorPrint(aus, __LINE__);
                 aus[0] = 0;/* resetting string's content */
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1563,7 +1583,7 @@ pid_t extractNode()
         }
         else
         {
-            sprintf(aus, "[USER %5ld]: failed to release mutex nodesList semaphore. Error", my_pid);
+            snprintf(aus, 199, "[USER %5ld]: failed to release mutex nodesList semaphore. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
             aus[0] = 0;/* resetting string's content */
             /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1571,7 +1591,7 @@ pid_t extractNode()
     }
     else
     {
-        sprintf(aus, "[USER %5ld]: failed to reserve mutex nodesList semaphore. Error", my_pid);
+        snprintf(aus, 199, "[USER %5ld]: failed to reserve mutex nodesList semaphore. Error: ", my_pid);
         safeErrorPrint(aus, __LINE__);
         aus[0] = 0;/* resetting string's content */
         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
@@ -1595,11 +1615,14 @@ void segmentationFaultHandler(int sig)
     
     aus = (char*)calloc(200, sizeof(char));
 
-    msg_length = sprintf(aus, "[USER %ld]: a segmentation fault error happened. Terminating...\n", my_pid);
+    msg_length = snprintf(aus, 199, "[USER %5ld]: a segmentation fault error happened. Terminating...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
     free(aus);
 
-    endOfExecution(-1);
+    if(sig == SIGSEGV)
+        endOfExecution(-1);
+    else
+        exit(EXIT_FAILURE);
 }
 #pragma endregion
 /*** END FUNCTIONS IMPLEMENTATIONS ***/

@@ -34,20 +34,24 @@ void safeErrorPrint(char *msg, int line)
     char *aus = NULL;
     int ret = -1;
 
-    ret = sprintf(aus, "An error occurred at line %d during the execution of process of PID: %ld. See following description.\n",
+    aus = (char *)calloc(200, sizeof(char));
+
+    ret = snprintf(aus, 199, "An error occurred at line %d during the execution of process of PID: %5ld. See following description.\n",
                   line, (long)getpid());
-    write(STDERR_FILENO, aus, ret);
+    write(STDERR_FILENO, aus, strlen(aus));
 
     if (errno)
     {
         /* check if null*/
         strcat(msg, strerror(errno));
+        strcat(msg, "\n");
         write(STDERR_FILENO, msg, strlen(msg));
     }
     else
     {
+        strcat(msg, "\n");
         write(STDERR_FILENO, msg, strlen(msg));
     }
-
-    write(STDERR_FILENO, "\n", 1);
+    
+    free(aus);
 }
