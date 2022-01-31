@@ -236,12 +236,11 @@ void segmentationFaultHandler(int);
 /*** MAIN FUNCTION ***/
 int main(int argc, char *argv[], char *envp[])
 {
-    function_we_into = "main";
     /*
         List that contains all the transactions sent by a process.
         We use it to keep track of the transactions sent by a process
         the haven't been written on the register yet.
-        Dato che potrebbe essere molto grande bisognerebbe fare
+        Dato che potrebbe essere molto grande bisognerebbe 
         inserimento ordinato e ricerca dicotomica
     */
     /*
@@ -254,6 +253,7 @@ int main(int argc, char *argv[], char *envp[])
     sigset_t mask;
     MsgGlobalQueue msgCheckFailedTrans;
     char * printMsg;
+    function_we_into = "main";
 
     /* initializing print string message */
     printMsg = (char*)calloc(200, sizeof(char));
@@ -261,10 +261,13 @@ int main(int argc, char *argv[], char *envp[])
 
     if (readParams())
     {
+        function_we_into = "main";
         if (allocateMemory())
         {
+            function_we_into = "main";
             if (initializeFacilities())
             {
+                function_we_into = "main";
                 if (sigfillset(&mask) == -1)
                 {
                     snprintf(printMsg, 199, "[USER %5ld]: failed to initialize signal mask. Error: ", my_pid);
@@ -336,6 +339,7 @@ int main(int argc, char *argv[], char *envp[])
                                                 printf("[USER %5ld]: failed transaction found. Removing it from list...\n", my_pid);
                                                 /* the transaction failed, so we remove it from the list of sent transactions */
                                                 transactionsSent = removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
+                                                function_we_into = "main";
                                             }
                                             else
                                             {
@@ -359,6 +363,7 @@ int main(int argc, char *argv[], char *envp[])
 
                                         /* generate a transaction */
                                         transactionGeneration(0);
+                                        function_we_into = "main";
 
                                         sleep(1);
                                     }
@@ -484,13 +489,14 @@ boolean allocateMemory()
  */
 boolean initializeFacilities()
 {
+    key_t key;
     function_we_into = "initializeFacilities";
     /* Initialization of semaphores*/
     /*
         CORREGGERE: sostituire i numeri con costanti simboliche
         testare errori shmat
     */
-    key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
+    key = ftok(SEMFILEPATH, FAIRSTARTSEED);
     FTOK_TEST_ERROR(key, "[USER]: ftok failed during fair start semaphore creation. Error: ")
     fairStartSem = semget(key, 1, 0600);
     SEM_TEST_ERROR(fairStartSem, "[USER]: semget failed during fair start semaphore creation. Error: ");
@@ -626,7 +632,6 @@ boolean initializeFacilities()
  */
 double computeBalance()
 {
-    function_we_into = "computeBalance";
     double balance = 0;
     int i, j, k, l, msg_length;
     Register *ptr;
@@ -634,6 +639,7 @@ double computeBalance()
     struct sembuf op;
     boolean errBeforeComputing = FALSE, errAfterComputing = FALSE;
     char * aus;
+    function_we_into = "computeBalance";
     aus = (char *)calloc(200, sizeof(char));
 
     balance = SO_BUDGET_INIT;
@@ -722,7 +728,7 @@ double computeBalance()
                         ptr = regPtrs[i];
                         
                         /* Il while portava alla generazione di segmentation fault */
-                        for (l = 0; l < REG_PARTITION_COUNT; l++, ptr++)
+                        for (l = 0; l < REG_PARTITION_COUNT; l++)
                         {
                             for (j = 0; j < ptr->nBlocks; j++)
                             {
@@ -738,9 +744,9 @@ double computeBalance()
                                             Togliamo le transazioni già presenti nel master
                                             dalla lista di quelle inviate
                                         */
-                                        balance -= (ptr->blockList[j].transList[k].amountSend) +
-                                                   (ptr->blockList[j].transList[k].reward);
+                                        balance -= ((ptr->blockList[j].transList[k].amountSend) + (ptr->blockList[j].transList[k].reward));
                                         transactionsSent = removeTransaction(transactionsSent, &(ptr->blockList[j].transList[k]));
+                                        function_we_into = "computeBalance";
                                     }
                                 }
                             }
@@ -757,6 +763,7 @@ double computeBalance()
                             safeErrorPrint(aus, __LINE__);
                             aus[0] = 0;/* resetting string's content */
                             userFailure();
+                            function_we_into = "computeBalance";
                             errAfterComputing = TRUE;
                         }
                         else
@@ -789,6 +796,7 @@ double computeBalance()
                                 safeErrorPrint(aus, __LINE__);
                                 aus[0] = 0;/* resetting string's content */
                                 userFailure();
+                                function_we_into = "computeBalance";
                                 errAfterComputing = TRUE;
                             }
                             else
@@ -799,6 +807,7 @@ double computeBalance()
                                     userFailure(); /* metto questo qui e non nel ramo then dell'if di wrPartSem perché se
                                                     * si verifica un errore sia in wrPartSem che in mutexPartSem il numero
                                                     * di fallimenti verrebbe decrementato due volte */
+                                    function_we_into = "computeBalance";
                                     break;         /* we stop the cycle and end balance computation */
                                 }
                             }
@@ -813,6 +822,7 @@ double computeBalance()
     {
         /* an error occurred with wrPartSem or rdPartSem or mutexPartSem before balance computing */
         userFailure();
+        function_we_into = "computeBalance";
         balance = 0;
     }
     else if(!errAfterComputing)
@@ -825,8 +835,7 @@ double computeBalance()
         transSent = transactionsSent;
         while (transSent != NULL)
         {
-            balance -= (transSent->currTrans.amountSend) +
-                        (transSent->currTrans.reward);
+            balance -= ((transSent->currTrans.amountSend) + (transSent->currTrans.reward));
             transSent = transSent->nextTrans;
         }
     }
@@ -848,10 +857,10 @@ double computeBalance()
  */
 TransList * removeTransaction(TransList *tList, Transaction *t)
 {
-    function_we_into = "removeTransaction";
     TransList *headPointer = tList;
     TransList *prev = NULL;
     boolean done = FALSE;
+    function_we_into = "removeTransaction";
 
     while (tList != NULL && !done)
     {
@@ -921,14 +930,15 @@ TransList * removeTransaction(TransList *tList, Transaction *t)
  */
 void endOfExecution(int sig)
 {
-    function_we_into = "endOfExecution";
     int exitCode = EXIT_FAILURE;
     char * aus = NULL;
     MsgGlobalQueue msgOnGQueue;
+    function_we_into = "endOfExecution";
     
     aus = (char *)calloc(200, sizeof(char));
 
     deallocateIPCFacilities();
+    function_we_into = "endOfExecution";
 
     if (sig == SIGUSR1)
     {
@@ -966,7 +976,6 @@ void endOfExecution(int sig)
  */
 void deallocateIPCFacilities()
 {
-    function_we_into = "deallocateIPCFacilities";
     /*
      * Cose da eliminare:
      *  - collegamento alla memoria condivisa
@@ -975,6 +984,7 @@ void deallocateIPCFacilities()
      */
     int i = 0, msg_length;
     char * aus = NULL;
+    function_we_into = "deallocateIPCFacilities";
 
     aus = (char *)calloc(200, sizeof(char));
 
@@ -1114,7 +1124,6 @@ void deallocateIPCFacilities()
  */
 void transactionGeneration(int sig)
 {
-    function_we_into = "transactionGeneration";
     int bilancio, queueId, msg_length;
     Transaction new_trans;
     MsgTP msg_to_node;
@@ -1123,10 +1132,13 @@ void transactionGeneration(int sig)
     struct timespec request, remaining, randTime;
     MsgGlobalQueue msgOnGQueue;
     char * aus;
+    FILE * report; /* ONLY FOR DEBUG PURPOSE */
+    function_we_into = "transactionGeneration";
 
     aus = (char *)calloc(200, sizeof(char));
 
     bilancio = computeBalance(); /* calcolo del bilancio */
+    function_we_into = "transactionGeneration";
 
     if (sig == 0)
     {
@@ -1154,6 +1166,7 @@ void transactionGeneration(int sig)
             safeErrorPrint(aus, __LINE__);
             aus[0] = 0;/* resetting string's content */
             userFailure();
+            function_we_into = "transactionGeneration";
         }
         else
         {
@@ -1177,12 +1190,14 @@ void transactionGeneration(int sig)
 
             /* extracting node which to send the transaction */
             receiver_node = extractNode();
+            function_we_into = "transactionGeneration";
             if (receiver_node == -1)
             {
                 snprintf(aus, 199, "[USER %5ld]: failed to extract node which to send transaction on TP. Error: ", my_pid);
                 safeErrorPrint(aus, __LINE__);
                 aus[0] = 0;/* resetting string's content */
                 userFailure();
+                function_we_into = "transactionGeneration";
             }
             else
             {
@@ -1198,6 +1213,7 @@ void transactionGeneration(int sig)
                     safeErrorPrint(aus, __LINE__);
                     aus[0] = 0;/* resetting string's content */
                     userFailure();
+                    function_we_into = "transactionGeneration";
                 }
                 else
                 {
@@ -1209,11 +1225,13 @@ void transactionGeneration(int sig)
                         safeErrorPrint(aus, __LINE__);
                         aus[0] = 0; /* resetting string's content */
                         userFailure();
+                        function_we_into = "transactionGeneration";
                     }
                     else
                     {
                         /* Inserting new transaction on list of transaction sent */
                         transactionsSent = addTransaction(transactionsSent, &new_trans);
+                        function_we_into = "transactionGeneration";
 
                         /* sending the transaction to node */
                         msg_length = snprintf(aus, 199, "[USER %5ld]: sending the created transaction to the node...\n", my_pid);
@@ -1232,14 +1250,20 @@ void transactionGeneration(int sig)
                                 msgOnGQueue.mtype = receiver_node;
                                 msgOnGQueue.msgContent = TRANSTPFULL;
                                 msgOnGQueue.transaction = new_trans;
-                                msgOnGQueue.hops = 0;
+                                msgOnGQueue.hops = SO_HOPS;
                                 if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
                                 {
                                     snprintf(aus, 199, "[USER %5ld]: failed to send transaction on global queue. Error: ", my_pid);
                                     safeErrorPrint(aus, __LINE__);
                                     aus[0] = 0;/* resetting string's content */
                                     userFailure();
+                                    function_we_into = "transactionGeneration";
                                 }
+
+                                /* ONLY FOR DEBUG PURPOSE */
+                                report = fopen("node_creation_report.txt", "a");
+                                fprintf(report, "[USER %5ld]: sent transaction on global queue with HOPS %ld\n", my_pid, SO_HOPS);
+                                fclose(report);
                             }
                             else
                             {
@@ -1257,6 +1281,7 @@ void transactionGeneration(int sig)
                                 }
 
                                 userFailure();
+                                function_we_into = "transactionGeneration";
                             }
                         }
                         else
@@ -1314,6 +1339,7 @@ void transactionGeneration(int sig)
         msg_length = snprintf(aus, 199, "[USER %5ld]: not enough money to make a transaction...\n", my_pid);
         write(STDOUT_FILENO, aus, msg_length);
         userFailure();
+        function_we_into = "transactionGeneration";
     }
 
     if (aus)
@@ -1326,9 +1352,9 @@ void transactionGeneration(int sig)
  */
 void userFailure()
 {
-    function_we_into = "userFailure";
     int msg_length;
     char * aus;
+    function_we_into = "userFailure";
 
     aus = (char *)calloc(200, sizeof(char));
 
@@ -1354,9 +1380,9 @@ void userFailure()
  */
 TransList *addTransaction(TransList *transSent, Transaction *t)
 {
-    function_we_into = "addTransaction";
     TransList *new_el = NULL;
     char * aus;
+    function_we_into = "addTransaction";
 
     aus = (char *)calloc(200, sizeof(char));
 
@@ -1404,12 +1430,12 @@ void freeTransList(TransList *transSent)
  */
 pid_t extractReceiver(pid_t pid)
 {
-    function_we_into = "extractReceiver";
     int n = -1;
     struct sembuf sops;
     pid_t pid_to_return = -1;
     boolean errBeforeExtraction = FALSE;
     char * aus;
+    function_we_into = "extractReceiver";
 
     aus = (char *)calloc(200, sizeof(char));
 
@@ -1522,12 +1548,12 @@ pid_t extractReceiver(pid_t pid)
  */
 pid_t extractNode()
 {
-    function_we_into = "extractNode";
     int n = -1;
     struct sembuf sops;
     pid_t pid_to_return = -1;
     boolean errBeforeExtraction = FALSE;
     char * aus;
+    function_we_into = "extractNode";
 
     aus = (char *)calloc(200, sizeof(char));
     sops.sem_flg = 0;
@@ -1650,7 +1676,7 @@ void segmentationFaultHandler(int sig)
         free(aus);
 
     /* ONLY FOR DEBUG PURPOSE */
-    fdReport = open("segfault.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    fdReport = open("user_segfault.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
     dprintf(fdReport, "[USER %5ld]: segmentation fault happened in function %s\n", my_pid, function_we_into);
     close(fdReport);
 
