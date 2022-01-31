@@ -1,5 +1,8 @@
 #include "user.h"
 
+/* TO REMOVE!!!!!!*/
+char * function_we_into = NULL;
+
 /*** GLOBAL VARIABLES FOR IPC ***/
 #pragma region GLOBAL VARIABLES FOR IPC
 /* Poiter to the array that contains the ids of the shared memory segments of the register's partitions.
@@ -153,11 +156,9 @@ boolean initializeFacilities();
 /**
  * @brief Function that computes the budget of the user counting from the register
  * and removing the amount of the sent but not processed transaction (the one not in register)
- * @param transSent it rappresents a pointer to the gloabl list of sent transactions, we must not
- * use the global one otherwise we lose the real pointer
  * @return returns the actual balance as a double
  */
-double computeBalance(TransList *);
+double computeBalance();
 
 /**
  * @brief Function that removes the passed transaction from the list of sent transactions.
@@ -235,6 +236,7 @@ void segmentationFaultHandler(int);
 /*** MAIN FUNCTION ***/
 int main(int argc, char *argv[], char *envp[])
 {
+    function_we_into = "main";
     /*
         List that contains all the transactions sent by a process.
         We use it to keep track of the transactions sent by a process
@@ -397,6 +399,7 @@ int main(int argc, char *argv[], char *envp[])
  */
 boolean readParams()
 {
+    function_we_into = "readParams";
     /*
         strtol ci consente di verificare se si sia verificato
         un error (atol invece non setta errno e non c'è modo
@@ -450,6 +453,7 @@ boolean readParams()
  */
 boolean allocateMemory()
 {
+    function_we_into = "allocateMemory";
     regPtrs = (Register **)calloc(REG_PARTITION_COUNT, sizeof(Register *));
     TEST_MALLOC_ERROR(regPtrs, "[USER]: failed to allocate register paritions' pointers array. Error: ");
 
@@ -480,6 +484,7 @@ boolean allocateMemory()
  */
 boolean initializeFacilities()
 {
+    function_we_into = "initializeFacilities";
     /* Initialization of semaphores*/
     /*
         CORREGGERE: sostituire i numeri con costanti simboliche
@@ -619,11 +624,13 @@ boolean initializeFacilities()
  * use the global one otherwise we lose the real pointer
  * @return returns the actual balance as a double
  */
-double computeBalance(TransList *transSent)
+double computeBalance()
 {
+    function_we_into = "computeBalance";
     double balance = 0;
     int i, j, k, l, msg_length;
     Register *ptr;
+    TransList *transSent;
     struct sembuf op;
     boolean errBeforeComputing = FALSE, errAfterComputing = FALSE;
     char * aus;
@@ -733,7 +740,7 @@ double computeBalance(TransList *transSent)
                                         */
                                         balance -= (ptr->blockList[j].transList[k].amountSend) +
                                                    (ptr->blockList[j].transList[k].reward);
-                                        transactionsSent = removeTransaction(transSent, &(ptr->blockList[j].transList[k]));
+                                        transactionsSent = removeTransaction(transactionsSent, &(ptr->blockList[j].transList[k]));
                                     }
                                 }
                             }
@@ -794,18 +801,6 @@ double computeBalance(TransList *transSent)
                                                     * di fallimenti verrebbe decrementato due volte */
                                     break;         /* we stop the cycle and end balance computation */
                                 }
-
-                                /* l'ho spostato qui perché va fatto solo se tutto viene eseguito correttamente */
-                                /*
-                                    Precondizione: da transSent sono state eliminate le transazioni
-                                    già registrate nel master
-                                */
-                                while (transSent != NULL)
-                                {
-                                    balance -= (transSent->currTrans.amountSend) +
-                                               (transSent->currTrans.reward);
-                                    transSent = transSent->nextTrans;
-                                }
                             }
                         }
                     }
@@ -819,6 +814,21 @@ double computeBalance(TransList *transSent)
         /* an error occurred with wrPartSem or rdPartSem or mutexPartSem before balance computing */
         userFailure();
         balance = 0;
+    }
+    else if(!errAfterComputing)
+    {
+        /* l'ho spostato qui perché va fatto solo se tutto viene eseguito correttamente */
+        /*
+            Precondizione: da transSent sono state eliminate le transazioni
+            già registrate nel master
+        */
+        transSent = transactionsSent;
+        while (transSent != NULL)
+        {
+            balance -= (transSent->currTrans.amountSend) +
+                        (transSent->currTrans.reward);
+            transSent = transSent->nextTrans;
+        }
     }
 
     /* print the user's balance */
@@ -838,6 +848,7 @@ double computeBalance(TransList *transSent)
  */
 TransList * removeTransaction(TransList *tList, Transaction *t)
 {
+    function_we_into = "removeTransaction";
     TransList *headPointer = tList;
     TransList *prev = NULL;
     boolean done = FALSE;
@@ -845,7 +856,7 @@ TransList * removeTransaction(TransList *tList, Transaction *t)
     while (tList != NULL && !done)
     {
         /*
-            CORREGGERE: i tempi si possono confrontare direttamente???
+            CORREGGERE: i tempi si possono confrontare direttamente??? Non credo...
         */
         if (tList->currTrans.timestamp.tv_nsec == t->timestamp.tv_nsec &&
             tList->currTrans.sender == t->sender &&
@@ -853,41 +864,40 @@ TransList * removeTransaction(TransList *tList, Transaction *t)
         {
             if (prev != NULL)
             {
-                prev->nextTrans = tList->nextTrans;
                 /*
-                    Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
+                    Siamo a metà o alla fine della lista. Dobbiamo rimuovere la transazione corrente, 
+                    memorizzata in tList. Prima dobbiamo salvare il riferimento alla transazione che 
+                    succede la corrente, quindi impostiamo il next della precedente transazione con il 
+                    next della corrente transazione (nel caso di fine lista quest'ultimo sarà NULL)
                 */
-                if (tList != NULL)
-                    free(tList);
+                prev->nextTrans = tList->nextTrans;
+                free(tList); /* se siamo ancora nel ciclo, siamo certi che tList non sarà NULL */
             }
             else
             {
+                /*
+                    prev è uguale a NULL, siamo quindi al primo ciclo e la transazione da rimuovere dalla
+                    lista è quella in cima.
+                */
                 if(tList->nextTrans == NULL) 
                 {
                     /*
                         Caso in cui la lista contiene un solo elemento
                         (quindi tList->nextTrans è gia NULL)
                     */
-                    /*tList->currTrans = NULL;*/
-                    /* ora currTrans non è più un puntatore, quindi non può essere impostato a NULL;
-                    soluzione: impostiamo la testa della lista a NULL */
-
-                    /*
-                        Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
-                    */
-                    if (tList != NULL)
-                        free(tList);
+                    
                     headPointer = NULL;
+                    free(tList); /* se siamo ancora nel ciclo, siamo certi che tList non sarà NULL */
                 }
                 else
                 {
                     /*
                         Caso in cui la transazione da rimuovere è la cima della lista,
-                        dobbiamo restituire il nuovo puntatore
+                        dobbiamo restituire il nuovo puntatore alla cima della lista (cioè la 
+                        transazione successiva).
                     */
-                    headPointer = tList->nextTrans;
-                    if (tList != NULL)
-                        free(tList);
+                    headPointer = headPointer->nextTrans;
+                    free(tList); /* se siamo ancora nel ciclo, siamo certi che tList non sarà NULL */
                 }
             }
 
@@ -897,10 +907,6 @@ TransList * removeTransaction(TransList *tList, Transaction *t)
         {
             prev = tList;
             tList = tList->nextTrans;
-            /*
-                Non bisognerebbe fare anche la free quando rimuoviamo un elemento?
-            */
-            /*free(prev);*/
         }
     }
 
@@ -915,6 +921,7 @@ TransList * removeTransaction(TransList *tList, Transaction *t)
  */
 void endOfExecution(int sig)
 {
+    function_we_into = "endOfExecution";
     int exitCode = EXIT_FAILURE;
     char * aus = NULL;
     MsgGlobalQueue msgOnGQueue;
@@ -959,6 +966,7 @@ void endOfExecution(int sig)
  */
 void deallocateIPCFacilities()
 {
+    function_we_into = "deallocateIPCFacilities";
     /*
      * Cose da eliminare:
      *  - collegamento alla memoria condivisa
@@ -1106,6 +1114,7 @@ void deallocateIPCFacilities()
  */
 void transactionGeneration(int sig)
 {
+    function_we_into = "transactionGeneration";
     int bilancio, queueId, msg_length;
     Transaction new_trans;
     MsgTP msg_to_node;
@@ -1117,7 +1126,7 @@ void transactionGeneration(int sig)
 
     aus = (char *)calloc(200, sizeof(char));
 
-    bilancio = computeBalance(transactionsSent); /* calcolo del bilancio */
+    bilancio = computeBalance(); /* calcolo del bilancio */
 
     if (sig == 0)
     {
@@ -1317,6 +1326,7 @@ void transactionGeneration(int sig)
  */
 void userFailure()
 {
+    function_we_into = "userFailure";
     int msg_length;
     char * aus;
 
@@ -1344,6 +1354,7 @@ void userFailure()
  */
 TransList *addTransaction(TransList *transSent, Transaction *t)
 {
+    function_we_into = "addTransaction";
     TransList *new_el = NULL;
     char * aus;
 
@@ -1358,7 +1369,8 @@ TransList *addTransaction(TransList *transSent, Transaction *t)
 
     /* insertion of new transaction to list */
     new_el = (TransList *)malloc(sizeof(TransList));
-    new_el->currTrans = *t;
+    memcpy(&(new_el->currTrans), t, sizeof(Transaction));
+    /*new_el->currTrans = *t;*/
     new_el->nextTrans = transSent;
     transSent = new_el;
 
@@ -1374,6 +1386,7 @@ TransList *addTransaction(TransList *transSent, Transaction *t)
  */
 void freeTransList(TransList *transSent)
 {
+    function_we_into = "freeTransList";
     if (transSent == NULL)
         return;
 
@@ -1391,6 +1404,7 @@ void freeTransList(TransList *transSent)
  */
 pid_t extractReceiver(pid_t pid)
 {
+    function_we_into = "extractReceiver";
     int n = -1;
     struct sembuf sops;
     pid_t pid_to_return = -1;
@@ -1508,6 +1522,7 @@ pid_t extractReceiver(pid_t pid)
  */
 pid_t extractNode()
 {
+    function_we_into = "extractNode";
     int n = -1;
     struct sembuf sops;
     pid_t pid_to_return = -1;
@@ -1625,6 +1640,7 @@ void segmentationFaultHandler(int sig)
 {
     char * aus = NULL;
     int msg_length;
+    int fdReport;
     
     aus = (char*)calloc(200, sizeof(char));
 
@@ -1632,6 +1648,11 @@ void segmentationFaultHandler(int sig)
     write(STDOUT_FILENO, aus, msg_length);
     if (aus != NULL)
         free(aus);
+
+    /* ONLY FOR DEBUG PURPOSE */
+    fdReport = open("segfault.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fdReport, "[USER %5ld]: segmentation fault happened in function %s\n", my_pid, function_we_into);
+    close(fdReport);
 
     if(sig == SIGSEGV)
         endOfExecution(-1);

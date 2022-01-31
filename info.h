@@ -11,6 +11,7 @@
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <sys/sem.h>
+#include <fcntl.h> /* ONLY FOR DEBUG PURPOSE */
 /*#include <sys/ipc.h> VEDERE SE SERVA*/
 #include "error.h"
 #define SEMFILEPATH "semfile.txt"

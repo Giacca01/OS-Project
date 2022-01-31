@@ -1183,15 +1183,14 @@ int main(int argc, char *argv[])
                                             /*el_list = bud_list_head;
                                             while (el_list != NULL && el_list->budget == bud_list_head->budget)
                                             {
-                                                if (el_list->p_type) */
-                                            /* Budget of node process */ /*
-                          printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-                      else */ /* Budget of user process */               /*
-                                          printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-              
-                                      el_list = el_list->next;
-                                  }*/
+                                                if (el_list->p_type) *//* Budget of node process *//*
+                                                    printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
+                                                else *//* Budget of user process *//*
+                                                    printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
 
+                                                el_list = el_list->next;
+                                            }*/
+                                            
                                             /* Printing budget of process with minimum budget */
                                             if (bud_list_head->p_type) /* Budget of node process */
                                                 printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_head->proc_pid, bud_list_head->budget);
@@ -1202,14 +1201,13 @@ int main(int argc, char *argv[])
                                             /*el_list = bud_list_tail;
                                             while (el_list != NULL && el_list->budget == bud_list_tail->budget)
                                             {
-                                                if (el_list->p_type) */
-                                            /* Budget of node process */ /*
-                          printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-                      else */ /* Budget of user process */               /*
-                                          printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-              
-                                      el_list = el_list->prev;
-                                  }*/
+                                                if (el_list->p_type) *//* Budget of node process *//*
+                                                    printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
+                                                else *//* Budget of user process *//*
+                                                    printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
+
+                                                el_list = el_list->prev;
+                                            }*/
 
                                             /* Printing budget of process with maximum budget */
                                             if (bud_list_tail->p_type) /* Budget of node process */
@@ -1497,7 +1495,7 @@ boolean assignEnvironmentVariables()
 /************************************************************************/
 boolean readConfigParameters()
 {
-    char *filename = "params_3.txt";
+    char *filename = "params_2.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1511,7 +1509,7 @@ boolean readConfigParameters()
 
     printf("[MASTER]: reading configuration parameters...\n");
 
-    aus = (char *)calloc(35, sizeof(char));
+    aus = (char *)calloc(100, sizeof(char));
     if (aus == NULL)
         unsafeErrorPrint("[MASTER]: failed to allocate memory. Error: ", __LINE__);
     else
@@ -1519,7 +1517,7 @@ boolean readConfigParameters()
         /* Handles any error in opening the file*/
         if (fp == NULL)
         {
-            snprintf(aus, 34, "[MASTER]: could not open file %s", filename);
+            snprintf(aus, 99, "[MASTER]: could not open file %s", filename);
             unsafeErrorPrint(aus, __LINE__);
             ret = FALSE;
         }
@@ -2168,10 +2166,12 @@ boolean deallocateFacilities(int *exitCode)
             -free dynamically allocated memory: Ok
     */
 
-    char *aus = (char *)calloc(100, sizeof(char));
+    char *printMsg;
     int msgLength = 0;
     int i = 0;
     /*TPElement *tmp;*/
+
+    printMsg = (char *)calloc(200, sizeof(char));
 
     /* Deallocating register's partitions*/
     write(STDOUT_FILENO,
@@ -2192,10 +2192,10 @@ boolean deallocateFacilities(int *exitCode)
             {
                 if (errno != EINVAL)
                 {
-                    msgLength = snprintf(aus, 99,
+                    msgLength = snprintf(printMsg, 199,
                                          "[MASTER]: failed to detach from register's partition number %d.\n",
                                          (i + 1));
-                    write(STDERR_FILENO, aus, msgLength); /* by doing this we avoid calling strlength*/
+                    write(STDERR_FILENO, printMsg, msgLength); /* by doing this we avoid calling strlength*/
                     *exitCode = EXIT_FAILURE;
                 }
             }
@@ -2205,20 +2205,20 @@ boolean deallocateFacilities(int *exitCode)
                 {
                     if (errno != EINVAL)
                     {
-                        msgLength = snprintf(aus, 99,
+                        msgLength = snprintf(printMsg, 199,
                                              "[MASTER]: failed to remove register's partition number %d.",
                                              (i + 1));
-                        write(STDERR_FILENO, aus, msgLength);
+                        write(STDERR_FILENO, printMsg, msgLength);
 
                         *exitCode = EXIT_FAILURE;
                     }
                 }
                 else
                 {
-                    msgLength = snprintf(aus, 99,
+                    msgLength = snprintf(printMsg, 199,
                                          "[MASTER]: register's partition number %d removed successfully.\n",
                                          (i + 1));
-                    write(STDOUT_FILENO, aus, msgLength);
+                    write(STDOUT_FILENO, printMsg, msgLength);
                 }
             }
         }
@@ -2302,11 +2302,11 @@ boolean deallocateFacilities(int *exitCode)
             {
                 if (errno != EINVAL)
                 {
-                    msgLength = snprintf(aus, 99,
+                    msgLength = snprintf(printMsg, 199,
                                          "[MASTER]: failed to detach from partition number %d shared variable segment.\n",
                                          (i + 1));
 
-                    write(STDERR_FILENO, aus, msgLength); /* by doing this we avoid calling strlength*/
+                    write(STDERR_FILENO, printMsg, msgLength); /* by doing this we avoid calling strlength*/
                     *exitCode = EXIT_FAILURE;
                 }
             }
@@ -2316,20 +2316,20 @@ boolean deallocateFacilities(int *exitCode)
                 {
                     if (errno != EINVAL)
                     {
-                        msgLength = snprintf(aus, 99,
+                        msgLength = snprintf(printMsg, 199,
                                              "[MASTER]: failed to remove partition number %d shared variable segment.",
                                              (i + 1));
-                        write(STDERR_FILENO, aus, msgLength);
+                        write(STDERR_FILENO, printMsg, msgLength);
 
                         *exitCode = EXIT_FAILURE;
                     }
                 }
                 else
                 {
-                    msgLength = snprintf(aus, 99,
+                    msgLength = snprintf(printMsg, 199,
                                          "[MASTER]: register's partition number %d shared variable segment removed successfully.\n",
                                          (i + 1));
-                    write(STDOUT_FILENO, aus, msgLength);
+                    write(STDOUT_FILENO, printMsg, msgLength);
                 }
             }
         }
@@ -2352,20 +2352,20 @@ boolean deallocateFacilities(int *exitCode)
             {
                 if (errno != EINVAL)
                 {
-                    msgLength = snprintf(aus, 99,
+                    msgLength = snprintf(printMsg, 199,
                                          "[MASTER]: failed to remove transaction pool of process %ld",
                                          (long)tpList[i].procId);
-                    write(STDERR_FILENO, aus, msgLength);
+                    write(STDERR_FILENO, printMsg, msgLength);
 
                     *exitCode = EXIT_FAILURE;
                 }
             }
             else
             {
-                msgLength = snprintf(aus, 99,
+                msgLength = snprintf(printMsg, 199,
                                      "[MASTER]: transaction pool of node of PID %ld successfully removed.\n",
                                      tpList[i].procId);
-                write(STDOUT_FILENO, aus, msgLength);
+                write(STDOUT_FILENO, printMsg, msgLength);
             }
         }
 
@@ -2387,8 +2387,8 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(aus, 99, "[MASTER]: failed to remove global message queue");
-            write(STDERR_FILENO, aus, msgLength);
+            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove global message queue");
+            write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2407,8 +2407,8 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(aus, 99, "[MASTER]: failed to remove partions' writing semaphores");
-            write(STDERR_FILENO, aus, msgLength);
+            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove partions' writing semaphores");
+            write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2427,8 +2427,8 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(aus, 99, "[MASTER]: failed to remove partions' reading semaphores");
-            write(STDERR_FILENO, aus, msgLength);
+            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove partions' reading semaphores");
+            write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2447,8 +2447,8 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(aus, 99, "[MASTER]: failed to remove partions' reading semaphores");
-            write(STDERR_FILENO, aus, msgLength);
+            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove partions' reading semaphores");
+            write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2467,8 +2467,8 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            snprintf(aus, 99, "[MASTER]: failed to remove users' list semaphores\n");
-            write(STDERR_FILENO, aus, msgLength);
+            snprintf(printMsg, 199, "[MASTER]: failed to remove users' list semaphores\n");
+            write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2487,8 +2487,8 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            snprintf(aus, 99, "[MASTER]: failed to remove register's paritions mutex semaphores\n");
-            write(STDERR_FILENO, aus, msgLength);
+            snprintf(printMsg, 199, "[MASTER]: failed to remove register's paritions mutex semaphores\n");
+            write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2535,8 +2535,8 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            snprintf(aus, 99, "[MASTER]: failed to remove nodes list's semaphores");
-            write(STDERR_FILENO, aus, msgLength);
+            snprintf(printMsg, 199, "[MASTER]: failed to remove nodes list's semaphores");
+            write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
     }
@@ -2577,8 +2577,8 @@ boolean deallocateFacilities(int *exitCode)
     }
 
     /* Releasing local variables' memory*/
-    if (aus != NULL)
-        free(aus);
+    if (printMsg != NULL)
+        free(printMsg);
 
     return TRUE;
 }
@@ -2605,6 +2605,7 @@ void checkNodeCreationRequests()
     char *printMsg;
     union semun arg;
     struct msqid_ds tpStruct;
+    FILE * report; /* ONLY FOR DEBUG PURPOSE */
 
     printMsg = (char *)calloc(200, sizeof(char));
 
@@ -2619,6 +2620,11 @@ void checkNodeCreationRequests()
         */
         if (aus.msgContent == NEWNODE)
         {
+            /* ONLY FOR DEBUG PURPOSE */
+            report = fopen("node_creation_report.txt", "a");
+            fprintf(report, "[MASTER]: handled creation of new node request\n");
+            fclose(report);
+
             if (noAllTimesNodes + 1 < maxNumNode)
             {
                 noEffectiveNodes++;

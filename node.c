@@ -1201,6 +1201,7 @@ void sendTransaction()
     int friendTp = -1;
     MsgTP aus;
     boolean found = FALSE;
+    FILE * report; /* ONLY FOR DEBUG PURPOSE */
     char *printMsg;
 
     /*
@@ -1241,8 +1242,12 @@ void sendTransaction()
                 }
                 else
                 {
-                    printf("Node: new node transazione: %d\n", trans.msgContent);
-                    printf("Node: new node pid target: %ld\n", trans.mtype);
+                    /*printf("Node: new node transazione: %d\n", trans.msgContent);
+                    printf("Node: new node pid target: %ld\n", trans.mtype);*/
+                    /* ONLY FOR DEBUG PURPOSE */
+                    report = fopen("node_creation_report.txt", "a");
+                    fprintf(report, "[NODE %5ld]: requested creation of new node to master\n", my_pid);
+                    fclose(report);
                     msg_length = snprintf(printMsg, 199, "[NODE %5ld]: requested creation of a new node to serve a transaction...\n", my_pid);
                     write(STDOUT_FILENO, printMsg, msg_length);
                     printMsg[0] = 0; /* resetting string's content */
