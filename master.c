@@ -661,9 +661,9 @@ int main(int argc, char *argv[])
                                                     during the msgget
                                                 */
 
-                                                if (tpStruct.msg_qbytes < sizeof(MsgTP) * SO_TP_SIZE)
+                                                if (tpStruct.msg_qbytes < (sizeof(MsgTP) -sizeof(long)) * SO_TP_SIZE)
                                                 {
-                                                    tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;
+                                                    tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
                                                     printf("Master: impostata nuova dimensione coda.\n");
                                                 }
 
@@ -1673,7 +1673,10 @@ boolean initializeIPCFacilities()
     }
     else
     {
-        globalQueueStruct.msg_qbytes = sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM);
+        /*
+            La dimensione è espressa in base al corpo del messaggio
+        */
+        globalQueueStruct.msg_qbytes = (sizeof(MsgGlobalQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
         if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
         {
             unsafeErrorPrint("[MASTER]: failed to set global queue size. Error: ", __LINE__);
