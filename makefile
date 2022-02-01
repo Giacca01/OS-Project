@@ -1,8 +1,8 @@
 CC=gcc
 CFLAGS=-ansi -pedantic-errors -Wall
 
-all: error master node user
-allDebug: error masterDebug nodeDebug userDebug
+all: rm error master node user
+allDebug: rm error masterDebug nodeDebug userDebug
 
 error: error.c error.h
 	${CC} -c error.c -o error.o
@@ -29,5 +29,7 @@ userDebug: user.c info.h
 	gcc -g -o0  user.c error.o -o user.out
 
 rm:
-	rm *.o
-	rm *.out
+	rm -f *.o
+	rm -f *.out
+	rm -f node_creation_report.txt
+	rm -f master_msgrcv_content.txt

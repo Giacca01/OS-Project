@@ -27,10 +27,12 @@
 /**** End of Headers inclusion ****/
 
 /**** Constants definition ****/
-#define NO_ATTEMPS_TERM 3                /* Maximum number of attemps to terminate the simulation*/
-#define MAX_PRINT_PROCESSES 15           /* Maximum number of processes of which we show budget, if noEffectiveNodes + noEffectiveUsers > MAX_PRINT_PROCESSES we only print max and min budget */
-#define NO_ATTEMPTS_UPDATE_BUDGET 3      /* Number of attempts to update budget reading a block on register */
-#define NO_ATTEMPTS_NEW_NODE_REQUESTS 10 /* Number of attempts to check for new node requests */
+#define NO_ATTEMPS_TERM 3                       /* Maximum number of attemps to terminate the simulation*/
+#define MAX_PRINT_PROCESSES 15                  /* Maximum number of processes of which we show budget, if noEffectiveNodes + noEffectiveUsers > MAX_PRINT_PROCESSES we only print max and min budget */
+#define NO_ATTEMPTS_UPDATE_BUDGET 3             /* Number of attempts to update budget reading a block on register */
+#define NO_ATTEMPTS_NEW_NODE_REQUESTS 10        /* Number of attempts to check for new node requests */
+#define NO_ATTEMPTS_CHECK_USER_TERMINATION 5    /* Number of attempts to check for user terminations */
+#define NO_ATTEMPTS_CHECK_NODE_TERMINATION 5    /* Number of attempts to check for node terminations */
 /**** End of Constants definition ****/
 
 /*****        Global structures        *****/
@@ -91,7 +93,11 @@ int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, r
 
 int noNodeSegReaders = -1; /* id of the shared memory segment that contains the variable used to syncronize
                               readers and writers access to nodes list */
-int *noNodeSegReadersPtr = NULL;
+int *noNodeSegReadersPtr = NULL; /* Pointer to the shared memory segment described above */
+
+int noAllTimesNodesSem = -1; /* Id of the mutex semaphore used to read/write the number of all times node processes shared variabile */
+int noAllTimesNodes = -1; /* id of the shared memory segment that contains the variable that keeps number of all times node processes */
+int *noAllTimesNodesPtr = NULL; /* Pointer to the shared memory segment described above */
 
 /*
     We use a long int variable to handle an outstanding number
@@ -102,7 +108,7 @@ long noTerminatedNodes = 0; /* NUmber of processes that terminated before end of
 
 long noEffectiveNodes = 0; /* Holds the effective number of nodes */
 long noEffectiveUsers = 0; /* Holds the effective number of users */
-long noAllTimesNodes = 0;  /* Historical number of nodes: it counts also the terminated ones */
+/*long noAllTimesNodes = 0;  *//* Historical number of nodes: it counts also the terminated ones */
 long noAllTimesUsers = 0;  /* Historical number of users: it counts also the terminated ones */
 
 long tplLength = 0; /* keeps tpList length */
@@ -288,6 +294,9 @@ void segmentationFaultHandler(int);
 
 int main(int argc, char *argv[])
 {
+    /* ONLY FOR DEBUG!!!!*/
+    FILE * report;
+
     pid_t child_pid;
     struct sembuf sops[3];
     sigset_t set;
@@ -358,6 +367,11 @@ int main(int argc, char *argv[])
     /*char *envVec[] = {NULL};*/
 
     char *aus = NULL;
+
+    long noAllTimeProcesses = 0;
+
+    int noAttemptsCheckUserTerm = 0;
+    int noAttemptsCheckNodeTerm = 0;
 
     /* Set common semaphore options*/
     sops[0].sem_num = 0;
@@ -621,8 +635,25 @@ int main(int argc, char *argv[])
                                             break;
 
                                         default:
+                                            sops[0].sem_num = 0;
+                                            sops[0].sem_op = -1;
+                                            if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
+                                            {
+                                                safeErrorPrint("[MASTER]: failed to reserve number of all times nodes' shared variable semaphore. Error: ", __LINE__);
+                                                endOfSimulation(-1);
+                                            }
+                                            
+                                            /* Incrementing number of effective and all times nodes */
                                             noEffectiveNodes++;
-                                            noAllTimesNodes++;
+                                            (*noAllTimesNodesPtr)++;
+
+                                            sops[0].sem_num = 0;
+                                            sops[0].sem_op = 1;
+                                            if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
+                                            {
+                                                safeErrorPrint("[MASTER]: failed to release number of all times nodes' shared variable semaphore. Error: ", __LINE__);
+                                                endOfSimulation(-1);
+                                            }
 
                                             sops[0].sem_num = 0;
                                             sops[0].sem_op = -1;
@@ -681,7 +712,7 @@ int main(int argc, char *argv[])
 
                                             tplLength++; /* updating tpList length */
 
-                                            /* Save users processes pid and state into usersList*/
+                                            /* Save nodes processes pid and state into nodesList */
                                             sops[0].sem_op = -1;
                                             sops[0].sem_num = 1;
                                             sops[1].sem_op = -1;
@@ -1150,7 +1181,27 @@ int main(int argc, char *argv[])
                                                 CORREGGERE: Qui si controllava noEffective, ma il budget
                                                 è da stamapre anche per i processi terminati
                                             */
-                                        if (noAllTimesNodes + noAllTimesUsers <= MAX_PRINT_PROCESSES)
+
+                                        sops[0].sem_num = 0;
+                                        sops[0].sem_op = -1;
+                                        if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
+                                        {
+                                            safeErrorPrint("[MASTER]: failed to reserve number of all times nodes' shared variable semaphore. Error: ", __LINE__);
+                                            endOfSimulation(-1);
+                                        }
+                                        
+                                        /* Counting number of all times processes */
+                                        noAllTimeProcesses = (*noAllTimesNodesPtr) + noAllTimesUsers;
+
+                                        sops[0].sem_num = 0;
+                                        sops[0].sem_op = 1;
+                                        if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
+                                        {
+                                            safeErrorPrint("[MASTER]: failed to release number of all times nodes' shared variable semaphore. Error: ", __LINE__);
+                                            endOfSimulation(-1);
+                                        }
+                                        
+                                        if (noAllTimeProcesses <= MAX_PRINT_PROCESSES)
                                         {
                                             /*
                                              * the number of effective processes is lower or equal than the maximum we established,
@@ -1230,9 +1281,15 @@ int main(int argc, char *argv[])
 
                                         /* Check if a user process has terminated to update the usersList */
                                         /*noUserTerminated = 0;*/ /* resetting user terminated counter */
+                                        noAttemptsCheckUserTerm = 0;
 
-                                        while (msgrcv(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
+                                        while (noAttemptsCheckUserTerm < NO_ATTEMPTS_CHECK_USER_TERMINATION && msgrcv(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                         {
+                                            report = fopen("master_msgrcv_content.txt", "a");
+                                            fprintf(report, "MASTER: in user termination check msgContent is %d\n", msg_from_user.msgContent);
+                                            fclose(report);
+
+                                            noAttemptsCheckUserTerm++;
                                             /* come dimensione specifichiamo sizeof(msg_from_user)-sizeof(long) perché bisogna specificare la dimensione del testo, non dell'intera struttura */
                                             /* come mtype prendiamo i messaggi destinati al Master, cioè il suo pid (prende il primo messaggio con quel mtype) */
 
@@ -1322,10 +1379,16 @@ int main(int argc, char *argv[])
 
                                         /**** NODE TERMINATION CHECK ****/
                                         /********************************/
+                                        noAttemptsCheckNodeTerm = 0;
 
                                         /* Check if a node process has terminated to update the nodes list */
-                                        while (msgrcv(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
+                                        while (noAttemptsCheckNodeTerm < NO_ATTEMPTS_CHECK_NODE_TERMINATION && msgrcv(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                         {
+                                            report = fopen("master_msgrcv_content.txt", "a");
+                                            fprintf(report, "MASTER: in node termination check msgContent is %d\n", msg_from_node.msgContent);
+                                            fclose(report);
+                                            noAttemptsCheckNodeTerm++;
+
                                             if (msg_from_node.msgContent == TERMINATEDNODE)
                                             {
                                                 sops[0].sem_num = 1;
@@ -1495,7 +1558,7 @@ boolean assignEnvironmentVariables()
 /************************************************************************/
 boolean readConfigParameters()
 {
-    char *filename = "params_2.txt";
+    char *filename = "params_mine.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1625,6 +1688,11 @@ boolean initializeIPCFacilities()
     mutexPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
     SEM_TEST_ERROR(mutexPartSem, "[MASTER]: semget failed during partitions mutex semaphores creation. Error: ");
 
+    key = ftok(SEMFILEPATH, NOALLTIMESNODESSEMSEED);
+    FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during number of all times nodes' shared variable semaphore creation. Error: ");
+    noAllTimesNodesSem = semget(key, 1, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
+    SEM_TEST_ERROR(noAllTimesNodesSem, "[MASTER]: semget failed during number of all times nodes' shared variable semaphore creation. Error: ");
+
     /*
         Each process will subtract one by waiting on the sempahore
     */
@@ -1656,6 +1724,10 @@ boolean initializeIPCFacilities()
     /*arg.val = 1;*/
     res = semctl(nodeListSem, 0, SETALL, arg); /* mutex, read, write*/
     SEMCTL_TEST_ERROR(res, "[MASTER]: semctl failed while initializing nodes list semaphore. Error: ");
+
+    arg.val = 1;
+    semctl(noAllTimesNodesSem, 0, SETVAL, arg);
+    SEMCTL_TEST_ERROR(noAllTimesNodesSem, "[MASTER]: semctl failed while initializing number of all times nodes' shared variable semaphore. Error: ");
 
     /* Creation of the global queue*/
     key = ftok(MSGFILEPATH, GLOBALMSGSEED);
@@ -1789,6 +1861,14 @@ boolean initializeIPCFacilities()
     TEST_SHMAT_ERROR(noNodeSegReadersPtr, "[MASTER]: failed to attach to nodes list's shared variable segment. Error: ");
     *noNodeSegReadersPtr = 0;
     /* END */
+
+    key = ftok(SHMFILEPATH, NOALLTIMESNODESSEED);
+    FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during number of all times nodes' shared variable creation. Error: ");
+    noAllTimesNodes = shmget(key, sizeof(long), IPC_CREAT | MASTERPERMITS);
+    SHM_TEST_ERROR(noAllTimesNodes, "[MASTER]: shmget failed during number of all times nodes' shared variable creation. Error: ");
+    noAllTimesNodesPtr = (int *)shmat(noAllTimesNodes, NULL, 0);
+    TEST_SHMAT_ERROR(noAllTimesNodesPtr, "[MASTER]: failed to attach to number of all times nodes' shared variable segment. Error: ");
+    *noAllTimesNodesPtr = 0;
 
     return TRUE;
 }
@@ -2206,7 +2286,7 @@ boolean deallocateFacilities(int *exitCode)
                     if (errno != EINVAL)
                     {
                         msgLength = snprintf(printMsg, 199,
-                                             "[MASTER]: failed to remove register's partition number %d.",
+                                             "[MASTER]: failed to remove register's partition number %d.\n",
                                              (i + 1));
                         write(STDERR_FILENO, printMsg, msgLength);
 
@@ -2317,7 +2397,7 @@ boolean deallocateFacilities(int *exitCode)
                     if (errno != EINVAL)
                     {
                         msgLength = snprintf(printMsg, 199,
-                                             "[MASTER]: failed to remove partition number %d shared variable segment.",
+                                             "[MASTER]: failed to remove partition number %d shared variable segment.\n",
                                              (i + 1));
                         write(STDERR_FILENO, printMsg, msgLength);
 
@@ -2353,7 +2433,7 @@ boolean deallocateFacilities(int *exitCode)
                 if (errno != EINVAL)
                 {
                     msgLength = snprintf(printMsg, 199,
-                                         "[MASTER]: failed to remove transaction pool of process %ld",
+                                         "[MASTER]: failed to remove transaction pool of process %ld.\n",
                                          (long)tpList[i].procId);
                     write(STDERR_FILENO, printMsg, msgLength);
 
@@ -2387,7 +2467,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove global message queue");
+            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove global message queue.\n");
             write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
@@ -2407,7 +2487,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove partions' writing semaphores");
+            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove partions' writing semaphores.\n");
             write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
@@ -2427,7 +2507,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove partions' reading semaphores");
+            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove partions' reading semaphores.\n");
             write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
@@ -2447,7 +2527,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove partions' reading semaphores");
+            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove fair start semaphore.\n");
             write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
@@ -2467,7 +2547,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            snprintf(printMsg, 199, "[MASTER]: failed to remove users' list semaphores\n");
+            snprintf(printMsg, 199, "[MASTER]: failed to remove users' list semaphores.\n");
             write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
@@ -2487,7 +2567,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            snprintf(printMsg, 199, "[MASTER]: failed to remove register's paritions mutex semaphores\n");
+            snprintf(printMsg, 199, "[MASTER]: failed to remove register's paritions mutex semaphores.\n");
             write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
@@ -2535,7 +2615,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (errno != EINVAL)
         {
-            snprintf(printMsg, 199, "[MASTER]: failed to remove nodes list's semaphores");
+            snprintf(printMsg, 199, "[MASTER]: failed to remove nodes list's semaphores.\n");
             write(STDERR_FILENO, printMsg, msgLength);
             *exitCode = EXIT_FAILURE;
         }
@@ -2576,6 +2656,55 @@ boolean deallocateFacilities(int *exitCode)
         }
     }
 
+    write(STDOUT_FILENO,
+          "[MASTER]: deallocating number of all times nodes' shared variable...\n",
+          strlen("[MASTER]: deallocating number of all times nodes' shared variable...\n"));
+    if (noAllTimesNodesPtr != NULL && shmdt(noAllTimesNodesPtr) == -1)
+    {
+        if (errno != EINVAL)
+        {
+            safeErrorPrint("[MASTER]: failed to detach from number of all times nodes' shared variable. Error: ", __LINE__);
+            *exitCode = EXIT_FAILURE;
+        }
+    }
+    else
+    {
+        if (shmctl(noAllTimesNodes, IPC_RMID, NULL) == -1)
+        {
+            if (errno != EINVAL)
+            {
+                safeErrorPrint("[MASTER]: failed to remove number of all times nodes' shared variable. Error: ", __LINE__);
+                *exitCode = EXIT_FAILURE;
+            }
+        }
+        else
+        {
+            write(STDOUT_FILENO,
+                  "[MASTER]: number of all times nodes' shared variable successfully removed.\n",
+                  strlen("[MASTER]: number of all times nodes' shared variable successfully removed.\n"));
+        }
+    }
+
+    /* Number of all times nodes' shared variable semaphore deallocation */
+    write(STDOUT_FILENO,
+          "[MASTER]: deallocating number of all times nodes' shared variable semaphore...\n",
+          strlen("[MASTER]: deallocating number of all times nodes' shared variable semaphore...\n"));
+    if (semctl(noAllTimesNodesSem, 0, IPC_RMID) == -1)
+    {
+        if (errno != EINVAL)
+        {
+            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove number of all times nodes' shared variable semaphore.\n");
+            write(STDERR_FILENO, printMsg, msgLength);
+            *exitCode = EXIT_FAILURE;
+        }
+    }
+    else
+    {
+        write(STDOUT_FILENO,
+              "[MASTER]: Number of all times nodes' shared variable semaphore successfully removed.\n",
+              strlen("[MASTER]: Number of all times nodes' shared variable semaphore successfully removed.\n"));
+    }
+
     /* Releasing local variables' memory*/
     if (printMsg != NULL)
         free(printMsg);
@@ -2600,6 +2729,7 @@ void checkNodeCreationRequests()
     budgetlist new_el;
     struct sembuf sops[3];
     long childPid = -1;
+    long indexNodesList = 0;
     int attempts = 0;
     int msg_length;
     char *printMsg;
@@ -2610,8 +2740,12 @@ void checkNodeCreationRequests()
     printMsg = (char *)calloc(200, sizeof(char));
 
     /* Siamo passati dall'if al while per aumentare il numero di richieste servite ad ogni ciclo del master */
-    while (msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1 && attempts < NO_ATTEMPTS_NEW_NODE_REQUESTS)
+    while (attempts < NO_ATTEMPTS_NEW_NODE_REQUESTS && msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1)
     {
+        report = fopen("master_msgrcv_content.txt", "a");
+        fprintf(report, "MASTER: in new node requests check msgContent is %d\n", aus.msgContent);
+        fclose(report);
+        
         /* Increasing the number of attempts to check for new node requests*/
         attempts++;
 
@@ -2625,10 +2759,32 @@ void checkNodeCreationRequests()
             fprintf(report, "[MASTER]: handled creation of new node request\n");
             fclose(report);
 
-            if (noAllTimesNodes + 1 < maxNumNode)
+            /* entering critical section for number of all times nodes' shared variable */
+            sops[0].sem_num = 0;
+            sops[0].sem_op = -1;
+            if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
             {
+                safeErrorPrint("[MASTER]: failed to reserve number of all times nodes' shared variable semaphore. Error: ", __LINE__);
+                endOfSimulation(-1);
+            }
+
+            if ((*noAllTimesNodesPtr) + 1 < maxNumNode)
+            {
+                /* Saving the old number of all times nodes to use it as index later */
+                indexNodesList = (*noAllTimesNodesPtr);
+
+                /* Incrementing number of effective and all times node processes */
                 noEffectiveNodes++;
-                noAllTimesNodes++;
+                (*noAllTimesNodesPtr)++;
+                
+                /* exiting the critical section entered before the if statement */
+                sops[0].sem_num = 0;
+                sops[0].sem_op = 1;
+                if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
+                {
+                    safeErrorPrint("[MASTER]: failed to release number of all times nodes' shared variable semaphore. Error: ", __LINE__);
+                    endOfSimulation(-1);
+                }
 
                 /* imposto il semaforo per far aspettare a partire il nuovo nodo */
                 arg.val = 1;
@@ -2683,8 +2839,8 @@ void checkNodeCreationRequests()
                             endOfSimulation(-1);
                         }
 
-                        nodesList[noAllTimesNodes - 1].procId = (long)procPid;
-                        nodesList[noAllTimesNodes - 1].procState = ACTIVE;
+                        nodesList[indexNodesList].procId = (long)procPid;
+                        nodesList[indexNodesList].procState = ACTIVE;
 
                         sops[0].sem_flg = 0;
                         sops[0].sem_num = 2;
@@ -2732,12 +2888,27 @@ void checkNodeCreationRequests()
                             }
                             else
                             {
-                                tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;
+                                /*
+                                    tpStruct.msg_qbytes was set to the maximum possible value
+                                    during the msgget
+                                */
+
+                                if (tpStruct.msg_qbytes < (sizeof(MsgTP) -sizeof(long)) * SO_TP_SIZE)
+                                {
+                                    tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
+                                    printf("Master: impostata nuova dimensione coda per nuovo nodo.\n");
+                                }
+
+                                /*tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;*/
                                 if (msgctl(tpList[tplLength - 1].msgQId, IPC_SET, &tpStruct) == -1)
                                 {
-                                    unsafeErrorPrint("[MASTER]: failed to set new node transaction pool's size. Error: ", __LINE__);
+                                    unsafeErrorPrint("[MASTER]: failed to set new node transaction pool's size. Error", __LINE__);
                                     endOfSimulation(-1);
                                 }
+                                /*
+                                    Se la dimensione è maggiore della dimensione massima allora
+                                    non facciamo alcuna modifica
+                                */
                             }
 
                             firstTrans.mtype = (long)procPid;
@@ -2763,7 +2934,7 @@ void checkNodeCreationRequests()
                                 /* friend node's generation */
                                 aus.mtype = (long)procPid;
                                 aus.msgContent = FRIENDINIT;
-                                estrai(noAllTimesNodes - 1);
+                                estrai(indexNodesList);
                                 for (j = 0; j < SO_FRIENDS_NUM; j++)
                                 {
                                     aus.friend = nodesList[extractedFriendsIndex[j]].procId;
@@ -2907,6 +3078,15 @@ void checkNodeCreationRequests()
             }
             else
             {
+                /* exiting the critical section entered before the if statement */
+                sops[0].sem_num = 0;
+                sops[0].sem_op = 1;
+                if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
+                {
+                    safeErrorPrint("[MASTER]: failed to release number of all times nodes' shared variable semaphore. Error: ", __LINE__);
+                    endOfSimulation(-1);
+                }
+                
                 safeErrorPrint("[MASTER]: no space left for storing new node information. Simulation will be terminated.", __LINE__);
                 /*
                     CORREGGERE: Mettere qui la segnalazione di fine simulazione
@@ -2917,9 +3097,9 @@ void checkNodeCreationRequests()
         }
         else
         {
-            write(STDOUT_FILENO,
+            /*write(STDOUT_FILENO,
                   "[MASTER]: no node creation requests to be served.\n",
-                  strlen("[MASTER]: no node creation requests to be served.\n"));
+                  strlen("[MASTER]: no node creation requests to be served.\n"));*/
 
             /* Reinserting the message that we have consumed from the global queue */
             if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)

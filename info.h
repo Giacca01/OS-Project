@@ -20,6 +20,7 @@
 #define RDPARTSEED 3
 #define USERLISTSEED 4
 #define PARTMUTEXSEED 5
+#define NOALLTIMESNODESSEMSEED 6
 
 /*
     A quanto pare i seeds non possono essere uguali, nemmeno
@@ -36,6 +37,7 @@
 #define NOREADERSTHREESEED 13
 #define NOUSRSEGRDERSSEED 14
 #define NONODESEGRDERSSEED 15
+#define NOALLTIMESNODESSEED 16
 
 #define MSGFILEPATH "msgfile.txt"
 #define GLOBALMSGSEED 16

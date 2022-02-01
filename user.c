@@ -92,6 +92,15 @@ int noNodeSegReaders = -1;
 /* Pointer to the variable that counts the number of readers, used to syncronize readers and writers access to nodes list */
 int *noNodeSegReadersPtr = NULL;
 
+/* Id of the mutex semaphore used to read/write the number of all times node processes' shared variabile */
+int noAllTimesNodesSem = -1;
+
+/* Id of the shared memory segment that contains the variable used to count the number of all times node processes */
+int noAllTimesNodes = -1;
+
+/* Pointer to the variable that counts the number of all times node processes */
+int *noAllTimesNodesPtr = NULL;
+
 #pragma endregion
 /*** END GLOBAL VARIABLES FOR IPC ***/
 
@@ -526,6 +535,11 @@ boolean initializeFacilities()
     mutexPartSem = semget(key, 3, 0600);
     SEM_TEST_ERROR(mutexPartSem, "[USER]: semget failed during partitions mutex semaphores creation. Error: ");
 
+    key = ftok(SEMFILEPATH, NOALLTIMESNODESSEMSEED);
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during number of all times nodes' shared variable's semaphore creation. Error: ")
+    noAllTimesNodesSem = semget(key, 1, 0600);
+    SEM_TEST_ERROR(noAllTimesNodesSem, "[USER]: semget failed during number of all times nodes' shared variable's semaphore creation. Error: ");
+
     /*****  Creates and initialize the messages queues  *****/
     /********************************************************/
     /* Creates the global queue*/
@@ -619,6 +633,13 @@ boolean initializeFacilities()
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
     /*SHMAT_TEST_ERROR(noNodeSegReadersPtr, "User");*/
     TEST_SHMAT_ERROR(noNodeSegReadersPtr, "[USER]: failed to attach to nodes list's shared variable segment. Error: ");
+
+    key = ftok(SHMFILEPATH, NOALLTIMESNODESSEED);
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during number of all times nodes' shared variable creation. Error: ");
+    noAllTimesNodes = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    SHM_TEST_ERROR(noAllTimesNodes, "[USER]: shmget failed during number of all times nodes' shared variable creation. Error: ")
+    noAllTimesNodesPtr = (int *)shmat(noAllTimesNodes, NULL, 0);
+    TEST_SHMAT_ERROR(noAllTimesNodesPtr, "[USER]: failed to attach to number of all times nodes' shared variable segment. Error: ");
 
     return TRUE;
 }
@@ -1105,6 +1126,20 @@ void deallocateIPCFacilities()
         }
     }
 
+    msg_length = snprintf(aus, 199, "[USER %5ld]: detaching from number of all times nodes' shared variable...\n", my_pid);
+    write(STDOUT_FILENO, aus, msg_length);
+    aus[0] = 0;/* resetting string's content */
+
+    if (noAllTimesNodesPtr != NULL && shmdt(noAllTimesNodesPtr) == -1)
+    {
+        if (errno != EINVAL)
+        {
+            snprintf(aus, 199, "[USER %5ld]: failed to detach from number of all times nodes' shared variable. Error: ", my_pid);
+            safeErrorPrint(aus, __LINE__);
+            aus[0] = 0;/* resetting string's content */
+        }
+    }
+
     msg_length = snprintf(aus, 199, "[USER %5ld]: cleanup operations completed. Process is about to end its execution...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
 
@@ -1553,62 +1588,55 @@ pid_t extractNode()
     pid_t pid_to_return = -1;
     boolean errBeforeExtraction = FALSE;
     char * aus;
+    long numNodes = 0;
     function_we_into = "extractNode";
 
     aus = (char *)calloc(200, sizeof(char));
     sops.sem_flg = 0;
 
-    sops.sem_num = 0;
+    /* entering critical section for number of all times nodes' shared variable */
     sops.sem_op = -1;
-    if (semop(nodeListSem, &sops, 1) != -1)
+    sops.sem_num = 0;
+    if (semop(noAllTimesNodesSem, &sops, 1) == -1)
     {
-        (*noNodeSegReadersPtr)++;
-        if ((*noNodeSegReadersPtr) == 1)
-        {
-            sops.sem_num = 2;
-            sops.sem_op = -1;
-            if (semop(nodeListSem, &sops, 1) == -1)
-            {
-                snprintf(aus, 199, "[USER %5ld]: failed to reserve write nodesList semaphore. Error: ", my_pid);
-                safeErrorPrint(aus, __LINE__);
-                aus[0] = 0;/* resetting string's content */
-                /* restituiamo -1 e contiamo come fallimento di invio di transazione */
-                errBeforeExtraction = TRUE;
-            }
-        }
-
-        sops.sem_num = 0;
+        snprintf(aus, 199, "[USER %5ld]: failed to reserve number of all times nodes' semaphore. Error: ", my_pid);
+        safeErrorPrint(aus, __LINE__);
+        aus[0] = 0;/* resetting string's content */
+        /* restituiamo -1 e contiamo come fallimento di invio di transazione */
+    }
+    else
+    {
+        /* saving number of all times node processes */
+        numNodes = (*noAllTimesNodesPtr);
+        
+        /* exiting critical section for number of all times nodes' shared variable */
         sops.sem_op = 1;
-        if (semop(nodeListSem, &sops, 1) != -1)
+        sops.sem_num = 0;
+        if (semop(noAllTimesNodesSem, &sops, 1) == -1)
         {
-            if(errBeforeExtraction)
-                return (pid_t)-1;
-
-            do
-            {
-                clock_gettime(CLOCK_REALTIME, &now);
-                n = now.tv_nsec % SO_NODES_NUM;
-            } while (nodesList[n].procState != ACTIVE);
-            /* cicla finché il nodo scelto casualmente non è attivo */
-
-            pid_to_return = nodesList[n].procId;
-
+            snprintf(aus, 199, "[USER %5ld]: failed to release number of all times nodes' semaphore. Error: ", my_pid);
+            safeErrorPrint(aus, __LINE__);
+            aus[0] = 0;/* resetting string's content */
+            /* restituiamo -1 e contiamo come fallimento di invio di transazione */
+        }
+        else
+        {
             sops.sem_num = 0;
             sops.sem_op = -1;
             if (semop(nodeListSem, &sops, 1) != -1)
             {
-                (*noNodeSegReadersPtr)--;
-                if ((*noNodeSegReadersPtr) == 0)
+                (*noNodeSegReadersPtr)++;
+                if ((*noNodeSegReadersPtr) == 1)
                 {
                     sops.sem_num = 2;
-                    sops.sem_op = 1;
+                    sops.sem_op = -1;
                     if (semop(nodeListSem, &sops, 1) == -1)
                     {
-                        snprintf(aus, 199, "[USER %5ld]: failed to release write nodesList semaphore. Error: ", my_pid);
+                        snprintf(aus, 199, "[USER %5ld]: failed to reserve write nodesList semaphore. Error: ", my_pid);
                         safeErrorPrint(aus, __LINE__);
                         aus[0] = 0;/* resetting string's content */
                         /* restituiamo -1 e contiamo come fallimento di invio di transazione */
-                        pid_to_return = (pid_t)-1;
+                        errBeforeExtraction = TRUE;
                     }
                 }
 
@@ -1616,7 +1644,58 @@ pid_t extractNode()
                 sops.sem_op = 1;
                 if (semop(nodeListSem, &sops, 1) != -1)
                 {
-                    return pid_to_return;
+                    if(errBeforeExtraction)
+                        return (pid_t)-1;
+
+                    do
+                    {
+                        clock_gettime(CLOCK_REALTIME, &now);
+                        n = now.tv_nsec % numNodes;
+                    } while (nodesList[n].procState != ACTIVE);
+                    /* cicla finché il nodo scelto casualmente non è attivo */
+
+                    pid_to_return = nodesList[n].procId;
+
+                    sops.sem_num = 0;
+                    sops.sem_op = -1;
+                    if (semop(nodeListSem, &sops, 1) != -1)
+                    {
+                        (*noNodeSegReadersPtr)--;
+                        if ((*noNodeSegReadersPtr) == 0)
+                        {
+                            sops.sem_num = 2;
+                            sops.sem_op = 1;
+                            if (semop(nodeListSem, &sops, 1) == -1)
+                            {
+                                snprintf(aus, 199, "[USER %5ld]: failed to release write nodesList semaphore. Error: ", my_pid);
+                                safeErrorPrint(aus, __LINE__);
+                                aus[0] = 0;/* resetting string's content */
+                                /* restituiamo -1 e contiamo come fallimento di invio di transazione */
+                                pid_to_return = (pid_t)-1;
+                            }
+                        }
+
+                        sops.sem_num = 0;
+                        sops.sem_op = 1;
+                        if (semop(nodeListSem, &sops, 1) != -1)
+                        {
+                            return pid_to_return;
+                        }
+                        else
+                        {
+                            snprintf(aus, 199, "[USER %5ld]: failed to release mutex nodesList semaphore. Error: ", my_pid);
+                            safeErrorPrint(aus, __LINE__);
+                            aus[0] = 0;/* resetting string's content */
+                            /* restituiamo -1 e contiamo come fallimento di invio di transazione */
+                        }
+                    }
+                    else
+                    {
+                        snprintf(aus, 199, "[USER %5ld]: failed to reserve mutex nodesList semaphore. Error: ", my_pid);
+                        safeErrorPrint(aus, __LINE__);
+                        aus[0] = 0;/* resetting string's content */
+                        /* restituiamo -1 e contiamo come fallimento di invio di transazione */
+                    }
                 }
                 else
                 {
@@ -1634,20 +1713,6 @@ pid_t extractNode()
                 /* restituiamo -1 e contiamo come fallimento di invio di transazione */
             }
         }
-        else
-        {
-            snprintf(aus, 199, "[USER %5ld]: failed to release mutex nodesList semaphore. Error: ", my_pid);
-            safeErrorPrint(aus, __LINE__);
-            aus[0] = 0;/* resetting string's content */
-            /* restituiamo -1 e contiamo come fallimento di invio di transazione */
-        }
-    }
-    else
-    {
-        snprintf(aus, 199, "[USER %5ld]: failed to reserve mutex nodesList semaphore. Error: ", my_pid);
-        safeErrorPrint(aus, __LINE__);
-        aus[0] = 0;/* resetting string's content */
-        /* restituiamo -1 e contiamo come fallimento di invio di transazione */
     }
 
     if (aus != NULL)
