@@ -14,6 +14,7 @@
 #include <fcntl.h> /* ONLY FOR DEBUG PURPOSE */
 /*#include <sys/ipc.h> VEDERE SE SERVA*/
 #include "error.h"
+#define IPCREMOVERFILEPATH "IPC_remover/IPC_resources.txt"
 #define SEMFILEPATH "semfile.txt"
 #define FAIRSTARTSEED 1
 #define WRPARTSEED 2
