@@ -1,761 +1,398 @@
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[USER 30001]: sent transaction on global queue with HOPS 1
-[USER 30108]: sent transaction on global queue with HOPS 1
-[USER 29826]: sent transaction on global queue with HOPS 1
-[USER 29967]: sent transaction on global queue with HOPS 1
-[USER 30030]: sent transaction on global queue with HOPS 1
-[USER 30221]: sent transaction on global queue with HOPS 1
-[USER 29936]: sent transaction on global queue with HOPS 1
-[USER 29912]: sent transaction on global queue with HOPS 1
-[USER 30029]: sent transaction on global queue with HOPS 1
-[USER 30002]: sent transaction on global queue with HOPS 1
-[USER 30155]: sent transaction on global queue with HOPS 1
-[USER 30107]: sent transaction on global queue with HOPS 1
-[USER 30250]: sent transaction on global queue with HOPS 1
-[USER 29998]: sent transaction on global queue with HOPS 1
-[USER 30175]: sent transaction on global queue with HOPS 1
-[USER 29902]: sent transaction on global queue with HOPS 1
-[NODE 30297]: found transaction read from global queue with HOPS 1
-[NODE 30297]: sent transaction on global queue with HOPS 0
-[NODE 30297]: found transaction read from global queue with HOPS 1
-[NODE 30297]: sent transaction on global queue with HOPS 0
-[NODE 30297]: found transaction read from global queue with HOPS 1
-[NODE 30297]: sent transaction on global queue with HOPS 0
-[NODE 30297]: found transaction read from global queue with HOPS 1
-[NODE 30297]: sent transaction on global queue with HOPS 0
-[NODE 30297]: found transaction read from global queue with HOPS 1
-[NODE 30297]: sent transaction on global queue with HOPS 0
-[NODE 30297]: found transaction read from global queue with HOPS 1
-[NODE 30297]: sent transaction on global queue with HOPS 0
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: found transaction read from global queue with HOPS 1
-[NODE 30296]: sent transaction read from global queue to friend of pid 30297
-[NODE 30296]: found transaction read from global queue with HOPS 1
-[NODE 30296]: sent transaction on global queue with HOPS 0
-[NODE 30296]: found transaction read from global queue with HOPS 1
-[NODE 30296]: sent transaction on global queue with HOPS 0
-[NODE 30296]: found transaction read from global queue with HOPS 1
-[NODE 30296]: sent transaction on global queue with HOPS 0
-[NODE 30296]: found transaction read from global queue with HOPS 1
-[NODE 30296]: sent transaction on global queue with HOPS 0
-[NODE 30296]: found transaction read from global queue with HOPS 1
-[NODE 30296]: sent transaction on global queue with HOPS 0
-[NODE 30296]: found transaction read from global queue with HOPS 1
-[NODE 30296]: sent transaction on global queue with HOPS 0
-[NODE 30296]: found transaction read from global queue with HOPS 1
-[NODE 30296]: sent transaction on global queue with HOPS 0
-[NODE 30296]: found transaction read from global queue with HOPS 1
-[NODE 30296]: sent transaction on global queue with HOPS 0
-[NODE 30296]: found transaction read from global queue with HOPS 1
-[NODE 30296]: sent transaction on global queue with HOPS 0
-[NODE 30296]: requested creation of new node to master
-[NODE 30296]: requested creation of new node to master
-[NODE 30296]: requested creation of new node to master
-[NODE 30296]: requested creation of new node to master
-[NODE 30296]: requested creation of new node to master
-[NODE 30296]: requested creation of new node to master
-[NODE 30296]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: requested creation of new node to master
-[NODE 30297]: requested creation of new node to master
-[NODE 30297]: requested creation of new node to master
-[NODE 30297]: requested creation of new node to master
-[NODE 30297]: requested creation of new node to master
-[NODE 30297]: requested creation of new node to master
-[NODE 30297]: requested creation of new node to master
-[NODE 30297]: requested creation of new node to master
-[NODE 30297]: requested creation of new node to master
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[USER 39059]: sent transaction on global queue with HOPS 1
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: no messages on global queue for me
+[USER 39148]: sent transaction on global queue with HOPS 1
+[USER 39140]: sent transaction on global queue with HOPS 1
+[USER 39128]: sent transaction on global queue with HOPS 1
+[USER 39120]: sent transaction on global queue with HOPS 1
+[USER 39091]: sent transaction on global queue with HOPS 1
+[USER 39115]: sent transaction on global queue with HOPS 1
+[USER 39080]: sent transaction on global queue with HOPS 1
+[USER 39100]: sent transaction on global queue with HOPS 1
+[USER 39086]: sent transaction on global queue with HOPS 1
+[USER 39084]: sent transaction on global queue with HOPS 1
+[USER 39143]: sent transaction on global queue with HOPS 1
+[USER 39137]: sent transaction on global queue with HOPS 1
+[USER 39075]: sent transaction on global queue with HOPS 1
+[USER 39016]: sent transaction on global queue with HOPS 1
+[USER 39119]: sent transaction on global queue with HOPS 1
+[USER 39117]: sent transaction on global queue with HOPS 1
+[USER 39112]: sent transaction on global queue with HOPS 1
+[USER 38770]: sent transaction on global queue with HOPS 1
+[USER 38720]: sent transaction on global queue with HOPS 1
+[USER 38928]: sent transaction on global queue with HOPS 1
+[USER 38722]: sent transaction on global queue with HOPS 1
+[USER 38932]: sent transaction on global queue with HOPS 1
+[USER 38718]: sent transaction on global queue with HOPS 1
+[USER 38769]: sent transaction on global queue with HOPS 1
+[USER 38724]: sent transaction on global queue with HOPS 1
+[USER 38940]: sent transaction on global queue with HOPS 1
+[USER 38779]: sent transaction on global queue with HOPS 1
+[USER 38772]: sent transaction on global queue with HOPS 1
+[USER 38960]: sent transaction on global queue with HOPS 1
+[USER 38961]: sent transaction on global queue with HOPS 1
+[USER 38814]: sent transaction on global queue with HOPS 1
+[USER 38857]: sent transaction on global queue with HOPS 1
+[USER 38902]: sent transaction on global queue with HOPS 1
+[USER 39065]: sent transaction on global queue with HOPS 1
+[USER 38925]: sent transaction on global queue with HOPS 1
+[USER 38751]: sent transaction on global queue with HOPS 1
+[USER 38682]: sent transaction on global queue with HOPS 1
+[USER 38785]: sent transaction on global queue with HOPS 1
+[USER 38667]: sent transaction on global queue with HOPS 1
+[USER 39007]: sent transaction on global queue with HOPS 1
+[USER 38945]: sent transaction on global queue with HOPS 1
+[USER 38778]: sent transaction on global queue with HOPS 1
+[USER 38930]: sent transaction on global queue with HOPS 1
+[USER 38692]: sent transaction on global queue with HOPS 1
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[USER 38876]: sent transaction on global queue with HOPS 1
+[USER 38931]: sent transaction on global queue with HOPS 1
+[USER 39069]: sent transaction on global queue with HOPS 1
+[USER 38918]: sent transaction on global queue with HOPS 1
+[USER 38919]: sent transaction on global queue with HOPS 1
+[USER 38916]: sent transaction on global queue with HOPS 1
+[USER 38826]: sent transaction on global queue with HOPS 1
+[USER 38905]: sent transaction on global queue with HOPS 1
+[USER 38669]: sent transaction on global queue with HOPS 1
+[USER 38699]: sent transaction on global queue with HOPS 1
+[NODE 39149]: found transaction read from global queue with HOPS 1
+[NODE 39149]: sent transaction on global queue with HOPS 0
+[NODE 39149]: found transaction read from global queue with HOPS 1
+[NODE 39149]: sent transaction on global queue with HOPS 0
+[NODE 39149]: found transaction read from global queue with HOPS 1
+[NODE 39149]: sent transaction on global queue with HOPS 0
+[NODE 39149]: found transaction read from global queue with HOPS 1
+[NODE 39149]: sent transaction on global queue with HOPS 0
+[NODE 39149]: found transaction read from global queue with HOPS 1
+[NODE 39149]: sent transaction on global queue with HOPS 0
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction read from global queue to friend of pid 39149
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction on global queue with HOPS 0
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction on global queue with HOPS 0
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction on global queue with HOPS 0
+[NODE 39150]: found transaction read from global queue with HOPS 1
+[NODE 39150]: sent transaction on global queue with HOPS 0
+[NODE 39150]: requested creation of new node to master
+[NODE 39150]: requested creation of new node to master
+[NODE 39150]: requested creation of new node to master
+[NODE 39150]: requested creation of new node to master
+[NODE 39150]: requested creation of new node to master
+[NODE 39150]: no messages on global queue for me
 [MASTER]: handled creation of new node request
 [MASTER]: handled creation of new node request
 [MASTER]: handled creation of new node request
 [MASTER]: handled creation of new node request
 [MASTER]: handled creation of new node request
+[USER 39059]: sent transaction on global queue with HOPS 1
+[USER 39063]: sent transaction on global queue with HOPS 1
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: requested creation of new node to master
+[NODE 39149]: requested creation of new node to master
+[NODE 39149]: requested creation of new node to master
+[NODE 39149]: requested creation of new node to master
+[NODE 39149]: found transaction read from global queue with HOPS 1
+[NODE 39149]: sent transaction read from global queue to friend of pid 39150
+[NODE 39149]: found transaction read from global queue with HOPS 1
+[NODE 39149]: sent transaction read from global queue to friend of pid 39150
+[NODE 39149]: no messages on global queue for me
+[USER 38815]: sent transaction on global queue with HOPS 1
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: found transaction read from global queue with HOPS 1
+[NODE 39149]: sent transaction read from global queue to friend of pid 39150
+[NODE 39149]: no messages on global queue for me
+[NODE 39414]: no messages on global queue for me
+[NODE 39418]: no messages on global queue for me
+[NODE 39415]: no messages on global queue for me
+[NODE 39416]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39417]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39414]: no messages on global queue for me
+[NODE 39416]: no messages on global queue for me
+[NODE 39415]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39417]: no messages on global queue for me
+[NODE 39418]: no messages on global queue for me
 [MASTER]: handled creation of new node request
 [MASTER]: handled creation of new node request
 [MASTER]: handled creation of new node request
 [MASTER]: handled creation of new node request
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 32353]: no messages on global queue for me
-[NODE 32357]: no messages on global queue for me
-[NODE 32354]: no messages on global queue for me
-[NODE 32349]: no messages on global queue for me
-[NODE 32355]: no messages on global queue for me
-[NODE 32356]: no messages on global queue for me
-[NODE 32350]: no messages on global queue for me
-[NODE 32352]: no messages on global queue for me
-[NODE 32351]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 32353]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 32357]: no messages on global queue for me
-[NODE 32354]: no messages on global queue for me
-[NODE 32351]: no messages on global queue for me
-[NODE 32349]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 32356]: no messages on global queue for me
-[NODE 32352]: no messages on global queue for me
-[NODE 32353]: no messages on global queue for me
-[NODE 32357]: no messages on global queue for me
-[NODE 32350]: no messages on global queue for me
-[NODE 32355]: no messages on global queue for me
-[NODE 32354]: no messages on global queue for me
-[NODE 32351]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 32349]: no messages on global queue for me
-[NODE 32353]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 32350]: no messages on global queue for me
-[NODE 32356]: no messages on global queue for me
-[NODE 32352]: no messages on global queue for me
-[NODE 32357]: no messages on global queue for me
-[NODE 32354]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 32351]: no messages on global queue for me
-[NODE 32353]: no messages on global queue for me
-[NODE 32352]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 32357]: no messages on global queue for me
-[NODE 32350]: no messages on global queue for me
-[NODE 32349]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 32352]: no messages on global queue for me
-[NODE 32355]: no messages on global queue for me
-[NODE 32356]: no messages on global queue for me
-[NODE 32354]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 30296]: no messages on global queue for me
-[NODE 30297]: no messages on global queue for me
-[NODE 32349]: no messages on global queue for me
-[NODE 32351]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[USER 34964]: sent transaction on global queue with HOPS 1
-[USER 34548]: sent transaction on global queue with HOPS 1
-[USER 34782]: sent transaction on global queue with HOPS 1
-[USER 34585]: sent transaction on global queue with HOPS 1
-[USER 34574]: sent transaction on global queue with HOPS 1
-[USER 34630]: sent transaction on global queue with HOPS 1
-[USER 34715]: sent transaction on global queue with HOPS 1
-[USER 34626]: sent transaction on global queue with HOPS 1
-[USER 34704]: sent transaction on global queue with HOPS 1
-[USER 34699]: sent transaction on global queue with HOPS 1
-[USER 34706]: sent transaction on global queue with HOPS 1
-[USER 34779]: sent transaction on global queue with HOPS 1
-[USER 34554]: sent transaction on global queue with HOPS 1
-[USER 34722]: sent transaction on global queue with HOPS 1
-[USER 34862]: sent transaction on global queue with HOPS 1
-[USER 34750]: sent transaction on global queue with HOPS 1
-[USER 34989]: sent transaction on global queue with HOPS 1
-[USER 34809]: sent transaction on global queue with HOPS 1
-[USER 34845]: sent transaction on global queue with HOPS 1
-[USER 34606]: sent transaction on global queue with HOPS 1
-[USER 34605]: sent transaction on global queue with HOPS 1
-[USER 34623]: sent transaction on global queue with HOPS 1
-[USER 34941]: sent transaction on global queue with HOPS 1
-[USER 34890]: sent transaction on global queue with HOPS 1
-[USER 34665]: sent transaction on global queue with HOPS 1
-[USER 34632]: sent transaction on global queue with HOPS 1
-[USER 34617]: sent transaction on global queue with HOPS 1
-[USER 34983]: sent transaction on global queue with HOPS 1
-[USER 34999]: sent transaction on global queue with HOPS 1
-[USER 35004]: sent transaction on global queue with HOPS 1
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[USER 34932]: sent transaction on global queue with HOPS 1
-[USER 34921]: sent transaction on global queue with HOPS 1
-[USER 34581]: sent transaction on global queue with HOPS 1
-[USER 34721]: sent transaction on global queue with HOPS 1
-[USER 34893]: sent transaction on global queue with HOPS 1
-[USER 34553]: sent transaction on global queue with HOPS 1
-[USER 34912]: sent transaction on global queue with HOPS 1
-[USER 34897]: sent transaction on global queue with HOPS 1
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction read from global queue to friend of pid 35024
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[USER 34527]: sent transaction on global queue with HOPS 1
-[USER 34616]: sent transaction on global queue with HOPS 1
-[USER 34703]: sent transaction on global queue with HOPS 1
-[USER 34676]: sent transaction on global queue with HOPS 1
-[USER 34548]: sent transaction on global queue with HOPS 1
-[USER 34651]: sent transaction on global queue with HOPS 1
-[USER 34626]: sent transaction on global queue with HOPS 1
-[USER 34704]: sent transaction on global queue with HOPS 1
-[USER 34706]: sent transaction on global queue with HOPS 1
-[USER 34779]: sent transaction on global queue with HOPS 1
-[USER 34722]: sent transaction on global queue with HOPS 1
-[USER 34989]: sent transaction on global queue with HOPS 1
-[USER 34962]: sent transaction on global queue with HOPS 1
-[USER 34605]: sent transaction on global queue with HOPS 1
-[USER 34845]: sent transaction on global queue with HOPS 1
-[USER 34941]: sent transaction on global queue with HOPS 1
-[USER 34606]: sent transaction on global queue with HOPS 1
-[USER 34665]: sent transaction on global queue with HOPS 1
-[USER 34632]: sent transaction on global queue with HOPS 1
-[USER 34617]: sent transaction on global queue with HOPS 1
-[USER 34983]: sent transaction on global queue with HOPS 1
-[USER 34999]: sent transaction on global queue with HOPS 1
-[USER 34544]: sent transaction on global queue with HOPS 1
-[USER 34958]: sent transaction on global queue with HOPS 1
-[USER 34719]: sent transaction on global queue with HOPS 1
-[USER 34557]: sent transaction on global queue with HOPS 1
-[USER 34812]: sent transaction on global queue with HOPS 1
-[USER 34790]: sent transaction on global queue with HOPS 1
-[USER 34873]: sent transaction on global queue with HOPS 1
-[USER 34664]: sent transaction on global queue with HOPS 1
-[USER 34560]: sent transaction on global queue with HOPS 1
-[USER 34877]: sent transaction on global queue with HOPS 1
-[USER 34636]: sent transaction on global queue with HOPS 1
-[USER 34994]: sent transaction on global queue with HOPS 1
-[USER 34764]: sent transaction on global queue with HOPS 1
-[USER 34805]: sent transaction on global queue with HOPS 1
-[USER 34810]: sent transaction on global queue with HOPS 1
-[USER 34943]: sent transaction on global queue with HOPS 1
-[USER 34955]: sent transaction on global queue with HOPS 1
-[USER 34864]: sent transaction on global queue with HOPS 1
-[USER 34702]: sent transaction on global queue with HOPS 1
-[USER 34695]: sent transaction on global queue with HOPS 1
-[USER 34982]: sent transaction on global queue with HOPS 1
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: found transaction read from global queue with HOPS 1
-[NODE 35025]: sent transaction on global queue with HOPS 0
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction read from global queue to friend of pid 35025
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: found transaction read from global queue with HOPS 1
-[NODE 35024]: sent transaction on global queue with HOPS 0
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: requested creation of new node to master
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: requested creation of new node to master
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[MASTER]: handled creation of new node request
-[MASTER]: handled creation of new node request
-[MASTER]: handled creation of new node request
-[MASTER]: handled creation of new node request
-[MASTER]: handled creation of new node request
-[MASTER]: handled creation of new node request
-[MASTER]: handled creation of new node request
-[MASTER]: handled creation of new node request
-[MASTER]: handled creation of new node request
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 36695]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 36693]: no messages on global queue for me
-[NODE 36690]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 36689]: no messages on global queue for me
-[NODE 36686]: no messages on global queue for me
-[NODE 36694]: no messages on global queue for me
-[NODE 36691]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 36688]: no messages on global queue for me
-[NODE 36687]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 36694]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 36686]: no messages on global queue for me
-[NODE 36693]: no messages on global queue for me
-[NODE 36690]: no messages on global queue for me
-[NODE 36691]: no messages on global queue for me
-[NODE 36687]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 36689]: no messages on global queue for me
-[NODE 36688]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 36695]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 36693]: no messages on global queue for me
-[NODE 36687]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 36689]: no messages on global queue for me
-[NODE 36690]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 36691]: no messages on global queue for me
-[NODE 36686]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 36694]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 36688]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 36693]: no messages on global queue for me
-[NODE 36689]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 35025]: no messages on global queue for me
-[NODE 35024]: no messages on global queue for me
-[NODE 36686]: no messages on global queue for me
-[NODE 36695]: no messages on global queue for me
-[NODE 36690]: no messages on global queue for me
-[NODE 36691]: no messages on global queue for me
-[NODE 36687]: no messages on global queue for me
+[NODE 39414]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39415]: no messages on global queue for me
+[NODE 39418]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39585]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39417]: no messages on global queue for me
+[NODE 39414]: no messages on global queue for me
+[NODE 39416]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39586]: no messages on global queue for me
+[NODE 39584]: no messages on global queue for me
+[NODE 39415]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39587]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39418]: no messages on global queue for me
+[NODE 39416]: no messages on global queue for me
+[NODE 39417]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39584]: no messages on global queue for me
+[NODE 39414]: no messages on global queue for me
+[NODE 39586]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39585]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39415]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39416]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39587]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39417]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39414]: no messages on global queue for me
+[NODE 39584]: no messages on global queue for me
+[NODE 39586]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39149]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39150]: no messages on global queue for me
+[NODE 39418]: no messages on global queue for me
+[NODE 39585]: no messages on global queue for me
+[NODE 39416]: no messages on global queue for me
+[NODE 39417]: no messages on global queue for me
