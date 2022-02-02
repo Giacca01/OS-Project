@@ -373,6 +373,7 @@ int main(int argc, char *argv[])
 
     /* allocation of extractedFriendsIndex */
     extractedFriendsIndex = (int *)malloc(SO_FRIENDS_NUM * sizeof(int));
+    /* initializing print string message */
     aus = (char *)calloc(200, sizeof(char));
 
     /* setting data for waiting for one second */
@@ -1416,7 +1417,7 @@ boolean assignEnvironmentVariables()
  */
 boolean readConfigParameters()
 {
-    char *filename = "params_mine.txt";
+    char *filename = "params_1.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1609,6 +1610,33 @@ boolean initializeIPCFacilities()
     procQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     MSG_TEST_ERROR(procQueue, "[MASTER]: msgget failed during processes global queue creation. Error: ");
 
+    printf("[MASTER]: setting processes global queue size...\n");
+    if (msgctl(procQueue, IPC_STAT, &globalQueueStruct) == -1)
+    {
+        unsafeErrorPrint("[MASTER]: failed to retrive processes global queue size. Error: ", __LINE__);
+        endOfSimulation(-1);
+    }
+    else
+    {
+        globalQueueStruct.msg_qbytes = (sizeof(ProcQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
+        if (msgctl(procQueue, IPC_SET, &globalQueueStruct) == -1)
+        {
+            unsafeErrorPrint("[MASTER]: failed to set processes global queue size. Error: ", __LINE__);
+            endOfSimulation(-1);
+        }
+    }
+    
+    /*
+    if (sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM) < globalQueueStruct.msg_qbytes){
+        globalQueueStruct.msg_qbytes = sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM);
+        if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
+        {
+            unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
+            endOfSimulation(-1);
+        }
+    }*/
+    /*}*/
+
     /* Creation of the processes global queue*/
     key = ftok(MSGFILEPATH, NODE_CREATION_QUEUE_SEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during nodes global queue creation. Error: ");
@@ -1618,6 +1646,22 @@ boolean initializeIPCFacilities()
     fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
     dprintf(fd, "q;%d\n", nodeCreationQueue);
     close(fd);
+    
+    printf("[MASTER]: setting nodes global queue size...\n");
+    if (msgctl(nodeCreationQueue, IPC_STAT, &globalQueueStruct) == -1)
+    {
+        unsafeErrorPrint("[MASTER]: failed to retrive nodes global queue size. Error: ", __LINE__);
+        endOfSimulation(-1);
+    }
+    else
+    {
+        globalQueueStruct.msg_qbytes = (sizeof(NodeCreationQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
+        if (msgctl(nodeCreationQueue, IPC_SET, &globalQueueStruct) == -1)
+        {
+            unsafeErrorPrint("[MASTER]: failed to set nodes global queue size. Error: ", __LINE__);
+            endOfSimulation(-1);
+        }
+    }
 
     key = ftok(MSGFILEPATH, TRANS_QUEUE_SEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during transactions global queue creation. Error: ");
@@ -1627,6 +1671,22 @@ boolean initializeIPCFacilities()
     fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
     dprintf(fd, "q;%d\n", transQueue);
     close(fd);
+    
+    printf("[MASTER]: setting transactions global queue size...\n");
+    if (msgctl(transQueue, IPC_STAT, &globalQueueStruct) == -1)
+    {
+        unsafeErrorPrint("[MASTER]: failed to retrive transactions global queue size. Error: ", __LINE__);
+        endOfSimulation(-1);
+    }
+    else
+    {
+        globalQueueStruct.msg_qbytes = (sizeof(TransQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
+        if (msgctl(transQueue, IPC_SET, &globalQueueStruct) == -1)
+        {
+            unsafeErrorPrint("[MASTER]: failed to set transactions global queue size. Error: ", __LINE__);
+            endOfSimulation(-1);
+        }
+    }
 
     /* Creation of register's partitions */
     key = ftok(SHMFILEPATH, REGPARTONESEED);
@@ -2559,6 +2619,7 @@ void checkNodeCreationRequests()
             dprintf(fdReport, "MASTER: handled creation of new node request\n");
             close(fdReport);
 
+            printf("[MASTER]: creating new node...\n");
             /* entering critical section for number of all times nodes' shared variable */
             sops[0].sem_num = 0;
             sops[0].sem_op = -1;
@@ -2610,6 +2671,7 @@ void checkNodeCreationRequests()
                         }
                         else
                         {
+                            printf("[NODE]: I'm a new node, my pid is %ld\n", (long)getpid());
                             if (execle("node.out", "node", "ADDITIONAL", NULL, environ) == -1)
                                 safeErrorPrint("[MASTER]: failed to load node's code. Error: ", __LINE__);
                         }
