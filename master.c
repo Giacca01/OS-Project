@@ -27,12 +27,12 @@
 /**** End of Headers inclusion ****/
 
 /**** Constants definition ****/
-#define NO_ATTEMPS_TERM 3                       /* Maximum number of attemps to terminate the simulation*/
-#define MAX_PRINT_PROCESSES 15                  /* Maximum number of processes of which we show budget, if noEffectiveNodes + noEffectiveUsers > MAX_PRINT_PROCESSES we only print max and min budget */
-#define NO_ATTEMPTS_UPDATE_BUDGET 3             /* Number of attempts to update budget reading a block on register */
-#define NO_ATTEMPTS_NEW_NODE_REQUESTS 10        /* Number of attempts to check for new node requests */
-#define NO_ATTEMPTS_CHECK_USER_TERMINATION 5    /* Number of attempts to check for user terminations */
-#define NO_ATTEMPTS_CHECK_NODE_TERMINATION 5    /* Number of attempts to check for node terminations */
+#define NO_ATTEMPS_TERM 3                    /* Maximum number of attemps to terminate the simulation*/
+#define MAX_PRINT_PROCESSES 15               /* Maximum number of processes of which we show budget, if noEffectiveNodes + noEffectiveUsers > MAX_PRINT_PROCESSES we only print max and min budget */
+#define NO_ATTEMPTS_UPDATE_BUDGET 3          /* Number of attempts to update budget reading a block on register */
+#define NO_ATTEMPTS_NEW_NODE_REQUESTS 10     /* Number of attempts to check for new node requests */
+#define NO_ATTEMPTS_CHECK_USER_TERMINATION 5 /* Number of attempts to check for user terminations */
+#define NO_ATTEMPTS_CHECK_NODE_TERMINATION 5 /* Number of attempts to check for node terminations */
 /**** End of Constants definition ****/
 
 /*****        Global structures        *****/
@@ -93,12 +93,12 @@ int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, r
                         to read and write nodes list
                         */
 
-int noNodeSegReaders = -1; /* id of the shared memory segment that contains the variable used to syncronize
-                              readers and writers access to nodes list */
+int noNodeSegReaders = -1;       /* id of the shared memory segment that contains the variable used to syncronize
+                                    readers and writers access to nodes list */
 int *noNodeSegReadersPtr = NULL; /* Pointer to the shared memory segment described above */
 
-int noAllTimesNodesSem = -1; /* Id of the mutex semaphore used to read/write the number of all times node processes shared variabile */
-int noAllTimesNodes = -1; /* id of the shared memory segment that contains the variable that keeps number of all times node processes */
+int noAllTimesNodesSem = -1;    /* Id of the mutex semaphore used to read/write the number of all times node processes shared variabile */
+int noAllTimesNodes = -1;       /* id of the shared memory segment that contains the variable that keeps number of all times node processes */
 int *noAllTimesNodesPtr = NULL; /* Pointer to the shared memory segment described above */
 
 /*
@@ -108,10 +108,10 @@ int *noAllTimesNodesPtr = NULL; /* Pointer to the shared memory segment describe
 long noTerminatedUsers = 0; /* NUmber of users that terminated before end of simulation*/
 long noTerminatedNodes = 0; /* NUmber of processes that terminated before end of simulation*/
 
-long noEffectiveNodes = 0; /* Holds the effective number of nodes */
-long noEffectiveUsers = 0; /* Holds the effective number of users */
-/*long noAllTimesNodes = 0;  *//* Historical number of nodes: it counts also the terminated ones */
-long noAllTimesUsers = 0;  /* Historical number of users: it counts also the terminated ones */
+long noEffectiveNodes = 0;      /* Holds the effective number of nodes */
+long noEffectiveUsers = 0;      /* Holds the effective number of users */
+/*long noAllTimesNodes = 0;  */ /* Historical number of nodes: it counts also the terminated ones */
+long noAllTimesUsers = 0;       /* Historical number of users: it counts also the terminated ones */
 
 long tplLength = 0; /* keeps tpList length */
 
@@ -296,8 +296,6 @@ void segmentationFaultHandler(int);
 
 int main(int argc, char *argv[])
 {
-    /* ONLY FOR DEBUG!!!!*/
-    FILE * report;
 
     pid_t child_pid;
     struct sembuf sops[3];
@@ -337,7 +335,7 @@ int main(int argc, char *argv[])
 
     /* declaring message structures used with global queue */
     ProcQueue msg_to_node, msg_from_user, msg_from_node;
-     MsgGlobalQueue msg_new_node;
+    MsgGlobalQueue msg_new_node;
 
     /* declaring counter for transactions read from global queue */
     /*int c_msg_read;*/
@@ -644,7 +642,7 @@ int main(int argc, char *argv[])
                                                 safeErrorPrint("[MASTER]: failed to reserve number of all times nodes' shared variable semaphore. Error: ", __LINE__);
                                                 endOfSimulation(-1);
                                             }
-                                            
+
                                             /* Incrementing number of effective and all times nodes */
                                             noEffectiveNodes++;
                                             (*noAllTimesNodesPtr)++;
@@ -694,7 +692,7 @@ int main(int argc, char *argv[])
                                                     during the msgget
                                                 */
 
-                                                if (tpStruct.msg_qbytes < (sizeof(MsgTP) -sizeof(long)) * SO_TP_SIZE)
+                                                if (tpStruct.msg_qbytes < (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
                                                 {
                                                     tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
                                                     printf("Master: impostata nuova dimensione coda.\n");
@@ -1191,7 +1189,7 @@ int main(int argc, char *argv[])
                                             safeErrorPrint("[MASTER]: failed to reserve number of all times nodes' shared variable semaphore. Error: ", __LINE__);
                                             endOfSimulation(-1);
                                         }
-                                        
+
                                         /* Counting number of all times processes */
                                         noAllTimeProcesses = (*noAllTimesNodesPtr) + noAllTimesUsers;
 
@@ -1202,7 +1200,7 @@ int main(int argc, char *argv[])
                                             safeErrorPrint("[MASTER]: failed to release number of all times nodes' shared variable semaphore. Error: ", __LINE__);
                                             endOfSimulation(-1);
                                         }
-                                        
+
                                         if (noAllTimeProcesses <= MAX_PRINT_PROCESSES)
                                         {
                                             /*
@@ -1236,14 +1234,15 @@ int main(int argc, char *argv[])
                                             /*el_list = bud_list_head;
                                             while (el_list != NULL && el_list->budget == bud_list_head->budget)
                                             {
-                                                if (el_list->p_type) *//* Budget of node process *//*
-                                                    printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-                                                else *//* Budget of user process *//*
-                                                    printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
+                                                if (el_list->p_type) */
+                                            /* Budget of node process */ /*
+                          printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
+                      else */ /* Budget of user process */               /*
+                                          printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
+              
+                                      el_list = el_list->next;
+                                  }*/
 
-                                                el_list = el_list->next;
-                                            }*/
-                                            
                                             /* Printing budget of process with minimum budget */
                                             if (bud_list_head->p_type) /* Budget of node process */
                                                 printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_head->proc_pid, bud_list_head->budget);
@@ -1254,13 +1253,14 @@ int main(int argc, char *argv[])
                                             /*el_list = bud_list_tail;
                                             while (el_list != NULL && el_list->budget == bud_list_tail->budget)
                                             {
-                                                if (el_list->p_type) *//* Budget of node process *//*
-                                                    printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-                                                else *//* Budget of user process *//*
-                                                    printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-
-                                                el_list = el_list->prev;
-                                            }*/
+                                                if (el_list->p_type) */
+                                            /* Budget of node process */ /*
+                          printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
+                      else */ /* Budget of user process */               /*
+                                          printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
+              
+                                      el_list = el_list->prev;
+                                  }*/
 
                                             /* Printing budget of process with maximum budget */
                                             if (bud_list_tail->p_type) /* Budget of node process */
@@ -1287,9 +1287,6 @@ int main(int argc, char *argv[])
 
                                         while (noAttemptsCheckUserTerm < NO_ATTEMPTS_CHECK_USER_TERMINATION && msgrcv(procQueue, &msg_from_user, sizeof(ProcQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                         {
-                                            report = fopen("master_msgrcv_content.txt", "a");
-                                            fprintf(report, "MASTER: in user termination check msgContent is %d\n", msg_from_user.msgContent);
-                                            fclose(report);
 
                                             noAttemptsCheckUserTerm++;
                                             /* come dimensione specifichiamo sizeof(msg_from_user)-sizeof(long) perché bisogna specificare la dimensione del testo, non dell'intera struttura */
@@ -1386,9 +1383,6 @@ int main(int argc, char *argv[])
                                         /* Check if a node process has terminated to update the nodes list */
                                         while (noAttemptsCheckNodeTerm < NO_ATTEMPTS_CHECK_NODE_TERMINATION && msgrcv(procQueue, &msg_from_node, sizeof(ProcQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                         {
-                                            report = fopen("master_msgrcv_content.txt", "a");
-                                            fprintf(report, "MASTER: in node termination check msgContent is %d\n", msg_from_node.msgContent);
-                                            fclose(report);
                                             noAttemptsCheckNodeTerm++;
 
                                             if (msg_from_node.msgContent == TERMINATEDNODE)
@@ -1746,32 +1740,32 @@ boolean initializeIPCFacilities()
     }
     else
     {*/
-        /*
-            La dimensione è espressa in base al corpo del messaggio
-        
-        globalQueueStruct.msg_qbytes = (sizeof(MsgGlobalQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
-        if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
-        {
-            unsafeErrorPrint("[MASTER]: failed to set global queue size. Error: ", __LINE__);
-            endOfSimulation(-1);
-        }*/
-        /*
-        printf("Master: dimensione coda globale: %ld\n", globalQueueStruct.msg_qbytes);
-        globalQueueStruct.msg_qbytes = 65536;
+    /*
+        La dimensione è espressa in base al corpo del messaggio
+
+    globalQueueStruct.msg_qbytes = (sizeof(MsgGlobalQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
+    if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
+    {
+        unsafeErrorPrint("[MASTER]: failed to set global queue size. Error: ", __LINE__);
+        endOfSimulation(-1);
+    }*/
+    /*
+    printf("Master: dimensione coda globale: %ld\n", globalQueueStruct.msg_qbytes);
+    globalQueueStruct.msg_qbytes = 65536;
+    if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
+    {
+        unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
+        endOfSimulation(-1);
+    }*/
+    /*
+    if (sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM) < globalQueueStruct.msg_qbytes){
+        globalQueueStruct.msg_qbytes = sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM);
         if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
         {
             unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
             endOfSimulation(-1);
-        }*/
-        /*
-        if (sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM) < globalQueueStruct.msg_qbytes){
-            globalQueueStruct.msg_qbytes = sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM);
-            if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
-            {
-                unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
-                endOfSimulation(-1);
-            }
-        }*/
+        }
+    }*/
     /*}*/
 
     /* Creation of the processes global queue*/
@@ -2088,15 +2082,12 @@ void endOfSimulation(int sig)
         */
         signal(SIGUSR1, SIG_IGN);
 
-        ret = snprintf(aus, 199, "[MASTER]: received signal %d\n", sig);
-        write(STDOUT_FILENO, aus, ret);
+        printf("[MASTER]: received signal %d\n", sig);
 
-        ret = snprintf(aus, 199, "[MASTER]: pid %5ld\n", masterPid);
-        write(STDOUT_FILENO, aus, ret);
+        printf("[MASTER]: pid %5ld\n", masterPid);
 
-        write(STDOUT_FILENO,
-              "[MASTER]: trying to terminate simulation...\n",
-              strlen("[MASTER]: trying to terminate simulation...\n"));
+        printf(
+            "[MASTER]: trying to terminate simulation...\n");
         /* error check*/
         fflush(stdout);
         /*if (noTerminatedUsers + noTerminatedNodes <= noEffectiveNodes + noEffectiveUsers)*/
@@ -2121,9 +2112,8 @@ void endOfSimulation(int sig)
                 }
                 else
                 {
-                    write(STDOUT_FILENO,
-                          "[MASTER]: end of simulation notified successfully to children.\n",
-                          strlen("[MASTER]: end of simulation notified successfully to children.\n"));
+                    printf(
+                        "[MASTER]: end of simulation notified successfully to children.\n");
                     done = TRUE;
                 }
             }
@@ -2142,9 +2132,8 @@ void endOfSimulation(int sig)
             // quindi ha senso fare così*/
         if (done)
         {
-            write(STDOUT_FILENO,
-                  "[MASTER]: waiting for children to terminate...\n",
-                  strlen("[MASTER]: waiting for children to terminate...\n"));
+            printf(
+                "[MASTER]: waiting for children to terminate...\n");
             /*
                 Conviene fare comunque la wait anche se tutti sono già terminati
                 in modo che non ci siano zombies
@@ -2158,9 +2147,8 @@ void endOfSimulation(int sig)
                 // Termination message composition
                 // we use only one system call for performances' sake.
                 // termination reason*/
-                write(STDOUT_FILENO,
-                      "[MASTER]: simulation terminated successfully. Printing report...\n",
-                      strlen("[MASTER]: simulation terminated successfully. Printing report...\n"));
+                printf(
+                    "[MASTER]: simulation terminated successfully. Printing report...\n");
 
                 /* Users and nodes budgets*/
                 /*printBudget();*/
@@ -2171,29 +2159,25 @@ void endOfSimulation(int sig)
 
                 /* processes terminated before end of simulation*/
                 /*printf("Processes terminated before end of simulation: %d\n", noTerminatedUsers);*/
-                ret = snprintf(terminationMessage, 99, "Processes terminated before end of simulation: %ld\n", noTerminatedUsers);
+                printf("Processes terminated before end of simulation: %ld\n", noTerminatedUsers);
 
                 /* Blocks in register*/
-                ret = snprintf(aus, 199, "There are %d blocks in the register.\n",
-                               regPtrs[0]->nBlocks + regPtrs[1]->nBlocks + regPtrs[2]->nBlocks);
-                strcat(terminationMessage, aus);
+                printf("There are %d blocks in the register.\n",
+                       regPtrs[0]->nBlocks + regPtrs[1]->nBlocks + regPtrs[2]->nBlocks);
 
                 if (sig == SIGALRM)
-                    strcat(terminationMessage, "Termination reason: end of simulation.\n");
+                    printf("Termination reason: end of simulation.\n");
                 else if (sig == SIGUSR1)
-                    strcat(terminationMessage, "Termination reason: register is full.\n");
+                    printf("Termination reason: register is full.\n");
                 else if (sig == -2)
-                    strcat(terminationMessage, "Termination reason: no more users alive.\n");
+                    printf("Termination reason: no more users alive.\n");
                 else if (sig == -3)
-                    strcat(terminationMessage, "Termination reason: no more nodes alive.\n");
+                    printf("Termination reason: no more nodes alive.\n");
                 else if (sig == -1)
-                    strcat(terminationMessage, "Termination reason: critical error.\n");
+                    printf("Termination reason: critical error.\n");
 
-                /* Writes termination message on standard output*/
-                write(STDOUT_FILENO, terminationMessage, strlen(terminationMessage));
-                write(STDOUT_FILENO,
-                      "[MASTER]: report printed successfully. Deallocating IPC facilities...\n",
-                      strlen("[MASTER]: report printed successfully. Deallocating IPC facilities...\n"));
+                printf(
+                    "[MASTER]: report printed successfully. Deallocating IPC facilities...\n");
                 /* deallocate facilities*/
                 deallocateFacilities(&exitCode);
                 done = TRUE;
@@ -2202,9 +2186,8 @@ void endOfSimulation(int sig)
             {
                 safeErrorPrint("[MASTER]: an error occurred while waiting for children. Error: ", __LINE__);
             }
-            write(STDOUT_FILENO,
-                  "[MASTER]: simulation terminated successfully!\n",
-                  strlen("[MASTER]: simulation terminated successfully!\n"));
+            printf(
+                "[MASTER]: simulation terminated successfully!\n");
 
             simTerminated = TRUE;
         }
@@ -2212,9 +2195,8 @@ void endOfSimulation(int sig)
         {
             deallocateFacilities(&exitCode);
             exitCode = EXIT_FAILURE;
-            write(STDOUT_FILENO,
-                  "[MASTER]: failed to terminate children. IPC facilties will be deallocated anyway.\n",
-                  strlen("[MASTER]: failed to terminate children. IPC facilties will be deallocated anyway.\n"));
+            printf(
+                "[MASTER]: failed to terminate children. IPC facilties will be deallocated anyway.\n");
         }
     }
     /* Releasing local variables' memory*/
@@ -2268,9 +2250,8 @@ boolean deallocateFacilities(int *exitCode)
     printMsg = (char *)calloc(200, sizeof(char));
 
     /* Deallocating register's partitions*/
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating register's paritions...\n",
-          strlen("[MASTER]: deallocating register's paritions...\n"));
+    printf(
+        "[MASTER]: deallocating register's paritions...\n");
 
     if (regPtrs != NULL)
     {
@@ -2286,10 +2267,8 @@ boolean deallocateFacilities(int *exitCode)
             {
                 if (errno != EINVAL)
                 {
-                    msgLength = snprintf(printMsg, 199,
-                                         "[MASTER]: failed to detach from register's partition number %d.\n",
-                                         (i + 1));
-                    write(STDERR_FILENO, printMsg, msgLength); /* by doing this we avoid calling strlength*/
+                    printf("[MASTER]: failed to detach from register's partition number %d.\n",
+                           (i + 1));
                     *exitCode = EXIT_FAILURE;
                 }
             }
@@ -2299,20 +2278,17 @@ boolean deallocateFacilities(int *exitCode)
                 {
                     if (errno != EINVAL)
                     {
-                        msgLength = snprintf(printMsg, 199,
-                                             "[MASTER]: failed to remove register's partition number %d.\n",
-                                             (i + 1));
-                        write(STDERR_FILENO, printMsg, msgLength);
+                        printf(
+                            "[MASTER]: failed to remove register's partition number %d.\n",
+                            (i + 1));
 
                         *exitCode = EXIT_FAILURE;
                     }
                 }
                 else
                 {
-                    msgLength = snprintf(printMsg, 199,
-                                         "[MASTER]: register's partition number %d removed successfully.\n",
-                                         (i + 1));
-                    write(STDOUT_FILENO, printMsg, msgLength);
+                    printf("[MASTER]: register's partition number %d removed successfully.\n",
+                           (i + 1));
                 }
             }
         }
@@ -2324,9 +2300,8 @@ boolean deallocateFacilities(int *exitCode)
         free(regPartsIds);
 
     /* Users list deallocation*/
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating users' list segment...\n",
-          strlen("[MASTER]: deallocating users' list segment...\n"));
+    printf(
+        "[MASTER]: deallocating users' list segment...\n");
     if (usersList != NULL && shmdt(usersList) == -1)
     {
         if (errno != EINVAL)
@@ -2347,16 +2322,14 @@ boolean deallocateFacilities(int *exitCode)
         }
         else
         {
-            write(STDOUT_FILENO,
-                  "[MASTER]: users' list memory segment successfully removed.\n",
-                  strlen("[MASTER]: users' list memory segment successfully removed.\n"));
+            printf(
+                "[MASTER]: users' list memory segment successfully removed.\n");
         }
     }
 
     /* Nodes list deallocation*/
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating nodes' list segment...\n",
-          strlen("[MASTER]: deallocating nodes' list segment...\n"));
+    printf(
+        "[MASTER]: deallocating nodes' list segment...\n");
     if (nodesList != NULL && shmdt(nodesList) == -1)
     {
         if (errno != EINVAL)
@@ -2377,9 +2350,8 @@ boolean deallocateFacilities(int *exitCode)
         }
         else
         {
-            write(STDOUT_FILENO,
-                  "[MASTER]: nodes' list memory segment successfully removed.\n",
-                  strlen("[MASTER]: nodes' list memory segment successfully removed.\n"));
+            printf(
+                "[MASTER]: nodes' list memory segment successfully removed.\n");
             /*
                 Non serve: abbiamo già deallocato il segmento di memoria condivisa
             */
@@ -2396,11 +2368,8 @@ boolean deallocateFacilities(int *exitCode)
             {
                 if (errno != EINVAL)
                 {
-                    msgLength = snprintf(printMsg, 199,
-                                         "[MASTER]: failed to detach from partition number %d shared variable segment.\n",
-                                         (i + 1));
-
-                    write(STDERR_FILENO, printMsg, msgLength); /* by doing this we avoid calling strlength*/
+                    printf("[MASTER]: failed to detach from partition number %d shared variable segment.\n",
+                           (i + 1));
                     *exitCode = EXIT_FAILURE;
                 }
             }
@@ -2410,20 +2379,16 @@ boolean deallocateFacilities(int *exitCode)
                 {
                     if (errno != EINVAL)
                     {
-                        msgLength = snprintf(printMsg, 199,
-                                             "[MASTER]: failed to remove partition number %d shared variable segment.\n",
-                                             (i + 1));
-                        write(STDERR_FILENO, printMsg, msgLength);
+                        printf("[MASTER]: failed to remove partition number %d shared variable segment.\n",
+                               (i + 1));
 
                         *exitCode = EXIT_FAILURE;
                     }
                 }
                 else
                 {
-                    msgLength = snprintf(printMsg, 199,
-                                         "[MASTER]: register's partition number %d shared variable segment removed successfully.\n",
-                                         (i + 1));
-                    write(STDOUT_FILENO, printMsg, msgLength);
+                    printf("[MASTER]: register's partition number %d shared variable segment removed successfully.\n",
+                           (i + 1));
                 }
             }
         }
@@ -2432,9 +2397,8 @@ boolean deallocateFacilities(int *exitCode)
     }
 
     /* Transaction pools list deallocation*/
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating transaction pools...\n",
-          strlen("[MASTER]: deallocating transaction pools...\n"));
+    printf(
+        "[MASTER]: deallocating transaction pools...\n");
     if (tpList != NULL)
     {
         for (i = 0; i < tplLength; i++)
@@ -2446,20 +2410,16 @@ boolean deallocateFacilities(int *exitCode)
             {
                 if (errno != EINVAL)
                 {
-                    msgLength = snprintf(printMsg, 199,
-                                         "[MASTER]: failed to remove transaction pool of process %ld.\n",
-                                         (long)tpList[i].procId);
-                    write(STDERR_FILENO, printMsg, msgLength);
+                    printf("[MASTER]: failed to remove transaction pool of process %ld.\n",
+                           (long)tpList[i].procId);
 
                     *exitCode = EXIT_FAILURE;
                 }
             }
             else
             {
-                msgLength = snprintf(printMsg, 199,
-                                     "[MASTER]: transaction pool of node of PID %ld successfully removed.\n",
-                                     tpList[i].procId);
-                write(STDOUT_FILENO, printMsg, msgLength);
+                printf("[MASTER]: transaction pool of node of PID %ld successfully removed.\n",
+                       tpList[i].procId);
             }
         }
 
@@ -2474,7 +2434,7 @@ boolean deallocateFacilities(int *exitCode)
     */
 
     /* Global queue deallocation*/
-    /*write(STDOUT_FILENO,
+    /*printf(
           "[MASTER]: deallocating global processes queue...\n",
           strlen("[MASTER]: deallocating global processes queue...\n"));*/
     printf("[MASTER]: deallocating global processes queue...\n");
@@ -2493,7 +2453,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         printf("[MASTER]: global processes queue successfully removed.\n");
         /*
-            write(STDOUT_FILENO,
+            printf(
                   "[MASTER]: global message processes successfully removed.\n",
                   strlen("[MASTER]: global message processes successfully removed.\n"));*/
     }
@@ -2527,108 +2487,92 @@ boolean deallocateFacilities(int *exitCode)
     }
 
     /* Writing Semaphores deallocation*/
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating writing semaphores...\n",
-          strlen("[MASTER]: deallocating writing semaphores...\n"));
+    printf(
+        "[MASTER]: deallocating writing semaphores...\n");
     if (semctl(wrPartSem, 0, IPC_RMID) == -1)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove partions' writing semaphores.\n");
-            write(STDERR_FILENO, printMsg, msgLength);
+            printf("[MASTER]: failed to remove partions' writing semaphores.\n");
             *exitCode = EXIT_FAILURE;
         }
     }
     else
     {
-        write(STDOUT_FILENO,
-              "[MASTER]: Writing Semaphores successfully removed.\n",
-              strlen("[MASTER]: Writing Semaphores successfully removed.\n"));
+        printf(
+            "[MASTER]: Writing Semaphores successfully removed.\n");
     }
 
     /* Reading Semaphores deallocation*/
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating reading semaphores...\n",
-          strlen("[MASTER]: deallocating reading semaphores...\n"));
+    printf(
+        "[MASTER]: deallocating reading semaphores...\n");
     if (semctl(rdPartSem, 0, IPC_RMID) == -1)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove partions' reading semaphores.\n");
-            write(STDERR_FILENO, printMsg, msgLength);
+            printf("[MASTER]: failed to remove partions' reading semaphores.\n");
             *exitCode = EXIT_FAILURE;
         }
     }
     else
     {
-        write(STDOUT_FILENO,
-              "[MASTER]: Reading Semaphores successfully removed.\n",
-              strlen("[MASTER]: Reading Semaphores successfully removed.\n"));
+        printf(
+            "[MASTER]: Reading Semaphores successfully removed.\n");
     }
 
     /* Fair start semaphore deallocation*/
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating fair start semaphores...\n",
-          strlen("[MASTER]: deallocating fair start semaphores...\n"));
+    printf(
+        "[MASTER]: deallocating fair start semaphores...\n");
     if (semctl(fairStartSem, 0, IPC_RMID) == -1)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove fair start semaphore.\n");
-            write(STDERR_FILENO, printMsg, msgLength);
+            printf("[MASTER]: failed to remove fair start semaphore.\n");
             *exitCode = EXIT_FAILURE;
         }
     }
     else
     {
-        write(STDOUT_FILENO,
-              "[MASTER]: Fair start semaphore successfully removed.\n",
-              strlen("[MASTER]: Fair start semaphore successfully removed.\n"));
+        printf(
+            "[MASTER]: Fair start semaphore successfully removed.\n");
     }
 
     /* Users' list semaphores deallocation*/
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating users' list semaphores...\n",
-          strlen("[MASTER]: deallocating users' list semaphores...\n"));
+    printf(
+        "[MASTER]: deallocating users' list semaphores...\n");
     if (semctl(userListSem, 0, IPC_RMID) == -1)
     {
         if (errno != EINVAL)
         {
-            snprintf(printMsg, 199, "[MASTER]: failed to remove users' list semaphores.\n");
-            write(STDERR_FILENO, printMsg, msgLength);
+            printf("[MASTER]: failed to remove users' list semaphores.\n");
             *exitCode = EXIT_FAILURE;
         }
     }
     else
     {
-        write(STDOUT_FILENO,
-              "[MASTER]: users' list semaphores successfully removed.\n",
-              strlen("[MASTER]: users' list semaphores successfully removed.\n"));
+        printf(
+            "[MASTER]: users' list semaphores successfully removed.\n");
     }
 
     /* Register's paritions mutex semaphores deallocation*/
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating register's paritions mutex semaphores...\n",
-          strlen("[MASTER]: deallocating register's paritions mutex semaphores...\n"));
+    printf(
+        "[MASTER]: deallocating register's paritions mutex semaphores...\n");
     if (semctl(mutexPartSem, 0, IPC_RMID) == -1)
     {
         if (errno != EINVAL)
         {
-            snprintf(printMsg, 199, "[MASTER]: failed to remove register's paritions mutex semaphores.\n");
-            write(STDERR_FILENO, printMsg, msgLength);
+            printf("[MASTER]: failed to remove register's paritions mutex semaphores.\n");
             *exitCode = EXIT_FAILURE;
         }
     }
     else
     {
-        write(STDOUT_FILENO,
-              "[MASTER]: register's paritions mutex semaphores successfully removed.\n",
-              strlen("[MASTER]: register's paritions mutex semaphores successfully removed.\n"));
+        printf(
+            "[MASTER]: register's paritions mutex semaphores successfully removed.\n");
     }
 
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating user list's shared variable...\n",
-          strlen("[MASTER]: deallocating user list's shared variable...\n"));
+    printf(
+        "[MASTER]: deallocating user list's shared variable...\n");
     if (noUserSegReadersPtr != NULL && shmdt(noUserSegReadersPtr) == -1)
     {
         if (errno != EINVAL)
@@ -2649,34 +2593,29 @@ boolean deallocateFacilities(int *exitCode)
         }
         else
         {
-            write(STDOUT_FILENO,
-                  "[MASTER]: user list's shared variable successfully removed.\n",
-                  strlen("[MASTER]: user list's shared variable successfully removed.\n"));
+            printf(
+                "[MASTER]: user list's shared variable successfully removed.\n");
         }
     }
 
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating nodes list's semaphores...\n",
-          strlen("[MASTER]: deallocating nodes list's semaphores...\n"));
+    printf(
+        "[MASTER]: deallocating nodes list's semaphores...\n");
     if (semctl(nodeListSem, 0, IPC_RMID) == -1)
     {
         if (errno != EINVAL)
         {
-            snprintf(printMsg, 199, "[MASTER]: failed to remove nodes list's semaphores.\n");
-            write(STDERR_FILENO, printMsg, msgLength);
+            printf("[MASTER]: failed to remove nodes list's semaphores.\n");
             *exitCode = EXIT_FAILURE;
         }
     }
     else
     {
-        write(STDOUT_FILENO,
-              "[MASTER]: nodes list's semaphores successfully removed.\n",
-              strlen("[MASTER]: nodes list's semaphores successfully removed.\n"));
+        printf(
+            "[MASTER]: nodes list's semaphores successfully removed.\n");
     }
 
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating node list's shared variable...\n",
-          strlen("[MASTER]: deallocating node list's shared variable...\n"));
+    printf(
+        "[MASTER]: deallocating node list's shared variable...\n");
     if (noNodeSegReadersPtr != NULL && shmdt(noNodeSegReadersPtr) == -1)
     {
         if (errno != EINVAL)
@@ -2697,15 +2636,13 @@ boolean deallocateFacilities(int *exitCode)
         }
         else
         {
-            write(STDOUT_FILENO,
-                  "[MASTER]: node list's shared variable successfully removed.\n",
-                  strlen("[MASTER]: node list's shared variable successfully removed.\n"));
+            printf(
+                "[MASTER]: node list's shared variable successfully removed.\n");
         }
     }
 
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating number of all times nodes' shared variable...\n",
-          strlen("[MASTER]: deallocating number of all times nodes' shared variable...\n"));
+    printf(
+        "[MASTER]: deallocating number of all times nodes' shared variable...\n");
     if (noAllTimesNodesPtr != NULL && shmdt(noAllTimesNodesPtr) == -1)
     {
         if (errno != EINVAL)
@@ -2726,30 +2663,26 @@ boolean deallocateFacilities(int *exitCode)
         }
         else
         {
-            write(STDOUT_FILENO,
-                  "[MASTER]: number of all times nodes' shared variable successfully removed.\n",
-                  strlen("[MASTER]: number of all times nodes' shared variable successfully removed.\n"));
+            printf(
+                "[MASTER]: number of all times nodes' shared variable successfully removed.\n");
         }
     }
 
     /* Number of all times nodes' shared variable semaphore deallocation */
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating number of all times nodes' shared variable semaphore...\n",
-          strlen("[MASTER]: deallocating number of all times nodes' shared variable semaphore...\n"));
+    printf(
+        "[MASTER]: deallocating number of all times nodes' shared variable semaphore...\n");
     if (semctl(noAllTimesNodesSem, 0, IPC_RMID) == -1)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove number of all times nodes' shared variable semaphore.\n");
-            write(STDERR_FILENO, printMsg, msgLength);
+            printf("[MASTER]: failed to remove number of all times nodes' shared variable semaphore.");
             *exitCode = EXIT_FAILURE;
         }
     }
     else
     {
-        write(STDOUT_FILENO,
-              "[MASTER]: Number of all times nodes' shared variable semaphore successfully removed.\n",
-              strlen("[MASTER]: Number of all times nodes' shared variable semaphore successfully removed.\n"));
+        printf(
+            "[MASTER]: Number of all times nodes' shared variable semaphore successfully removed.\n");
     }
 
     /* Releasing local variables' memory*/
@@ -2784,17 +2717,13 @@ void checkNodeCreationRequests()
     char *printMsg;
     union semun arg;
     struct msqid_ds tpStruct;
-    FILE * report; /* ONLY FOR DEBUG PURPOSE */
 
     printMsg = (char *)calloc(200, sizeof(char));
 
     /* Siamo passati dall'if al while per aumentare il numero di richieste servite ad ogni ciclo del master */
     while (attempts < NO_ATTEMPTS_NEW_NODE_REQUESTS && msgrcv(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1)
     {
-        report = fopen("master_msgrcv_content.txt", "a");
-        fprintf(report, "MASTER: in new node requests check msgContent is %d\n", ausNode.msgContent);
-        fclose(report);
-        
+
         /* Increasing the number of attempts to check for new node requests*/
         attempts++;
 
@@ -2803,10 +2732,6 @@ void checkNodeCreationRequests()
         */
         if (ausNode.msgContent == NEWNODE)
         {
-            /* ONLY FOR DEBUG PURPOSE */
-            report = fopen("node_creation_report.txt", "a");
-            fprintf(report, "[MASTER]: handled creation of new node request\n");
-            fclose(report);
 
             /* entering critical section for number of all times nodes' shared variable */
             sops[0].sem_num = 0;
@@ -2825,7 +2750,7 @@ void checkNodeCreationRequests()
                 /* Incrementing number of effective and all times node processes */
                 noEffectiveNodes++;
                 (*noAllTimesNodesPtr)++;
-                
+
                 /* exiting the critical section entered before the if statement */
                 sops[0].sem_num = 0;
                 sops[0].sem_op = 1;
@@ -2942,7 +2867,7 @@ void checkNodeCreationRequests()
                                     during the msgget
                                 */
 
-                                if (tpStruct.msg_qbytes < (sizeof(MsgTP) -sizeof(long)) * SO_TP_SIZE)
+                                if (tpStruct.msg_qbytes < (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
                                 {
                                     tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
                                     printf("Master: impostata nuova dimensione coda per nuovo nodo.\n");
@@ -3103,7 +3028,7 @@ void checkNodeCreationRequests()
                         semop(fairStartSem, &sops[0], 1);
 
                         msg_length = snprintf(printMsg, 199, "[MASTER]: created new node on request with pid %5ld\n", (long)procPid);
-                        write(STDOUT_FILENO, printMsg, msg_length);
+                        printf(printMsg, msg_length);
 
                         if (printMsg != NULL)
                             free(printMsg);
@@ -3135,7 +3060,7 @@ void checkNodeCreationRequests()
                     safeErrorPrint("[MASTER]: failed to release number of all times nodes' shared variable semaphore. Error: ", __LINE__);
                     endOfSimulation(-1);
                 }
-                
+
                 safeErrorPrint("[MASTER]: no space left for storing new node information. Simulation will be terminated.", __LINE__);
                 /*
                     CORREGGERE: Mettere qui la segnalazione di fine simulazione
@@ -3163,13 +3088,11 @@ void checkNodeCreationRequests()
     if (errno != ENOMSG)
         safeErrorPrint("[MASTER]: failed to check for node creation requests on global queue. Error: ", __LINE__);
     else if (attempts == 0)
-        write(STDOUT_FILENO,
-              "[MASTER]: no node creation requests to be served.\n",
-              strlen("[MASTER]: no node creation requests to be served.\n"));
+        printf(
+            "[MASTER]: no node creation requests to be served.\n");
     else if (attempts > 0)
-        write(STDOUT_FILENO,
-              "[MASTER]: no more node creation requests to be served.\n",
-              strlen("[MASTER]: no more node creation requests to be served.\n"));
+        printf(
+            "[MASTER]: no more node creation requests to be served.\n");
 }
 
 void printRemainedTransactions()

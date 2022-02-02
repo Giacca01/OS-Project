@@ -216,13 +216,13 @@ typedef struct /* Modificato 10/12/2021*/
 */
 typedef enum
 {
-    NEWNODE = 0,    // Ok
-    NEWFRIEND,      // Ok
-    FAILEDTRANS,    // Ok
-    FRIENDINIT,     // Ok
-    TRANSTPFULL,    // Ok
-    TERMINATEDUSER, // Ok
-    TERMINATEDNODE  // Ok
+    NEWNODE = 0,
+    NEWFRIEND,
+    FAILEDTRANS,
+    FRIENDINIT,
+    TRANSTPFULL,
+    TERMINATEDUSER,
+    TERMINATEDNODE
 } GlobalMsgContent;
 
 /* attenzione!!!! Per friends va fatta una memcopy
@@ -271,7 +271,7 @@ typedef struct
 } ProcQueue;
 
 /*
-    Global queue for spare and failed transactions 
+    Global queue for spare and failed transactions
 */
 typedef struct
 {

@@ -1214,7 +1214,6 @@ void sendTransaction()
     int friendTp = -1;
     MsgTP aus;
     boolean found = FALSE;
-    FILE * report; /* ONLY FOR DEBUG PURPOSE */
     char *printMsg;
 
     /*
@@ -1236,9 +1235,6 @@ void sendTransaction()
         */
         if (trans.msgContent == TRANSTPFULL)
         {
-            /* ONLY FOR DEBUG PURPOSE */
-            report = fopen("node_creation_report.txt", "a");
-            
             /*
                 trans contiene la transazione da mandare ad un amico/master se non sta nella pool del nodo attuale o se hops == 0
             */
@@ -1266,10 +1262,7 @@ void sendTransaction()
                 {
                     /*printf("Node: new node transazione: %d\n", trans.msgContent);
                     printf("Node: new node pid target: %ld\n", trans.mtype);*/
-                    
-                    /* ONLY FOR DEBUG PURPOSE */
-                    fprintf(report, "[NODE %5ld]: requested creation of new node to master\n", my_pid);
-                    
+
                     msg_length = snprintf(printMsg, 199, "[NODE %5ld]: requested creation of a new node to serve a transaction...\n", my_pid);
                     write(STDOUT_FILENO, printMsg, msg_length);
                     printMsg[0] = 0; /* resetting string's content */
@@ -1277,9 +1270,7 @@ void sendTransaction()
             }
             else
             {
-                /* ONLY FOR DEBUG PURPOSE */
-                fprintf(report, "[NODE %5ld]: found transaction read from global queue with HOPS %ld\n", my_pid, trans.hops);
-                
+
                 /* generating a random index to access the array of nodes friend */
                 i = extractFriendNode();
                 if (i == -1)
@@ -1315,9 +1306,6 @@ void sendTransaction()
                             msg_length = snprintf(printMsg, 199, "[NODE %5ld]: transaction successfully dispatched to friend via global queue.\n", my_pid);
                             write(STDOUT_FILENO, printMsg, msg_length);
                             printMsg[0] = 0; /* resetting string's content */
-
-                            /* ONLY FOR DEBUG PURPOSE */
-                            fprintf(report, "[NODE %5ld]: sent transaction on global queue with HOPS %ld\n", my_pid, trans.hops);
                         }
                         else
                         {
@@ -1349,9 +1337,6 @@ void sendTransaction()
                                 msg_length = snprintf(printMsg, 199, "[NODE %5ld]: transaction successfully dispatched to friend via global queue.\n", my_pid);
                                 write(STDOUT_FILENO, printMsg, msg_length);
                                 printMsg[0] = 0; /* resetting string's content */
-
-                                /* ONLY FOR DEBUG PURPOSE */
-                                fprintf(report, "[NODE %5ld]: sent transaction on global queue with HOPS %ld\n", my_pid, trans.hops);
                             }
                             else
                             {
@@ -1387,10 +1372,7 @@ void sendTransaction()
                                 {
                                     msg_length = snprintf(printMsg, 199, "[NODE %5ld]: transaction successfully dispatched to friend via global queue.\n", my_pid);
                                     write(STDOUT_FILENO, printMsg, msg_length);
-                                    printMsg[0] = 0; /* resetting string's content */
-
-                                    /* ONLY FOR DEBUG PURPOSE */
-                                    fprintf(report, "[NODE %5ld]: sent transaction on global queue with HOPS %ld\n", my_pid, trans.hops);
+                                    printMsg[0] = 0; /* resetting string's content
                                 }
                                 else
                                 {
@@ -1413,17 +1395,11 @@ void sendTransaction()
                                 msg_length = snprintf(printMsg, 199, "[NODE %5ld]: transaction successfully dispatched to friend.\n", my_pid);
                                 write(STDOUT_FILENO, printMsg, msg_length);
                                 printMsg[0] = 0; /* resetting string's content */
-
-                                /* ONLY FOR DEBUG PURPOSE */
-                                fprintf(report, "[NODE %5ld]: sent transaction read from global queue to friend of pid %5ld\n", my_pid, (long)*(friends_node + i));
                             }
                         }
                     }
                 }
             }
-
-            /* ONLY FOR DEBUG PURPOSE */
-            fclose(report);
         }
         else
         {
@@ -1440,7 +1416,8 @@ void sendTransaction()
         }
     }
 
-    while (msgrcv(nodeCreationQueue, &ausNode, sizeof(ausNode) - sizeof(long), my_pid, IPC_NOWAIT) != -1){
+    while (msgrcv(nodeCreationQueue, &ausNode, sizeof(ausNode) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
+    {
         if (ausNode.msgContent == NEWFRIEND)
         {
             /*
@@ -1477,12 +1454,6 @@ void sendTransaction()
     {
         snprintf(printMsg, 199, "[NODE %5ld]: failed to check existence of transactions on global queue. Error: ", my_pid);
         safeErrorPrint(printMsg, __LINE__);
-    }
-    else if(errno == ENOMSG)
-    {
-        report = fopen("node_creation_report.txt", "a");
-        fprintf(report, "[NODE %5ld]: no messages on global queue for me\n", my_pid);
-        fclose(report);
     }
 
     if (printMsg != NULL)
