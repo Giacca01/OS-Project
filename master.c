@@ -355,6 +355,8 @@ int main(int argc, char *argv[])
     int noAttemptsCheckUserTerm = 0;
     int noAttemptsCheckNodeTerm = 0;
 
+    char *aus = NULL;
+
     /* Set common semaphore options*/
     sops[0].sem_num = 0;
     sops[0].sem_flg = 0;
@@ -366,7 +368,6 @@ int main(int argc, char *argv[])
     /* allocation of extractedFriendsIndex */
     extractedFriendsIndex = (int *)malloc(SO_FRIENDS_NUM * sizeof(int));
     /* initializing print string message */
-    char *aus = NULL;
     aus = (char *)calloc(200, sizeof(char));
 
     /* setting data for waiting for one second */
