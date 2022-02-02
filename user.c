@@ -32,7 +32,8 @@ int nodesListId = -1;
 ProcListElem *nodesList = NULL;
 
 /* Id of the global message queue where users, nodes and master communicate */
-int globalQueueId = -1;
+int procQueue = -1;
+int transQueue = -1;
 /*
     Serve perchè su di essa potrebbe arrivare
     la notifica del fallimento di una transazione nel caso in cui
@@ -260,7 +261,7 @@ int main(int argc, char *argv[], char *envp[])
     struct sigaction actGenTrans;
     struct sigaction actSegFaultHandler;
     sigset_t mask;
-    MsgGlobalQueue msgCheckFailedTrans;
+    TransQueue msgCheckFailedTrans;
     char * printMsg;
     function_we_into = "main";
 
@@ -339,7 +340,7 @@ int main(int argc, char *argv[], char *envp[])
                                     {
                                         printf("[USER %5ld]: checking if there are failed transactions...\n", my_pid);
                                         /* check on global queue if a sent transaction failed */
-                                        if (msgrcv(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
+                                        if (msgrcv(transQueue, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
                                         {
 
                                             /* got a message for this user from global queue */
@@ -354,7 +355,7 @@ int main(int argc, char *argv[], char *envp[])
                                             {
                                                 printf("[USER %5ld]: no failed transactions found.\n", my_pid);
                                                 /* the message wasn't the one we were looking for, reinserting it on the global queue */
-                                                if (msgsnd(globalQueueId, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), 0) == -1)
+                                                if (msgsnd(transQueue, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), 0) == -1)
                                                 {
                                                     snprintf(printMsg, 199, "[USER %5ld]: failed to reinsert the message read from global queue while checking for failed transactions. Error: ", my_pid);
                                                     unsafeErrorPrint(printMsg, __LINE__);
@@ -374,6 +375,10 @@ int main(int argc, char *argv[], char *envp[])
                                         transactionGeneration(0);
                                         function_we_into = "main";
 
+
+                                        /*
+                                            CORREGGERE
+                                        */
                                         sleep(1);
                                     }
                                 }
@@ -543,10 +548,15 @@ boolean initializeFacilities()
     /*****  Creates and initialize the messages queues  *****/
     /********************************************************/
     /* Creates the global queue*/
-    key = ftok(MSGFILEPATH, GLOBALMSGSEED);
-    FTOK_TEST_ERROR(key, "[USER]: ftok failed during global queue creation. Error: ");
-    globalQueueId = msgget(key, 0600);
-    MSG_TEST_ERROR(globalQueueId, "[USER]: msgget failed during global queue creation. Error: ");
+    key = ftok(MSGFILEPATH, PROC_QUEUE_SEED);
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during processes global queue creation. Error: ");
+    procQueue = msgget(key, 0600);
+    MSG_TEST_ERROR(procQueue, "[USER]: msgget failed during processes global queue creation. Error: ");
+
+    key = ftok(MSGFILEPATH, TRANS_QUEUE_SEED);
+    FTOK_TEST_ERROR(key, "[USER]: ftok failed during transactions global queue creation. Error: ");
+    transQueue = msgget(key, 0600);
+    MSG_TEST_ERROR(transQueue, "[USER]: msgget failed during transactions global queue creation. Error: ");
     /********************************************************/
     /********************************************************/
 
@@ -953,7 +963,7 @@ void endOfExecution(int sig)
 {
     int exitCode = EXIT_FAILURE;
     char * aus = NULL;
-    MsgGlobalQueue msgOnGQueue;
+    ProcQueue msgOnGQueue;
     function_we_into = "endOfExecution";
     
     aus = (char *)calloc(200, sizeof(char));
@@ -976,8 +986,8 @@ void endOfExecution(int sig)
         /* notify master that user process terminated before expected */
         msgOnGQueue.mtype = getppid();
         msgOnGQueue.msgContent = TERMINATEDUSER;
-        msgOnGQueue.terminatedPid = (pid_t)my_pid;
-        if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), IPC_NOWAIT) == -1)
+        msgOnGQueue.procPid = (pid_t)my_pid;
+        if (msgsnd(procQueue, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), IPC_NOWAIT) == -1)
         {
             if(errno == EAGAIN)
                 snprintf(aus, 199, "[USER %5ld]: failed to inform master of my termination (global queue was full). Error: ", my_pid);
@@ -1165,7 +1175,7 @@ void transactionGeneration(int sig)
     key_t key;
     pid_t receiver_node, receiver_user;
     struct timespec request, remaining, randTime;
-    MsgGlobalQueue msgOnGQueue;
+    TransQueue msgOnGQueue;
     char * aus;
     FILE * report; /* ONLY FOR DEBUG PURPOSE */
     function_we_into = "transactionGeneration";
@@ -1286,7 +1296,7 @@ void transactionGeneration(int sig)
                                 msgOnGQueue.msgContent = TRANSTPFULL;
                                 msgOnGQueue.transaction = new_trans;
                                 msgOnGQueue.hops = SO_HOPS;
-                                if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
+                                if (msgsnd(transQueue, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), 0) == -1)
                                 {
                                     snprintf(aus, 199, "[USER %5ld]: failed to send transaction on global queue. Error: ", my_pid);
                                     safeErrorPrint(aus, __LINE__);

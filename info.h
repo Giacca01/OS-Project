@@ -40,7 +40,9 @@
 #define NOALLTIMESNODESSEED 16
 
 #define MSGFILEPATH "msgfile.txt"
-#define GLOBALMSGSEED 16
+#define PROC_QUEUE_SEED 16
+#define NODE_CREATION_QUEUE_SEED 17
+#define TRANS_QUEUE_SEED 18
 /* il seed è il pid del proprietario
 i figli lo preleveranno dalla lista dei nodi*/
 
@@ -214,13 +216,13 @@ typedef struct /* Modificato 10/12/2021*/
 */
 typedef enum
 {
-    NEWNODE = 0,
-    NEWFRIEND,
-    FAILEDTRANS,
-    FRIENDINIT,
-    TRANSTPFULL,
-    TERMINATEDUSER,
-    TERMINATEDNODE
+    NEWNODE = 0,    // Ok
+    NEWFRIEND,      // Ok
+    FAILEDTRANS,    // Ok
+    FRIENDINIT,     // Ok
+    TRANSTPFULL,    // Ok
+    TERMINATEDUSER, // Ok
+    TERMINATEDNODE  // Ok
 } GlobalMsgContent;
 
 /* attenzione!!!! Per friends va fatta una memcopy
@@ -249,6 +251,35 @@ typedef struct
     long hops;               /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
     pid_t terminatedPid;     /* pid of terminated user/node, garbage if msgContent != TERMINATEDUSER || msgContent != TERMINATEDNODE */
 } MsgGlobalQueue;
+
+typedef struct
+{
+    long int mtype;
+    GlobalMsgContent msgContent; /* NEWNODE or NEWFRIEND*/
+    Transaction transaction;
+    pid_t procPid;
+} NodeCreationQueue;
+
+/*
+    Global queue for terminated users and friends initialization
+*/
+typedef struct
+{
+    long int mtype;
+    GlobalMsgContent msgContent; /* FRIENDINIT or TERMINATEDUSER or TERMINATEDNODE*/
+    pid_t procPid;
+} ProcQueue;
+
+/*
+    Global queue for spare and failed transactions 
+*/
+typedef struct
+{
+    long int mtype;
+    GlobalMsgContent msgContent; /* FAILEDTRANS or TRANSTPFULL*/
+    Transaction transaction;
+    long hops;
+} TransQueue;
 
 /*
  * Fields:

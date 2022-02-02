@@ -31,8 +31,10 @@ int nodesListId = -1;
 /* Pointer to the nodes list */
 ProcListElem *nodesList = NULL;
 
-/* Id of the global message queue where users, nodes and master communicate */
-int globalQueueId = -1;
+/* Id of the global message queues where users, nodes and master communicate */
+int nodeCreationQueue = -1;
+int procQueue = -1;
+int transQueue = -1;
 
 /* Id of the set that contains the three semaphores used to write on the register's partitions */
 int fairStartSem = -1;
@@ -152,7 +154,7 @@ void sendTransaction();
  * @param hp value to add/subract to the hops of the transaction
  * @return Returns TRUE if successfull, FALSE in case an error occurred while sending the message.
  */
-boolean sendOnGlobalQueue(MsgGlobalQueue *, pid_t, GlobalMsgContent, long);
+boolean sendOnGlobalQueue(TransQueue *, pid_t, GlobalMsgContent, long);
 
 /**
  * @brief Function that extracts randomly a friend node which to send a transaction.
@@ -200,8 +202,8 @@ int main(int argc, char *argv[], char *envp[])
     sigset_t mask;
     MsgTP new_trans;
     Transaction rew_tran;
-    MsgGlobalQueue friendFromList;
-    MsgGlobalQueue msgOnGQueue;
+    ProcQueue friendFromList;
+    ProcQueue msgOnGQueue;
     struct sembuf sops[3];
     int num_bytes = 0;
     int contMex = 0;
@@ -245,7 +247,7 @@ int main(int argc, char *argv[], char *envp[])
                             Anche mettedola qui non c'è bisogno di sincronizzazione "manuale", la fornisce
                             il SO, sbloccando il processo solo quando sulla coda c'è un messagio di tipo richiesto
                         */
-                        num_bytes = msgrcv(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue) - sizeof(long), my_pid, 0);
+                        num_bytes = msgrcv(procQueue, &friendFromList, sizeof(ProcQueue) - sizeof(long), my_pid, 0);
                         if (num_bytes == -1)
                         {
                             snprintf(printMsg, 199, "[NODE %5ld]: failed to initialize friends' list. Error: ", my_pid);
@@ -257,14 +259,14 @@ int main(int argc, char *argv[], char *envp[])
                         {
                             if (friendFromList.msgContent == FRIENDINIT)
                             {
-                                friends_node[contMex] = friendFromList.friend;
+                                friends_node[contMex] = friendFromList.procPid;
                                 friends_node_len++;
                                 contMex++;
                             }
                             else
                             {
                                 /* the message wasn't the one we were looking for, so we reinsert it on the global queue */
-                                if (msgsnd(globalQueueId, &friendFromList, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                                if (msgsnd(procQueue, &friendFromList, sizeof(ProcQueue) - sizeof(long), 0) == -1)
                                 {
                                     snprintf(printMsg, 199, "[NODE %5ld]: failed to initialize friends' list. Error: ", my_pid);
                                     unsafeErrorPrint(printMsg, __LINE__);
@@ -782,8 +784,8 @@ int main(int argc, char *argv[], char *envp[])
     /* notify master that user process terminated before expected */
     msgOnGQueue.mtype = getppid();
     msgOnGQueue.msgContent = TERMINATEDNODE;
-    msgOnGQueue.terminatedPid = (pid_t)my_pid;
-    if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), IPC_NOWAIT) == -1)
+    msgOnGQueue.procPid = (pid_t)my_pid;
+    if (msgsnd(procQueue, &msgOnGQueue, sizeof(ProcQueue) - sizeof(long), IPC_NOWAIT) == -1)
     {
         if (errno == EAGAIN)
             snprintf(printMsg, 199, "[NODE %5ld]: failed to inform master of my termination (global queue was full). Error: ", my_pid);
@@ -907,10 +909,20 @@ boolean initializeIPCFacilities()
     /*****  Creates and initialize the messages queues  *****/
     /********************************************************/
     /* Creates the global queue*/
-    key = ftok(MSGFILEPATH, GLOBALMSGSEED);
-    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during global queue creation. Error: ");
-    globalQueueId = msgget(key, 0600);
-    MSG_TEST_ERROR(globalQueueId, "[NODE]: msgget failed during global queue creation. Error: ");
+    key = ftok(MSGFILEPATH, PROC_QUEUE_SEED);
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during processes global queue creation. Error: ");
+    procQueue = msgget(key, 0600);
+    MSG_TEST_ERROR(procQueue, "[NODE]: msgget failed during processes global queue creation. Error: ");
+
+    key = ftok(MSGFILEPATH, NODE_CREATION_QUEUE_SEED);
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during nodes global queue creation. Error: ");
+    nodeCreationQueue = msgget(key, 0600);
+    MSG_TEST_ERROR(nodeCreationQueue, "[NODE]: msgget failed during nodes global queue creation. Error: ");
+
+    key = ftok(MSGFILEPATH, TRANS_QUEUE_SEED);
+    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during transactions global queue creation. Error: ");
+    transQueue = msgget(key, 0600);
+    MSG_TEST_ERROR(transQueue, "[NODE]: msgget failed during transactions global queue creation. Error: ");
     /********************************************************/
     /********************************************************/
 
@@ -1005,7 +1017,7 @@ void reinsertTransactions(Block failedTrs)
 {
     int msg_length;
     char *aus = NULL;
-    MsgGlobalQueue temp;
+    TransQueue temp;
     MsgTP msg;
 
     aus = (char *)calloc(200, sizeof(char));
@@ -1194,7 +1206,8 @@ safeErrorPrint(printMsg, __LINE__);
  */
 void sendTransaction()
 {
-    MsgGlobalQueue trans;
+    TransQueue trans;
+    NodeCreationQueue ausNode;
     MsgGlobalQueue msg_to_master;
     int i = 0, msg_length;
     key_t key = -1;
@@ -1213,7 +1226,10 @@ void sendTransaction()
     */
     printMsg = (char *)calloc(200, sizeof(char));
 
-    while (msgrcv(globalQueueId, &trans, sizeof(MsgGlobalQueue) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
+    /*
+        Recupero transazioni in eccesso
+    */
+    while (msgrcv(transQueue, &trans, sizeof(TransQueue) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
     {
         /*
             Ora trans contiene il messaggio letto dalla coda globale, dobbiamo verificare il contenuto del messaggio
@@ -1228,7 +1244,10 @@ void sendTransaction()
             */
             if (trans.hops == 0)
             {
-                if (!sendOnGlobalQueue(&trans, getppid(), NEWNODE, 0))
+                ausNode.msgContent = NEWNODE;
+                ausNode.mtype = getppid();
+                ausNode.transaction = trans.transaction;
+                if (msgsnd(nodeCreationQueue, &ausNode, sizeof(ausNode) - sizeof(long), 0) == -1)
                 {
                     snprintf(printMsg, 199, "[NODE %5ld]: failed to dispatch transaction to master. Error: ", my_pid);
                     safeErrorPrint(printMsg, __LINE__);
@@ -1406,7 +1425,23 @@ void sendTransaction()
             /* ONLY FOR DEBUG PURPOSE */
             fclose(report);
         }
-        else if (trans.msgContent == NEWFRIEND)
+        else
+        {
+            /*
+                È POSSIBILE CHE IL MESSAGGIO LETTO NON SIA DEI DUE TIPI CERCATI??
+                SE SÌ, OCCORRE REINSERIRLO SULLA CODA GLOBALE!
+            */
+            /* the message wasn't the one we were looking for, so we reinsert it on the global queue */
+            if (msgsnd(transQueue, &trans, sizeof(TransQueue) - sizeof(long), 0) == -1)
+            {
+                snprintf(printMsg, 199, "[NODE %5ld]: failed to reinsert on global queue a message read from it. Error: ", my_pid);
+                safeErrorPrint(printMsg, __LINE__);
+            }
+        }
+    }
+
+    while (msgrcv(nodeCreationQueue, &ausNode, sizeof(ausNode) - sizeof(long), my_pid, IPC_NOWAIT) != -1){
+        if (ausNode.msgContent == NEWFRIEND)
         {
             /*
                 Aggiunta amico su richiesta master
@@ -1418,13 +1453,13 @@ void sendTransaction()
             }
 
             if (found)
-                friends_node[i] = trans.friend;
+                friends_node[i] = ausNode.procPid;
             else
             {
                 friends_node_len++;
                 friends_node = (pid_t *)realloc(friends_node, sizeof(pid_t) * friends_node_len);
                 if (friends_node != NULL)
-                    friends_node[i] = trans.friend;
+                    friends_node[i] = ausNode.procPid;
                 else
                 {
                     snprintf(printMsg, 199, "[NODE %5ld]: failed to reallocate friends' array. Error: ", my_pid);
@@ -1435,19 +1470,6 @@ void sendTransaction()
             /*
                     CORREGGERE: dovremmo testare lo stato??
                 */
-        }
-        else
-        {
-            /*
-                È POSSIBILE CHE IL MESSAGGIO LETTO NON SIA DEI DUE TIPI CERCATI??
-                SE SÌ, OCCORRE REINSERIRLO SULLA CODA GLOBALE!
-            */
-            /* the message wasn't the one we were looking for, so we reinsert it on the global queue */
-            if (msgsnd(globalQueueId, &trans, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
-            {
-                snprintf(printMsg, 199, "[NODE %5ld]: failed to reinsert on global queue a message read from it. Error: ", my_pid);
-                safeErrorPrint(printMsg, __LINE__);
-            }
         }
     }
 
@@ -1476,7 +1498,7 @@ void sendTransaction()
  * @param hp value (positive or negative) to add to the number of hops of the transaction
  * @return Returns TRUE if successfull, FALSE in case an error occurred while sending the message.
  */
-boolean sendOnGlobalQueue(MsgGlobalQueue *trans, pid_t pid, GlobalMsgContent cnt, long hp)
+boolean sendOnGlobalQueue(TransQueue *trans, pid_t pid, GlobalMsgContent cnt, long hp)
 {
     boolean ret = TRUE;
 
@@ -1485,7 +1507,7 @@ boolean sendOnGlobalQueue(MsgGlobalQueue *trans, pid_t pid, GlobalMsgContent cnt
     trans->hops += hp;
     if (trans->msgContent == NEWNODE)
         printf("AL PID %ld, PID DEL MASTER: %ld\n", (long)pid, (long)trans->mtype);
-    if (msgsnd(globalQueueId, trans, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+    if (msgsnd(transQueue, trans, sizeof(TransQueue) - sizeof(long), 0) == -1)
     {
         ret = FALSE;
     }
@@ -1610,7 +1632,7 @@ int extractFriendNode()
  */
 void endOfExecution(int sig)
 {
-    MsgGlobalQueue msgOnGQueue;
+    ProcQueue msgOnGQueue;
     char *aus;
 
     aus = (char *)calloc(200, sizeof(char));
@@ -1620,8 +1642,8 @@ void endOfExecution(int sig)
     /* notify master that user process terminated before expected */
     msgOnGQueue.mtype = getppid();
     msgOnGQueue.msgContent = TERMINATEDNODE;
-    msgOnGQueue.terminatedPid = (pid_t)my_pid;
-    if (msgsnd(globalQueueId, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), IPC_NOWAIT) == -1)
+    msgOnGQueue.procPid = (pid_t)my_pid;
+    if (msgsnd(procQueue, &msgOnGQueue, sizeof(msgOnGQueue) - sizeof(long), IPC_NOWAIT) == -1)
     {
         if (errno == EAGAIN)
             snprintf(aus, 199, "[NODE %5ld]: failed to inform master of my termination (global queue was full). Error: ", my_pid);

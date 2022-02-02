@@ -56,7 +56,9 @@ ProcListElem *nodesList = NULL;
 
 TPElement *tpList = NULL;
 
-int globalQueueId = -1;
+int nodeCreationQueue = -1;
+int procQueue = -1;
+int transQueue = -1;
 
 int fairStartSem = -1; /* Id of the set that contais the three semaphores*/
                        /* used to write on the register's partitions*/
@@ -334,8 +336,8 @@ int main(int argc, char *argv[])
     /*int c_users_active, c_nodes_active;*/
 
     /* declaring message structures used with global queue */
-    MsgGlobalQueue msg_from_node, msg_from_user, msg_to_node;
-    MsgGlobalQueue msg_new_node;
+    ProcQueue msg_to_node, msg_from_user, msg_from_node;
+     MsgGlobalQueue msg_new_node;
 
     /* declaring counter for transactions read from global queue */
     /*int c_msg_read;*/
@@ -894,8 +896,8 @@ int main(int argc, char *argv[])
                                         /*tmpFriend.mtype = nodesList[i].procId;**/
                                         for (j = 0; j < SO_FRIENDS_NUM; j++)
                                         {
-                                            msg_to_node.friend = nodesList[extractedFriendsIndex[j]].procId;
-                                            if (msgsnd(globalQueueId, &msg_to_node, sizeof(msg_to_node) - sizeof(long), 0) == -1)
+                                            msg_to_node.procPid = nodesList[extractedFriendsIndex[j]].procId;
+                                            if (msgsnd(procQueue, &msg_to_node, sizeof(msg_to_node) - sizeof(long), 0) == -1)
                                             {
                                                 unsafeErrorPrint("[MASTER]: failed to initialize node friends. Error: ", __LINE__);
                                                 endOfSimulation(-1);
@@ -1283,7 +1285,7 @@ int main(int argc, char *argv[])
                                         /*noUserTerminated = 0;*/ /* resetting user terminated counter */
                                         noAttemptsCheckUserTerm = 0;
 
-                                        while (noAttemptsCheckUserTerm < NO_ATTEMPTS_CHECK_USER_TERMINATION && msgrcv(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
+                                        while (noAttemptsCheckUserTerm < NO_ATTEMPTS_CHECK_USER_TERMINATION && msgrcv(procQueue, &msg_from_user, sizeof(ProcQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                         {
                                             report = fopen("master_msgrcv_content.txt", "a");
                                             fprintf(report, "MASTER: in user termination check msgContent is %d\n", msg_from_user.msgContent);
@@ -1311,7 +1313,7 @@ int main(int argc, char *argv[])
                                                     /* cycle to search for the user process */
                                                     for (i = 0; i < SO_USERS_NUM; i++)
                                                     {
-                                                        if (usersList[i].procId == msg_from_user.terminatedPid)
+                                                        if (usersList[i].procId == msg_from_user.procPid)
                                                         {
                                                             /* we found the user process terminated */
                                                             usersList[i].procState = TERMINATED;
@@ -1341,14 +1343,14 @@ int main(int argc, char *argv[])
                                                     }
                                                     else
                                                     {
-                                                        printf("[MASTER]: the user process with pid %5d has terminated\n", msg_from_user.terminatedPid);
+                                                        printf("[MASTER]: the user process with pid %5d has terminated\n", msg_from_user.procPid);
                                                     }
                                                 }
                                             }
                                             else
                                             {
                                                 /* Reinserting the message that we have consumed from the global queue */
-                                                if (msgsnd(globalQueueId, &msg_from_user, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                                                if (msgsnd(procQueue, &msg_from_user, sizeof(ProcQueue) - sizeof(long), 0) == -1)
                                                 {
                                                     /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
                                                     unsafeErrorPrint("[MASTER]: failed to reinsert the message read from the global queue while checking for terminated users. Error: ", __LINE__);
@@ -1382,7 +1384,7 @@ int main(int argc, char *argv[])
                                         noAttemptsCheckNodeTerm = 0;
 
                                         /* Check if a node process has terminated to update the nodes list */
-                                        while (noAttemptsCheckNodeTerm < NO_ATTEMPTS_CHECK_NODE_TERMINATION && msgrcv(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
+                                        while (noAttemptsCheckNodeTerm < NO_ATTEMPTS_CHECK_NODE_TERMINATION && msgrcv(procQueue, &msg_from_node, sizeof(ProcQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                         {
                                             report = fopen("master_msgrcv_content.txt", "a");
                                             fprintf(report, "MASTER: in node termination check msgContent is %d\n", msg_from_node.msgContent);
@@ -1404,7 +1406,7 @@ int main(int argc, char *argv[])
                                                 {
                                                     for (i = 0; i < SO_NODES_NUM; i++)
                                                     {
-                                                        if (nodesList[i].procId == msg_from_node.terminatedPid)
+                                                        if (nodesList[i].procId == msg_from_node.procPid)
                                                         {
                                                             nodesList[i].procState = TERMINATED;
                                                             noTerminatedNodes++;
@@ -1430,14 +1432,14 @@ int main(int argc, char *argv[])
                                                     }
                                                     else
                                                     {
-                                                        printf("[MASTER]: the node process with pid %5d has terminated\n", msg_from_node.terminatedPid);
+                                                        printf("[MASTER]: the node process with pid %5d has terminated\n", msg_from_node.procPid);
                                                     }
                                                 }
                                             }
                                             else
                                             {
                                                 /* Reinserting the message that we have consumed from the global queue */
-                                                if (msgsnd(globalQueueId, &msg_from_node, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                                                if (msgsnd(procQueue, &msg_from_node, sizeof(ProcQueue) - sizeof(long), 0) == -1)
                                                 {
                                                     /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
                                                     unsafeErrorPrint("[MASTER]: failed to reinsert the message read from the global queue while checking for terminated nodes. Error: ", __LINE__);
@@ -1729,12 +1731,13 @@ boolean initializeIPCFacilities()
     semctl(noAllTimesNodesSem, 0, SETVAL, arg);
     SEMCTL_TEST_ERROR(noAllTimesNodesSem, "[MASTER]: semctl failed while initializing number of all times nodes' shared variable semaphore. Error: ");
 
-    /* Creation of the global queue*/
-    key = ftok(MSGFILEPATH, GLOBALMSGSEED);
-    FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during global queue creation. Error: ");
-    globalQueueId = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
-    MSG_TEST_ERROR(globalQueueId, "[MASTER]: msgget failed during global queue creation. Error: ");
+    /* Creation of the processes global queue*/
+    key = ftok(MSGFILEPATH, PROC_QUEUE_SEED);
+    FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during processes global queue creation. Error: ");
+    procQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
+    MSG_TEST_ERROR(procQueue, "[MASTER]: msgget failed during processes global queue creation. Error: ");
 
+    /*
     printf("[MASTER]: setting global queue size...\n");
     if (msgctl(globalQueueId, IPC_STAT, &globalQueueStruct) == -1)
     {
@@ -1742,16 +1745,16 @@ boolean initializeIPCFacilities()
         endOfSimulation(-1);
     }
     else
-    {
+    {*/
         /*
             La dimensione è espressa in base al corpo del messaggio
-        */
+        
         globalQueueStruct.msg_qbytes = (sizeof(MsgGlobalQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
         if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
         {
             unsafeErrorPrint("[MASTER]: failed to set global queue size. Error: ", __LINE__);
             endOfSimulation(-1);
-        }
+        }*/
         /*
         printf("Master: dimensione coda globale: %ld\n", globalQueueStruct.msg_qbytes);
         globalQueueStruct.msg_qbytes = 65536;
@@ -1769,7 +1772,18 @@ boolean initializeIPCFacilities()
                 endOfSimulation(-1);
             }
         }*/
-    }
+    /*}*/
+
+    /* Creation of the processes global queue*/
+    key = ftok(MSGFILEPATH, NODE_CREATION_QUEUE_SEED);
+    FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during nodes global queue creation. Error: ");
+    nodeCreationQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
+    MSG_TEST_ERROR(nodeCreationQueue, "[MASTER]: msgget failed during nodes global queue creation. Error: ");
+
+    key = ftok(MSGFILEPATH, TRANS_QUEUE_SEED);
+    FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during transactions global queue creation. Error: ");
+    transQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
+    MSG_TEST_ERROR(transQueue, "[MASTER]: msgget failed during transactions global queue creation. Error: ");
 
     /* Creation of register's partitions */
     key = ftok(SHMFILEPATH, REGPARTONESEED);
@@ -2460,23 +2474,56 @@ boolean deallocateFacilities(int *exitCode)
     */
 
     /* Global queue deallocation*/
-    write(STDOUT_FILENO,
-          "[MASTER]: deallocating global message queue...\n",
-          strlen("[MASTER]: deallocating global message queue...\n"));
-    if (msgctl(globalQueueId, IPC_RMID, NULL) == -1)
+    /*write(STDOUT_FILENO,
+          "[MASTER]: deallocating global processes queue...\n",
+          strlen("[MASTER]: deallocating global processes queue...\n"));*/
+    printf("[MASTER]: deallocating global processes queue...\n");
+    if (msgctl(procQueue, IPC_RMID, NULL) == -1)
     {
         if (errno != EINVAL)
         {
-            msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove global message queue.\n");
-            write(STDERR_FILENO, printMsg, msgLength);
+            perror("[MASTER]: failed to remove global processes queue: ");
+            /*
+                msgLength = snprintf(printMsg, 199, "[MASTER]: failed to remove global processes queue.\n");
+            write(STDERR_FILENO, printMsg, msgLength);*/
             *exitCode = EXIT_FAILURE;
         }
     }
     else
     {
-        write(STDOUT_FILENO,
-              "[MASTER]: global message queue successfully removed.\n",
-              strlen("[MASTER]: global message queue successfully removed.\n"));
+        printf("[MASTER]: global processes queue successfully removed.\n");
+        /*
+            write(STDOUT_FILENO,
+                  "[MASTER]: global message processes successfully removed.\n",
+                  strlen("[MASTER]: global message processes successfully removed.\n"));*/
+    }
+
+    printf("[MASTER]: deallocating global nodes queue...\n");
+    if (msgctl(nodeCreationQueue, IPC_RMID, NULL) == -1)
+    {
+        if (errno != EINVAL)
+        {
+            perror("[MASTER]: failed to remove global nodes queue: ");
+            *exitCode = EXIT_FAILURE;
+        }
+    }
+    else
+    {
+        printf("[MASTER]: global nodes queue successfully removed.\n");
+    }
+
+    printf("[MASTER]: deallocating global transactions queue...\n");
+    if (msgctl(transQueue, IPC_RMID, NULL) == -1)
+    {
+        if (errno != EINVAL)
+        {
+            perror("[MASTER]: failed to remove global transactions queue: ");
+            *exitCode = EXIT_FAILURE;
+        }
+    }
+    else
+    {
+        printf("[MASTER]: global transactions queue successfully removed.\n");
     }
 
     /* Writing Semaphores deallocation*/
@@ -2721,7 +2768,9 @@ void checkNodeCreationRequests()
         modo uniforme tra le varie iterazioni del ciclo
         di vita del master
     */
-    MsgGlobalQueue aus;
+    NodeCreationQueue ausNode;
+    TransQueue ausTrans;
+    ProcQueue ausProc;
     pid_t procPid = -1;
     int tpId = -1, j = 0;
     pid_t currPid = getpid();
@@ -2740,10 +2789,10 @@ void checkNodeCreationRequests()
     printMsg = (char *)calloc(200, sizeof(char));
 
     /* Siamo passati dall'if al while per aumentare il numero di richieste servite ad ogni ciclo del master */
-    while (attempts < NO_ATTEMPTS_NEW_NODE_REQUESTS && msgrcv(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1)
+    while (attempts < NO_ATTEMPTS_NEW_NODE_REQUESTS && msgrcv(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1)
     {
         report = fopen("master_msgrcv_content.txt", "a");
-        fprintf(report, "MASTER: in new node requests check msgContent is %d\n", aus.msgContent);
+        fprintf(report, "MASTER: in new node requests check msgContent is %d\n", ausNode.msgContent);
         fclose(report);
         
         /* Increasing the number of attempts to check for new node requests*/
@@ -2752,7 +2801,7 @@ void checkNodeCreationRequests()
         /*
             Su questa coda l'unico tipo di messaggio per il master è NEWNODE
         */
-        if (aus.msgContent == NEWNODE)
+        if (ausNode.msgContent == NEWNODE)
         {
             /* ONLY FOR DEBUG PURPOSE */
             report = fopen("node_creation_report.txt", "a");
@@ -2912,18 +2961,18 @@ void checkNodeCreationRequests()
                             }
 
                             firstTrans.mtype = (long)procPid;
-                            firstTrans.transaction = aus.transaction;
+                            firstTrans.transaction = ausNode.transaction;
 
                             if (msgsnd(tpId, &(firstTrans.transaction), sizeof(MsgTP) - sizeof(long), 0) == -1)
                             {
                                 safeErrorPrint("[MASTER]: failed to send transaction to new node's transaction pool . Error: ", __LINE__);
 
                                 /* informing sender of transaction that it wasn't processed */
-                                aus.mtype = firstTrans.transaction.sender;
-                                aus.msgContent = FAILEDTRANS;
-                                aus.transaction = firstTrans.transaction;
+                                ausTrans.mtype = firstTrans.transaction.sender;
+                                ausTrans.msgContent = FAILEDTRANS;
+                                ausTrans.transaction = firstTrans.transaction;
 
-                                if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                                if (msgsnd(transQueue, &ausTrans, sizeof(TransQueue) - sizeof(long), 0) == -1)
                                 {
                                     /* Che facciamo in questo caso ???*/
                                     safeErrorPrint("[MASTER]: failed to inform sender of transaction that the transaction wasn't processed. Error: ", __LINE__);
@@ -2932,21 +2981,21 @@ void checkNodeCreationRequests()
                             else
                             {
                                 /* friend node's generation */
-                                aus.mtype = (long)procPid;
-                                aus.msgContent = FRIENDINIT;
+                                ausProc.mtype = (long)procPid;
+                                ausProc.msgContent = FRIENDINIT;
                                 estrai(indexNodesList);
                                 for (j = 0; j < SO_FRIENDS_NUM; j++)
                                 {
-                                    aus.friend = nodesList[extractedFriendsIndex[j]].procId;
-                                    if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                                    ausProc.procPid = nodesList[extractedFriendsIndex[j]].procId;
+                                    if (msgsnd(procQueue, &ausProc, sizeof(ProcQueue) - sizeof(long), 0) == -1)
                                     {
                                         safeErrorPrint("[MASTER]: failed to send a friend to new node. Error: ", __LINE__);
                                         /* informing sender of transaction that it wasn't processed */
-                                        aus.mtype = firstTrans.transaction.sender;
-                                        aus.msgContent = FAILEDTRANS;
-                                        aus.transaction = firstTrans.transaction;
+                                        ausTrans.mtype = firstTrans.transaction.sender;
+                                        ausTrans.msgContent = FAILEDTRANS;
+                                        ausTrans.transaction = firstTrans.transaction;
 
-                                        if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                                        if (msgsnd(transQueue, &ausTrans, sizeof(TransQueue) - sizeof(long), 0) == -1)
                                         {
                                             /* Che facciamo in questo caso ???*/
                                             safeErrorPrint("[MASTER]: failed to inform sender of transaction that the transaction wasn't processed. Error: ", __LINE__);
@@ -3000,13 +3049,13 @@ void checkNodeCreationRequests()
                             endOfSimulation(-1);
                         }
 
-                        aus.friend = procPid;
-                        aus.msgContent = NEWFRIEND;
+                        ausNode.procPid = procPid;
+                        ausNode.msgContent = NEWFRIEND;
                         estrai(noEffectiveNodes);
                         for (j = 0; j < SO_FRIENDS_NUM; j++)
                         {
-                            aus.mtype = nodesList[extractedFriendsIndex[j]].procId;
-                            if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+                            ausNode.mtype = nodesList[extractedFriendsIndex[j]].procId;
+                            if (msgsnd(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), 0) == -1)
                             {
                                 /*
                                             CORREGGERE: possiamo semplicemente segnalare l'errore senza fare nulla?
@@ -3102,7 +3151,7 @@ void checkNodeCreationRequests()
                   strlen("[MASTER]: no node creation requests to be served.\n"));*/
 
             /* Reinserting the message that we have consumed from the global queue */
-            if (msgsnd(globalQueueId, &aus, sizeof(MsgGlobalQueue) - sizeof(long), 0) == -1)
+            if (msgsnd(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), 0) == -1)
             {
                 /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
                 safeErrorPrint("[MASTER]: failed to reinsert the message read from the global queue while checking for new node creation requests. Error: ", __LINE__);
