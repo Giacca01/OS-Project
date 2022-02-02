@@ -1,21 +1,3 @@
-/*
-    Cose da fare:
-        Test: Testare persistenza associazione:
-            Su Linux funziona (purtroppo :D) senza bisogno
-            di riagganciare l'handler
-            PROVARE SU ALTRI SO
-        Refactoring
-        Handler CTRL + C
-        Handler per graceful termination
-        REG_PARTITION_SIZE: OK
-        Correzione stampe in handler
-        Modifica procedure d'errore in modo che __LINE__ sia indicativo
-        e modifica macro che stampa l'errore
-        Sistemare kill: Ok
-        Vedere perchè ci siano più processi master: A quanto pare non ci sono
-        Fare in modo che kill non segnali il master
-*/
-
 #define _GNU_SOURCE
 
 /**** Headers inclusion ****/
@@ -35,7 +17,8 @@
 #define NO_ATTEMPTS_CHECK_NODE_TERMINATION 5 /* Number of attempts to check for node terminations */
 /**** End of Constants definition ****/
 
-/*****        Global structures        *****/
+/*** GLOBAL VARIABLES FOR IPC ***/
+#pragma region GLOBAL VARIABLES FOR IPC
 
 union semun
 {
@@ -45,76 +28,130 @@ union semun
     struct seminfo *__buf;
 };
 
-Register **regPtrs = NULL; /* Array of pointers to register's partitions */
-int *regPartsIds = NULL;   /* Array of ids of register's partitions */
+/* Poiter to the array that contains the ids of the shared memory segments of the register's partitions.
+ * regPartsIds[0]: id of the first partition segment
+ * regPartsIds[1]: id of the second partition segment
+ * regPartsIds[2]: id of the third partition segment
+ */
+int *regPartsIds = NULL;
 
+/* Pointer to the array that contains the pointers to the the register's partitions.
+ * regPtrs[0]: pointer to the first partition segment
+ * regPtrs[1]: pointer to the second partition segment
+ * regPtrs[2]: pointer to the third partition segment
+ */
+Register **regPtrs = NULL;
+
+/* Id of the shared memory segment that contains the users list */
 int usersListId = -1;
+
+/* Pointer to the users list */
 ProcListElem *usersList = NULL;
 
+/* Id of the shared memory segment that contains the nodes list */
 int nodesListId = -1;
+
+/* Pointer to the nodes list */
 ProcListElem *nodesList = NULL;
 
+/* Pointer to the tp list */
 TPElement *tpList = NULL;
 
+/* Id of the global message queue where users, nodes and master communicate */
 int nodeCreationQueue = -1;
 int procQueue = -1;
 int transQueue = -1;
 
-int fairStartSem = -1; /* Id of the set that contais the three semaphores*/
-                       /* used to write on the register's partitions*/
+/* Id of the set that contains the three semaphores used to write on the register's partitions */
+int fairStartSem = -1;
 
-int wrPartSem = -1; /* Id of the set that contais the three semaphores*/
-                    /* used to write on the register's partitions*/
+/* Id of the set that contains the three semaphores used to write on the register's partitions */
+int wrPartSem = -1;
 
-int rdPartSem = -1; /* Id of the set that contais the three semaphores*/
-                    /* used to read from the register's partitions*/
+/* Id of the set that contains the three semaphores used to read from the register's partitions */
+int rdPartSem = -1;
 
-int mutexPartSem = -1; /* id of the set that contains the three sempagores used to
-                        to access the number of readers variables of the registers partitions
-                        in mutual exclusion*/
+/* Id of the set that contains the three sempagores used to access the number of readers
+ * variables of the registers partitions in mutual exclusion
+ */
+int mutexPartSem = -1;
 
-/* Si dovrebbe fare due vettori*/
-int *noReadersPartitions = NULL;      /* Pointer to the array contains the ids of the shared memory segments
-                                        where the variables used to syncronize
-                                        readers and writes access to register's partition are stored, e.g:
-                                        noReadersPartitions[0]: id of first partition's shared variable
-                                        */
-int **noReadersPartitionsPtrs = NULL; /* Pointer to the array contains the variables used to syncronize
-                                        readers and writes access to register's partition. E.g:
-                                        noReadersPartitions[0]: pointer to the first partition's shared variable
-                                        */
-int userListSem = -1;                 /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
-                                        to read and write users list*/
-int noUserSegReaders = -1;            /* id of the shared memory segment that contains the variable used to syncronize
-                                        readers and writes access to users list*/
-int *noUserSegReadersPtr = NULL;      /* Pointer to the shared memory segment described above */
+/* Pointer to the array containing the ids of the shared memory segments where the variables used to syncronize
+ * readers and writers access to register's partition are stored.
+ * noReadersPartitions[0]: id of first partition's shared variable
+ * noReadersPartitions[1]: id of second partition's shared variable
+ * noReadersPartitions[2]: id of third partition's shared variable
+ */
+int *noReadersPartitions = NULL;
 
-int nodeListSem = -1; /* Id of the set that contais the semaphores (mutex = 0, read = 1, write = 2) used
-                        to read and write nodes list
-                        */
+/* Pointer to the array containing the variables used to syncronize readers and writers access to register's partition.
+ * noReadersPartitionsPtrs[0]: pointer to the first partition's shared variable
+ * noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
+ * noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable
+ */
+int **noReadersPartitionsPtrs = NULL;
 
-int noNodeSegReaders = -1;       /* id of the shared memory segment that contains the variable used to syncronize
-                                    readers and writers access to nodes list */
-int *noNodeSegReadersPtr = NULL; /* Pointer to the shared memory segment described above */
+/* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write users list */
+int userListSem = -1;
 
-int noAllTimesNodesSem = -1;    /* Id of the mutex semaphore used to read/write the number of all times node processes shared variabile */
-int noAllTimesNodes = -1;       /* id of the shared memory segment that contains the variable that keeps number of all times node processes */
-int *noAllTimesNodesPtr = NULL; /* Pointer to the shared memory segment described above */
+/* Id of the shared memory segment that contains the variable used to syncronize readers and writers access to users list */
+int noUserSegReaders = -1;
+
+/* Pointer to the variable that counts the number of readers, used to syncronize readers and writers access to users list */
+int *noUserSegReadersPtr = NULL;
+
+/* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write nodes list */
+int nodeListSem = -1;
+/*
+ * Serve una variabile per contare il lettori perchè per estrarre un nodo a cui mandare la
+ * transazione da processare bisogna leggere la lista dei nodi.
+ */
+
+/* Id of the shared memory segment that contains the variable used to syncronize readers and writers access to nodes list */
+int noNodeSegReaders = -1;
+
+/* Pointer to the variable that counts the number of readers, used to syncronize readers and writers access to nodes list */
+int *noNodeSegReadersPtr = NULL;
+
+/* Id of the mutex semaphore used to read/write the number of all times node processes' shared variabile */
+int noAllTimesNodesSem = -1;
+
+/* Id of the shared memory segment that contains the variable used to count the number of all times node processes */
+int noAllTimesNodes = -1;
+
+/* Pointer to the variable that counts the number of all times node processes */
+int *noAllTimesNodesPtr = NULL;
 
 /*
     We use a long int variable to handle an outstanding number
     of child processes
 */
-long noTerminatedUsers = 0; /* NUmber of users that terminated before end of simulation*/
-long noTerminatedNodes = 0; /* NUmber of processes that terminated before end of simulation*/
+/* NUmber of users that terminated before end of simulation*/
+long noTerminatedUsers = 0;
 
-long noEffectiveNodes = 0;      /* Holds the effective number of nodes */
-long noEffectiveUsers = 0;      /* Holds the effective number of users */
+/* NUmber of processes that terminated before end of simulation*/
+long noTerminatedNodes = 0;
+
+/* Holds the effective number of nodes */
+long noEffectiveNodes = 0;
+
+/* Holds the effective number of users */
+long noEffectiveUsers = 0;
 /*long noAllTimesNodes = 0;  */ /* Historical number of nodes: it counts also the terminated ones */
-long noAllTimesUsers = 0;       /* Historical number of users: it counts also the terminated ones */
+/* Historical number of users: it counts also the terminated ones */
+long noAllTimesUsers = 0;
 
-long tplLength = 0; /* keeps tpList length */
+/* keeps tpList length */
+long tplLength = 0;
 
+#pragma endregion
+/*** END GLOBAL VARIABLES FOR IPC ***/
+
+/*** GLOBAL VARIABLES ***/
+#pragma region GLOBAL VARIABLES
+/***** Definition of global variables that contain *****/
+/***** the values ​​of the configuration parameters  *****/
+/*******************************************************/
 extern char **environ;
 struct timespec now;
 int *extractedFriendsIndex;
@@ -129,19 +166,16 @@ typedef struct proc_budget
     struct proc_budget *next; /* keeps link to next node */
 } proc_budget;
 
-/* linked list of budgets for every user and node process */
 /*
-    L'idea è che il libro mastro sia immutabile e non sia quindi
-    necessario scorrerlo tutto ogni volta.
-    Per migliorare l'efficienza del calcolo del budget
-    possiamo limitarci ad aggiornare i budget sulla base
-    delle sole transazioni inserite nel libro mastro
-    tra un aggiornamento e l'altro
+    The idea is that the ledger is immutable and therefore is not
+    need to go through it all every time.
+    To improve the efficiency of budget calculation
+    we can just update the budgets on the basis
+    of transactions entered in the ledger only
+    between updates
 */
+/* linked list of budgets for every user and node process */
 typedef proc_budget *budgetlist;
-/* budgetlist is implemented as a linked list */
-
-/***** End of Global structures *****/
 
 /***** Configuration parameters *****/
 long SO_USERS_NUM,
@@ -158,145 +192,121 @@ long SO_USERS_NUM,
     SO_FRIENDS_NUM,
     SO_HOPS;
 /***** End of Configuration parameters ***********/
+
+/* max number of nodes */
 long maxNumNode = 0;
+/* used in file reading */
 char line[CONF_MAX_LINE_NO][CONF_MAX_LINE_SIZE];
 /* initialization of the budgetlist head - array to maintain budgets read from ledger */
 budgetlist bud_list_head = NULL;
 /* initialization of the budgetlist tail - array to maintain budgets read from ledger */
 budgetlist bud_list_tail = NULL;
+/* master's pid */
 long masterPid = -1;
+/* keep track if simulation is terminated */
 boolean simTerminated = FALSE;
+#pragma endregion
+/*** END GLOBAL VARIABLES ***/
 
-/**********  Function prototypes  *****************/
+/*** FUNCTIONS PROTOTYPES DECLARATION ***/
+#pragma region FUNCTIONS PROTOTYPES DECLARATION
+/**
+ * @brief Function that assigns the values ​​of the environment variables to the global variables defined above.
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean assignEnvironmentVariables();
+
+/**
+ * @brief Function that reads the file containing the configuration parameters to save them as environment variables.
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean readConfigParameters();
+
+/**
+ * @brief Allocation of global structures.
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean allocateGlobalStructures();
+
+/**
+ * @brief Ipc structures allocation.
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean initializeIPCFacilities();
 
+/**
+ * @brief Function that ends the execution of the user; this can happen in three different ways,
+ * rappresented by the values that the parameter might assume.
+ * @param sig the parameters value are: 0 -> only end of execution; -1 -> end of execution and deallocation (called from error);
+ * SIGUSR1 -> end of execution and deallocation (called by signal from master)
+ */
 void endOfSimulation(int);
-void printBudget();
+
+/**
+ * @brief Function that deallocates the IPC facilities for the user.
+ * @param exitcode indicates whether the simulation ends successfully or not
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean deallocateFacilities(int *);
+
+/**
+ * @brief Function that checks for node creation requests.
+ */
 void checkNodeCreationRequests();
 
-/*
- * Function to frees the space dedicated to the budget list p passed as argument
+/**
+ * @brief Function to frees the space dedicated to the budget list p passed as argument.
+ * @param p pointer to linked list budgetlist
  */
 void budgetlist_free(budgetlist);
 
-/*
- * Function that inserts in the global list bud_list the node passed as
+/**
+ * @brief Function that inserts in the global list bud_list the node passed as
  * argument in an ordered way (the list is ordered in ascending order).
  * We want to keep the list sorted to implement a more efficient
  * budget calculation.
+ * @param new_el pointer to a new element to insert into linked list budgetlist
  */
 void insert_ordered(budgetlist);
 
-/*
- * Function that searches in the gloabl list bud_list for an element with
+/**
+ * @brief Function that searches in the gloabl list bud_list for an element with
  * proc_pid as the one passed as first argument; if it's found, upgrades its budget
  * adding the second argument, which is a positive or negative amount.
- * It returns -1 in case an error happens, otherwise it returns 0 on success.
+ * @param remove_pid pid of the item to be searched for in the budgetlist.
+ * @param amount_changing positive or negative amount.
  */
 int update_budget(pid_t, double);
 
+/**
+ * @brief Function that print remained transactions.
+ */
 void printRemainedTransactions();
-/**************************************************/
 
-/*****  Momentary functions created for testing purposes  *****/
-/**************************************************************/
-void busy_cpu(unsigned long loops)
-{
-    /*int i;*/
-    double my_var = 0.25;
+/**
+ * @brief Upload the location to extractedFriendsIndex in friends' nodesList
+ * (doing so extracts friends)
+ * @param k index of the process that cannot be extracted, i.e. the one calling the function.
+ */
+void estrai(int);
 
-    while (1)
-    {
-        my_var += 0.5;
-    }
-
-    /*
-        for (i = 0; i < loops; i++)
-    {
-
-        //my_var = my_var > 1 ? my_var - 1 : my_var;
-    }
-    */
-}
-
-void do_stuff(int t)
-{
-    if (t == 1)
-        printf("Hi, I'm a user, my pid is %d\n", getpid());
-    else
-        printf("Hi, I'm a node, my pid is %d\n", getpid());
-    /*srand(time(0));*/
-
-    regPtrs[0]->nBlocks = REG_PARTITION_SIZE;
-    regPtrs[1]->nBlocks = REG_PARTITION_SIZE;
-    regPtrs[2]->nBlocks = REG_PARTITION_SIZE;
-    /*busy_cpu(rand() % 1000000000);*/
-}
-/**************************************************************/
-/**************************************************************/
-
-void estrai(int k)
-{
-    /*
-        Carica in extractedFriendsIndex la posizione
-        in nodesList degli amici
-        (così facendo estrae gli amici)
-    */
-    int x, count, n, i = 0;
-
-    /*
-        CORREGGERE: controllare lo stato dell'amico
-    */
-    for (count = 0; count < SO_FRIENDS_NUM; count++)
-    {
-        do
-        {
-            clock_gettime(CLOCK_REALTIME, &now);
-            n = now.tv_nsec % maxNumNode;
-        } while (k == n);
-        extractedFriendsIndex[count] = n;
-    }
-
-    while (i < SO_FRIENDS_NUM)
-    {
-        int r;
-        do
-        {
-            clock_gettime(CLOCK_REALTIME, &now);
-            r = now.tv_nsec % SO_NODES_NUM;
-        } while (r == k);
-
-        for (x = 0; x < i; x++)
-        {
-            if (extractedFriendsIndex[x] == r)
-            {
-                break;
-            }
-        }
-        if (x == i)
-        {
-            extractedFriendsIndex[i++] = r;
-        }
-    }
-}
-
+/**
+ * @param sig signal that fired the handler
+ */
 void tmpHandler(int sig);
 
 /**
  * @brief Function that catches any segmentation fault error during execution and
  * avoids brutal termination.
- *
  * @param sig signal that fired the handler
  */
 void segmentationFaultHandler(int);
+#pragma endregion
+/*** END FUNCTIONS PROTOTYPES DECLARATION ***/
 
+/*** MAIN FUNCTION ***/
 int main(int argc, char *argv[])
 {
-
     pid_t child_pid;
     struct sembuf sops[3];
     sigset_t set;
@@ -320,56 +330,28 @@ int main(int argc, char *argv[])
     /* array that keeps memory of the block we stopped reading budgets for every partition of register  */
     int prev_read_nblock[REG_PARTITION_COUNT];
 
-    int ind_block;           /* indice per scorrimento blocchi */
-    int ind_tr_in_block = 0; /* indice per scorrimento transazioni in blocco */
+    /* index for scrolling blocks */
+    int ind_block;
+    /* index for scrolling bulk transactions */
+    int ind_tr_in_block = 0;
 
     /* variable that keeps track of the attempts to update a budget,
     if > NO_ATTEMPTS_UPDATE_BUDGET we switch to next block */
     int bud_update_attempts = 0;
 
-    /* variable that keeps memory of the previous budget, used in print of budget */
-    /*int prev_bud = 0;*/
-
-    /* counters for active user and node processes */
-    /*int c_users_active, c_nodes_active;*/
-
     /* declaring message structures used with global queue */
     ProcQueue msg_to_node, msg_from_user, msg_from_node;
     MsgGlobalQueue msg_new_node;
 
-    /* declaring counter for transactions read from global queue */
-    /*int c_msg_read;*/
-
-    /* declaration of array of transactions for new node creation*/
-    /*Transaction *transanctions_read;*/
-
-    /* variables for new node creation */
-    /*int *id_new_friends;*/ /* array to keep track of already chosen new friends */
-    /* int new;*/            /* flag */
-    /*int index, tr_written;*/
-
-    /* declaring of message for new transaction pool of new node */
-    /* MsgTP new_trans;*/
-
-    /* declaring of variable for sending transactions over TP of new node */
-    /*int tp_new_node;*/
-
     /* declaring of variables for budget update */
     Block block;
     Transaction trans;
-
     struct msqid_ds tpStruct;
 
-    /* variables that keeps track of user terminated */
-    /*int noUserTerminated = 0;*/
-
-    /*char *argVec[] = {NULL};*/
-    /*char *envVec[] = {NULL};*/
-
-    char *aus = NULL;
-
+    /* Number of all processes created during the simulation */
     long noAllTimeProcesses = 0;
 
+    /* Number of user/node attempts of termination */
     int noAttemptsCheckUserTerm = 0;
     int noAttemptsCheckNodeTerm = 0;
 
@@ -381,7 +363,10 @@ int main(int argc, char *argv[])
     sops[2].sem_num = 2;
     sops[2].sem_flg = 0;
 
+    /* allocation of extractedFriendsIndex */
     extractedFriendsIndex = (int *)malloc(SO_FRIENDS_NUM * sizeof(int));
+    /* initializing print string message */
+    char *aus = NULL;
     aus = (char *)calloc(200, sizeof(char));
 
     /* setting data for waiting for one second */
@@ -392,12 +377,11 @@ int main(int argc, char *argv[])
     for (i = 0; i < REG_PARTITION_COUNT; i++)
         prev_read_nblock[i] = 0; /* qui memorizzo il blocco a cui mi sono fermato allo scorso ciclo nella i-esima partizione */
 
+    /* saves master pid */
     masterPid = (long)getpid();
 
     signal(SIGINT, endOfSimulation);
 
-    /* Read configuration parameters from
-                    // file and save them as environment variables*/
     printf("[MASTER]: my pid is %5ld\n", masterPid);
     printf("**** [MASTER]: simulation configuration started ****\n");
 
@@ -408,9 +392,6 @@ int main(int argc, char *argv[])
     printf("[MASTER]: setting up simulation timer...\n");
     printf("[MASTER]: simulation lasts %ld seconds\n", SO_SIM_SEC);
     /* No previous alarms were set, so it must return 0*/
-    /*
-        Usando alarm i figli non ricevono nessuno di questi timer
-    */
     if (alarm(SO_SIM_SEC) != 0)
         unsafeErrorPrint("[MASTER]: failed to set up simulation timer. ", __LINE__);
     else
@@ -465,44 +446,29 @@ int main(int argc, char *argv[])
                                     for (i = 0; i < SO_USERS_NUM; i++)
                                     {
                                         printf("[MASTER]: user number %d\n", i);
-                                        /*
-                                            CORREGGERE: manca l'error handling
-                                            e tutte queste semop son ogiuste??
-                                        */
                                         switch (child_pid = fork())
                                         {
                                         case -1:
                                             /*Handle error*/
                                             unsafeErrorPrint("[MASTER]: fork failed. Error: ", __LINE__);
                                             /*
-                                                        (**)
-                                                        In case we failed to create a process we end
-                                                        the simulation.
-                                                        This solution is extended to every operation required to create a node/user.
-                                                        This solution is quite restrictive, but we have to consider
-                                                        that loosing even one process before it even started
-                                                        means violating the project requirments
-                                                    */
+                                             *    (**)
+                                             *    In case we failed to create a process we end
+                                             *    the simulation.
+                                             *    This solution is extended to every operation required to create a node/user.
+                                             *    This solution is quite restrictive, but we have to consider
+                                             *    that loosing even one process before it even started
+                                             *    means violating the project requirments
+                                             */
                                             endOfSimulation(-1);
                                         case 0:
                                             /*
-                                                // The process tells the father that it is ready to run
-                                                // and that it waits for all processes to be ready*/
+                                             * The process tells the father that it is ready to run
+                                             *and that it waits for all processes to be ready
+                                             */
                                             printf("[USER %5ld]: starting execution....\n", (long)getpid());
-                                            /*
-                                                    For test's sake
-                                                */
-
                                             signal(SIGALRM, SIG_IGN);
-                                            /*
-                                                (Almeno) questa serve davvero
-                                                perchè il segnale di fine simulazione potrebe arrivare
-                                                prima che i figli inizino la loro computazione
-                                            */
                                             signal(SIGUSR1, tmpHandler);
-                                            /*
-                                        sops[0].sem_op = -1;
-                                        semop(fairStartSem, &sops[0], 1);*/
 
                                             printf("[USER %5ld]: waiting for simulation to start....\n", (long)getpid());
                                             sops[0].sem_op = 0;
@@ -519,25 +485,21 @@ int main(int argc, char *argv[])
                                             }
                                             else
                                             {
-                                                /* Temporary part to get the process to do something*/
                                                 if (execle("user.out", "user", NULL, environ) == -1)
                                                 {
                                                     snprintf(aus, 199, "[USER %5ld]: failed to load user's code. Error: ", (long)getpid());
                                                     unsafeErrorPrint(aus, __LINE__);
                                                     endOfSimulation(-1);
                                                 }
-                                                /*
-                                                        do_stuff(1);
-                                                        printf("Eseguo user...\n");
-                                                        printf("User done! PID:%d\n", getpid());
-                                                        busy_cpu(1);
-                                                        exit(i);*/
                                             }
                                             break;
 
                                         default:
+                                            /* Increments number of effective users and alltime users */
                                             noEffectiveUsers++;
                                             noAllTimesUsers++;
+
+                                            /* Process notify his creatorion */
                                             sops[0].sem_num = 0;
                                             sops[0].sem_op = -1;
                                             sops[0].sem_flg = IPC_NOWAIT;
@@ -547,17 +509,14 @@ int main(int argc, char *argv[])
                                                 endOfSimulation(-1);
                                             }
 
-                                            /* Save users processes pid and state into usersList*/
-
                                             /*
-                                                        No user or node is writing or reading on the
-                                                        read but it's better to be one hundred percent
-                                                        to check no one is reading or writing from the list
-                                                    */
-                                            /*
-                                                        ENTRY SECTION:
-                                                        Reserve read semaphore and Reserve write semaphore
-                                                    */
+                                             *    No user or node is writing or reading on the
+                                             *    read but it's better to be one hundred percent
+                                             *    to check no one is reading or writing from the list
+                                             *
+                                             *    ENTRY SECTION:
+                                             *    Reserve read semaphore and Reserve write semaphore
+                                             */
                                             sops[0].sem_op = -1;
                                             sops[0].sem_num = 1;
 
@@ -569,12 +528,13 @@ int main(int argc, char *argv[])
                                                 endOfSimulation(-1);
                                             }
 
+                                            /* Save users processes pid and state into usersList*/
                                             usersList[i].procId = child_pid;
                                             usersList[i].procState = ACTIVE;
 
                                             /*
-                                                        Exit section
-                                                    */
+                                             *Exit section
+                                             */
                                             sops[0].sem_op = 1;
                                             sops[0].sem_num = 1;
 
@@ -606,18 +566,12 @@ int main(int argc, char *argv[])
                                             endOfSimulation(-1);
                                         case 0:
                                             /*
-                                                // The process tells the father that it is ready to run
-                                                // and that it waits for all processes to be ready*/
+                                             * The process tells the father that it is ready to run
+                                             *and that it waits for all processes to be ready
+                                             */
                                             printf("[NODE %5ld]: starting execution....\n", (long)getpid());
-                                            /*sops[0].sem_op = -1;
-                                                semop(fairStartSem, &sops[0], 1);*/
 
                                             signal(SIGALRM, SIG_IGN);
-                                            /*
-                                                (Almeno) questa serve davvero
-                                                perchè il segnale di fine simulazione potrebe arrivare
-                                                prima che i figli inizino la loro computazione
-                                            */
                                             signal(SIGUSR1, tmpHandler);
 
                                             /* Temporary part to get the process to do something*/
@@ -626,15 +580,10 @@ int main(int argc, char *argv[])
                                                 snprintf(aus, 199, "[NODE %5ld]: failed to load node's code. Error: ", (long)getpid());
                                                 unsafeErrorPrint(aus, __LINE__);
                                             }
-                                            /*
-                                                    do_stuff(2);
-                                                    printf("Eseguo nodo...\n");
-                                                    printf("Node done! PID:%d\n", getpid());
-                                                    busy_cpu(1);
-                                                    exit(i);*/
                                             break;
 
                                         default:
+                                            /* Process notify his creatorion */
                                             sops[0].sem_num = 0;
                                             sops[0].sem_op = -1;
                                             if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
@@ -691,7 +640,6 @@ int main(int argc, char *argv[])
                                                     tpStruct.msg_qbytes was set to the maximum possible value
                                                     during the msgget
                                                 */
-
                                                 if (tpStruct.msg_qbytes < (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
                                                 {
                                                     tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
@@ -705,12 +653,13 @@ int main(int argc, char *argv[])
                                                     endOfSimulation(-1);
                                                 }
                                                 /*
-                                                    Se la dimensione è maggiore della dimensione massima allora
-                                                    non facciamo alcuna modifica
-                                                */
+                                                 *   If the size is larger than the maximum size then
+                                                 *   we do not make any changes
+                                                 */
                                             }
 
-                                            tplLength++; /* updating tpList length */
+                                            /* updating tpList length */
+                                            tplLength++;
 
                                             /* Save nodes processes pid and state into nodesList */
                                             sops[0].sem_op = -1;
@@ -743,6 +692,9 @@ int main(int argc, char *argv[])
                                     /********************************************/
                                     /********************************************/
 
+                                    /*****  Initialize budget for users processes   *****/
+                                    /****************************************************/
+
                                     /* we enter the critical section for the noUserSegReadersPtr variabile */
                                     sops[0].sem_op = -1;
                                     sops[0].sem_num = 0;
@@ -765,14 +717,15 @@ int main(int argc, char *argv[])
                                             endOfSimulation(-1);
                                         }
                                         /*
-                                         * se lo scrittore sta scrivendo, allora il primo lettore che entrerà in questo
-                                         * ramo si addormenterà su questo semaforo.
-                                         * se lo scrittore non sta scrivendo, allora il primo lettore decrementerà di 1 il
-                                         * valore semaforico, in modo tale se lo scrittore vuole scrivere, si addormenterà
-                                         * sul semaforo
+                                         * if the writer is writing, then the first reader who will enter this
+                                         * branch will fall asleep on this traffic light.
+                                         * if the writer is not writing, then the first reader will decrement the by 1
+                                         * traffic light value, so if the writer wants to write, he will fall asleep
+                                         * on the traffic light
                                          */
                                     }
-                                    /* we exit the critical section for the noUserSegReadersPtr variabile */
+
+                                    /* We exit the critical section for the noUserSegReadersPtr variabile */
                                     sops[0].sem_num = 0;
                                     sops[0].sem_op = 1;
                                     sops[1].sem_num = 1;
@@ -783,7 +736,6 @@ int main(int argc, char *argv[])
                                         endOfSimulation(-1);
                                     }
 
-                                    /* initializing budget for users processes */
                                     printf("[MASTER]: initializing budget users processes...\n");
                                     bud_list_head = NULL;
                                     bud_list_tail = NULL;
@@ -816,8 +768,8 @@ int main(int argc, char *argv[])
                                             endOfSimulation(-1);
                                         }
                                         /*
-                                         * se sono l'ultimo lettore e smetto di leggere, allora devo riportare a 0
-                                         * il valore semaforico in modo che se lo scrittore vuole scrivere possa farlo.
+                                         * if I am the last reader and stop reading then I need to reset to 0
+                                         * the semaphore value so that if the writer wants to write he can do it.
                                          */
                                     }
 
@@ -829,8 +781,11 @@ int main(int argc, char *argv[])
                                         safeErrorPrint("[MASTER]: failed to release mutex usersList semaphore. Error: ", __LINE__);
                                         endOfSimulation(-1);
                                     }
+                                    /****************************************************/
+                                    /****************************************************/
 
-                                    /**** Initializing budget for nodes processes ****/
+                                    /*****  Initialize budget for nodes processes   *****/
+                                    /****************************************************/
                                     printf("[MASTER]: initializing budget nodes processes...\n");
                                     /* we enter the critical section for the noNodeSegReadersPtr variabile */
                                     sops[0].sem_num = 0;
@@ -865,11 +820,6 @@ int main(int argc, char *argv[])
                                         endOfSimulation(-1);
                                     }
 
-                                    /* initializing budget for nodes processes */
-                                    /*
-                                            Ci basta scorrere fino a SO_NODES_NUM
-                                            perchè a questo punto non ci sono ancora nodi addizionali
-                                        */
                                     for (i = 0; i < SO_NODES_NUM; i++)
                                     {
                                         new_el = malloc(sizeof(*new_el));
@@ -878,13 +828,16 @@ int main(int argc, char *argv[])
                                         new_el->p_type = 1;
                                         insert_ordered(new_el); /* insert node on budgetlist */
                                     }
+                                    /****************************************************/
+                                    /****************************************************/
 
                                     /************** END OF INITIALIZATION OF BUDGETLIST **************/
                                     /*****************************************************************/
 
-                                    /* Devo ancora lavorare su nodesList, faccio dopo la UNLOCK della zona critica */
+                                    /* Still have to work on nodesList, I do after the UNLOCK of the critical zone */
 
-                                    /**** Friends estraction ***/
+                                    /*****  Friends estraction   *****/
+                                    /*********************************/
                                     printf("[MASTER]: extracting friends for nodes...\n");
                                     for (i = 0; i < SO_NODES_NUM; i++)
                                     {
@@ -903,6 +856,7 @@ int main(int argc, char *argv[])
                                         }
                                     }
 
+                                    /* Now UNLOCK of the critical zone */
                                     /* we enter the critical section for the noNodeSegReadersPtr variabile */
                                     sops[0].sem_num = 0;
                                     sops[0].sem_op = -1;
@@ -933,9 +887,9 @@ int main(int argc, char *argv[])
                                         safeErrorPrint("[MASTER]: failed to release nodeList semaphore after reading operation. Error: ", __LINE__);
                                         endOfSimulation(-1);
                                     }
+                                    /*****  End of Friends estraction   *****/
+                                    /****************************************/
 
-                                    /*sops[0].sem_op = -1;
-                                    semop(fairStartSem, &sops[0], 1);*/
                                     printf("[MASTER]: about to start simulation...\n");
                                     sops[0].sem_op = -1;
                                     sops[0].sem_num = 0;
@@ -944,17 +898,13 @@ int main(int argc, char *argv[])
 
                                     /* master lifecycle*/
                                     printf("**** [MASTER]: starting lifecycle... ****\n");
-                                    /*sleep(10);*/ /*CORREGGERE*/
                                     while (1 && child_pid)
                                     {
+                                        /* checking if register's partitions are full */
                                         printf("[MASTER]: checking if register's partitions are full...\n");
                                         fullRegister = TRUE;
                                         for (i = 0; i < REG_PARTITION_COUNT && fullRegister; i++)
                                         {
-                                            /*
-                                                printf("[MASTER]: number of blocks is %d\n", regPtrs[i]->nBlocks);
-                                                printf("[MASTER]: Max size %d\n", REG_PARTITION_SIZE);*/
-                                            /*sleep(5);*/
                                             if (regPtrs[i]->nBlocks < REG_PARTITION_SIZE)
                                                 fullRegister = FALSE;
                                         }
@@ -967,17 +917,6 @@ int main(int argc, char *argv[])
                                             endOfSimulation(SIGUSR1);
                                         }
 
-                                        /*
-                                                L'informazione memorizzata nelle righe successive è memorizzata
-                                                in noEffectiveUsers e noEffectiveNodes, manutenute dal SO.
-                                                Questo, oltre a servire per altri scopi, accorcia il ciclo di vita
-                                            */
-                                        /**** COUNT NUMBER OF ACTIVE NODE AND USER PROCESSES ****/
-                                        /********************************************************/
-
-                                        /**** END OF COUNT NUMBER OF ACTIVE NODE AND USER PROCESSES ****/
-                                        /***************************************************************/
-
                                         /**** CYCLE THAT UPDATES BUDGETLIST OF PROCESSES BEFORE PRINTING IT ****/
                                         /***********************************************************************/
 
@@ -988,7 +927,6 @@ int main(int argc, char *argv[])
                                         {
                                             /* setting options for getting access to i-th partition of register */
 
-                                            /* NUOVO ACCESSO A SEMAFORO IN LETTURA */
                                             /* we enter the critical section for the noReadersPartitions variabile of i-th partition */
                                             sops[0].sem_num = i;
                                             sops[0].sem_op = -1;
@@ -997,9 +935,9 @@ int main(int argc, char *argv[])
                                                 snprintf(aus, 199, "[MASTER]: failed to reserve read semaphore for %d-th partition. Error: ", i);
                                                 unsafeErrorPrint(aus, __LINE__);
                                                 /*
-                                                        Computing the budget is a critical operation, so we end the simulation
-                                                        in case of error
-                                                    */
+                                                 *Computing the budget is a critical operation, so we end the simulation
+                                                 *in case of error
+                                                 */
                                                 endOfSimulation(-1);
                                             }
                                             else
@@ -1045,34 +983,33 @@ int main(int argc, char *argv[])
                                                         unsafeErrorPrint(aus, __LINE__);
                                                         endOfSimulation(-1);
                                                     }
-                                                    /*
-                                                            CORREGGERE: togliere in debug
-                                                        */
                                                     printf("[MASTER]: gained access to %d-th partition of register\n", i);
 
-                                                    /* inizializzo l'indice al blocco in cui mi ero fermato allo scorso ciclo */
+                                                    /* Initialize the index to the block where I stopped in the last loop */
                                                     ind_block = prev_read_nblock[i];
 
-                                                    /* ciclo di scorrimento dei blocchi della i-esima partizione */
+                                                    /*scrolling cycle of the blocks of the i - th partition */
                                                     while (ind_block < regPtrs[i]->nBlocks)
                                                     {
-                                                        /* restituisce il blocco di indice ind_block */
+                                                        /* returns the index block ind_block */
                                                         block = regPtrs[i]->blockList[ind_block];
                                                         ind_tr_in_block = 0;
                                                         bud_update_attempts = 0; /* reset attempts */
 
-                                                        /* scorro la lista di transizioni del blocco di indice ind_block */
+                                                        /* Scroll through the list of transitions of the index block ind_block */
                                                         while (ind_tr_in_block < SO_BLOCK_SIZE)
                                                         {
-                                                            trans = block.transList[ind_tr_in_block]; /* restituisce la transazione di indice ind_tr_in_block */
+                                                            /* returns the index transaction ind_tr_in_block */
+                                                            trans = block.transList[ind_tr_in_block];
 
-                                                            ct_updates = 0; /* conta il numero di aggiornamenti di budget fatti per la transazione (totale 2, uno per sender e uno per receiver) */
+                                                            /* counts the number of budget updates made for the transaction (total 2, one for sender and one for receiver) */
+                                                            ct_updates = 0;
                                                             if (trans.sender == -1)
                                                             {
                                                                 ct_updates++;
                                                                 /*
-                                                                 * se il sender è -1, rappresenta transazione di pagamento reward del nodo,
-                                                                 * quindi non bisogna aggiornare il budget del sender, ma solo del receiver.
+                                                                 * if the sender is -1, it represents the node's reward payment transaction,
+                                                                 * therefore you do not need to update the budget of the sender, but only of the receiver.
                                                                  */
                                                             }
 
@@ -1086,34 +1023,6 @@ int main(int argc, char *argv[])
                                                             if (update_budget(trans.receiver, trans.amountSend) == 0)
                                                                 ct_updates++;
 
-#if 0
-                                                            for(el_list = bud_list; el_list != NULL; el_list = el_list->next)
-                                                            {
-                                                                /* guardo sender --> devo decrementare di amountSend il suo budget */
-                                                                /* se il sender è -1, non si entrerà mai nel ramo then (???) */
-                                                                if(trans.sender == el_list->proc_pid)
-                                                                {
-                                                                    /* aggiorno il budget */
-                                                                    el_list->budget -= trans.amountSend;
-                                                                    ct_updates++;
-                                                                }
-
-                                                                /* guardo receiver --> devo incrementare di amountSend il suo budget */
-                                                                if(trans.receiver == el_list->proc_pid)
-                                                                {
-                                                                    /* aggiorno il budget */
-                                                                    el_list->budget += trans.amountSend;
-                                                                    ct_updates++;
-                                                                }
-
-                                                                /* 
-                                                                * condizione di terminazione del ciclo, per velocizzare (non serve controllare il resto 
-                                                                * degli elementi della lista perché ho già aggiornato il budget di sender e receiver della corrente transazione) 
-                                                                */
-                                                                if(ct_updates == 2)
-                                                                    break;
-                                                            }
-#endif
                                                             /* if we have done two updates, we can switch to next block, otherwise we stay on this */
                                                             if (ct_updates == 2)
                                                             {
@@ -1132,9 +1041,9 @@ int main(int argc, char *argv[])
                                                         ind_block++;
                                                     }
 
-                                                    prev_read_nblock[i] = ind_block; /* memorizzo il blocco a cui mi sono fermato */
+                                                    /* Memorize the block I stopped at */
+                                                    prev_read_nblock[i] = ind_block;
 
-                                                    /* NUOVO ACCESSO A SEMAFORO IN LETTURA */
                                                     /* we enter the critical section for the noReadersPartitions variabile of i-th partition */
                                                     sops[0].sem_num = i;
                                                     sops[0].sem_op = -1;
@@ -1150,7 +1059,7 @@ int main(int argc, char *argv[])
                                                         if ((*noReadersPartitionsPtrs[i]) == 0)
                                                         {
                                                             sops[0].sem_num = i;
-                                                            sops[0].sem_op = 1; /* controllare se giusto!!! */
+                                                            sops[0].sem_op = 1;
                                                             if (semop(wrPartSem, &sops[0], 1) == -1)
                                                             {
                                                                 snprintf(aus, 199, "[MASTER]: failed to reserve write semaphore for %d-th partition. Error: ", i);
@@ -1177,11 +1086,6 @@ int main(int argc, char *argv[])
 
                                         /**** PRINT BUDGET OF EVERY PROCESS ****/
                                         /***************************************/
-                                        /*
-                                                CORREGGERE: Qui si controllava noEffective, ma il budget
-                                                è da stamapre anche per i processi terminati
-                                            */
-
                                         sops[0].sem_num = 0;
                                         sops[0].sem_op = -1;
                                         if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
@@ -1228,39 +1132,15 @@ int main(int argc, char *argv[])
 
                                             /* printing minimum budget in budgetlist - we print all processes' budget that is minimum */
                                             /*
-                                                    Here we take advantage of the sorted budget list: finding the minimum budget
-                                                    is just a matter of checking if it's equal tot that on top of the list
-                                                */
-                                            /*el_list = bud_list_head;
-                                            while (el_list != NULL && el_list->budget == bud_list_head->budget)
-                                            {
-                                                if (el_list->p_type) */
-                                            /* Budget of node process */ /*
-                          printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-                      else */ /* Budget of user process */               /*
-                                          printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-              
-                                      el_list = el_list->next;
-                                  }*/
+                                             *Here we take advantage of the sorted budget list: finding the minimum budget
+                                             *is just a matter of checking if it's equal tot that on top of the list
+                                             */
 
                                             /* Printing budget of process with minimum budget */
                                             if (bud_list_head->p_type) /* Budget of node process */
                                                 printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_head->proc_pid, bud_list_head->budget);
                                             else /* Budget of user process */
                                                 printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_head->proc_pid, bud_list_head->budget);
-
-                                            /* printing maximum budget in budgetlist - we print all processes' budget that is maximum */
-                                            /*el_list = bud_list_tail;
-                                            while (el_list != NULL && el_list->budget == bud_list_tail->budget)
-                                            {
-                                                if (el_list->p_type) */
-                                            /* Budget of node process */ /*
-                          printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-                      else */ /* Budget of user process */               /*
-                                          printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
-              
-                                      el_list = el_list->prev;
-                                  }*/
 
                                             /* Printing budget of process with maximum budget */
                                             if (bud_list_tail->p_type) /* Budget of node process */
@@ -1269,30 +1149,30 @@ int main(int argc, char *argv[])
                                                 printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_tail->proc_pid, bud_list_tail->budget);
                                         }
 
+                                        /* Printing number of active nodes and users */
                                         printf("[MASTER]: Number of active nodes: %ld\n", noEffectiveNodes);
                                         printf("[MASTER]: Number of active users: %ld\n", noEffectiveUsers);
 
                                         /**** END OF PRINT BUDGET OF EVERY PROCESS ****/
                                         /**********************************************/
 
+                                        /* Checks if there are node creation requests */
                                         printf("[MASTER]: checking if there are node creation requests to be served...\n");
                                         checkNodeCreationRequests();
 
                                         /**** USER TERMINATION CHECK ****/
                                         /********************************/
-
                                         /* Check if a user process has terminated to update the usersList */
-                                        /*noUserTerminated = 0;*/ /* resetting user terminated counter */
                                         noAttemptsCheckUserTerm = 0;
 
                                         while (noAttemptsCheckUserTerm < NO_ATTEMPTS_CHECK_USER_TERMINATION && msgrcv(procQueue, &msg_from_user, sizeof(ProcQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                         {
 
                                             noAttemptsCheckUserTerm++;
-                                            /* come dimensione specifichiamo sizeof(msg_from_user)-sizeof(long) perché bisogna specificare la dimensione del testo, non dell'intera struttura */
-                                            /* come mtype prendiamo i messaggi destinati al Master, cioè il suo pid (prende il primo messaggio con quel mtype) */
+                                            /* as size we specify sizeof (msg_from_user) -sizeof (long) because you have to specify the size of the text, not the whole structure */
+                                            /* as mtype we take the messages destined to the Master, that is its pid (it takes the first message with that mtype) */
 
-                                            /* in questo caso cerchiamo i messaggi con msgContent TERMINATEDUSER */
+                                            /* in this case we look for messages with msgContent TERMINATEDUSER */
                                             if (msg_from_user.msgContent == TERMINATEDUSER)
                                             {
                                                 /* we enter the critical section for the usersList */
@@ -1331,11 +1211,6 @@ int main(int argc, char *argv[])
                                                     if (semop(userListSem, sops, 2) == -1)
                                                     {
                                                         safeErrorPrint("[MASTER]: failed to release usersList semaphore for writing operation. Error: ", __LINE__);
-                                                        /*
-                                                                CORREGGERE: terminiamo la simulazione??
-                                                                È la soluzione più sensata, perchè il rischio è quello di bloccare tutti gli altri processi
-                                                                in attesa su questa lista
-                                                            */
                                                         endOfSimulation(-1);
                                                     }
                                                     else
@@ -1360,16 +1235,6 @@ int main(int argc, char *argv[])
                                         if (errno != ENOMSG)
                                         {
                                             unsafeErrorPrint("[MASTER]: failed to retrieve user termination messages from global queue. Error: ", __LINE__);
-                                            /*
-                                             * DEVO FARE EXIT?????
-                                             * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
-                                             * è necessario fare la exit, ma se si verifica un errore a tutti i cicli non è possibile
-                                             * leggere messaggi dalla coda, quindi si finisce con il non creare un nuovo nodo, non processare
-                                             * alcune transazioni e si può riempire la coda globale, rischiando di mandare in wait tutti i
-                                             * restanti processi nodi e utenti. Quindi sarebbe opportuno fare exit appena si verifica un errore
-                                             * oppure utilizzare un contatore (occorre stabilire una soglia di ripetizione dell'errore). Per
-                                             * ora lo lasciamo.
-                                             */
                                             endOfSimulation(-1);
                                         }
 
@@ -1417,11 +1282,6 @@ int main(int argc, char *argv[])
                                                     if (semop(nodeListSem, sops, 2) == -1)
                                                     {
                                                         safeErrorPrint("[MASTER]: failed to release nodeslist semaphore for writing operation. Error: ", __LINE__);
-                                                        /*
-                                                                CORREGGERE: terminiamo la simulazione??
-                                                                È la soluzione più sensata, perchè il rischio è quello di bloccare tutti gli altri processi
-                                                                in attesa su questa lista
-                                                            */
                                                         endOfSimulation(-1);
                                                     }
                                                     else
@@ -1446,23 +1306,13 @@ int main(int argc, char *argv[])
                                         if (errno != ENOMSG)
                                         {
                                             unsafeErrorPrint("[MASTER]: failed to retrieve node termination messages from global queue. Error: ", __LINE__);
-                                            /*
-                                             * DEVO FARE EXIT?????
-                                             * Dipende, perché se è un errore momentaneo che al prossimo ciclo non riaccade, allora non
-                                             * è necessario fare la exit, ma se si verifica un errore a tutti i cicli non è possibile
-                                             * leggere messaggi dalla coda, quindi si finisce con il non creare un nuovo nodo, non processare
-                                             * alcune transazioni e si può riempire la coda globale, rischiando di mandare in wait tutti i
-                                             * restanti processi nodi e utenti. Quindi sarebbe opportuno fare exit appena si verifica un errore
-                                             * oppure utilizzare un contatore (occorre stabilire una soglia di ripetizione dell'errore). Per
-                                             * ora lo lasciamo.
-                                             */
                                             endOfSimulation(-1);
                                         }
 
                                         /**** END OF NODE TERMINATION CHECK ****/
                                         /***************************************/
 
-                                        printf("--------------- END OF CYCLE ---------------\n"); /* for debug purpose */
+                                        printf("--------------- END OF CYCLE ---------------\n");
 
                                         if (noEffectiveUsers == 0)
                                         {
@@ -1486,19 +1336,13 @@ int main(int argc, char *argv[])
         }
     }
 
-    /* POSTCONDIZIONE: all'esecuzione di questa system call
-        l'handler di fine simulazione è già stato eseguito*/
-
-    /* freeing dynamically allocated space */
-    /*free(extractedFriendsIndex);
-    free(aus);*/
-
     exit(exitCode);
 }
 
-/***** Function that assigns the values ​​of the environment *****/
-/***** variables to the global variables defined above     *****/
-/***************************************************************/
+/**
+ * @brief Function that assigns the values ​​of the environment variables to the global variables defined above.
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean assignEnvironmentVariables()
 {
     /*
@@ -1549,9 +1393,10 @@ boolean assignEnvironmentVariables()
     return TRUE;
 }
 
-/***** Function that reads the file containing the configuration    *****/
-/***** parameters to save them as environment variables             *****/
-/************************************************************************/
+/**
+ * @brief Function that reads the file containing the configuration parameters to save them as environment variables.
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean readConfigParameters()
 {
     char *filename = "params_mine.txt";
@@ -1612,11 +1457,10 @@ boolean readConfigParameters()
     return ret;
 }
 
-/************************************************************************/
-/************************************************************************/
-
-/****   Allocation of global structures    *****/
-/***********************************************/
+/**
+ * @brief Allocation of global structures.
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean allocateGlobalStructures()
 {
     regPtrs = (Register **)calloc(REG_PARTITION_COUNT, sizeof(Register *));
@@ -1636,17 +1480,13 @@ boolean allocateGlobalStructures()
 
     return TRUE;
 }
-/****************************************************************************/
-/****************************************************************************/
 
-/*****  Ipc structures allocation *****/
-/****************************************************************************/
+/**
+ * @brief Ipc structures allocation.
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean initializeIPCFacilities()
 {
-    /*
-        Sostituire la macro attuale con un meccanismo che deallochi
-        le risorse IPC in caso di errore
-    */
     union semun arg;
     unsigned short aux[REG_PARTITION_COUNT] = {1, 1, 1};
     int res = -1;
@@ -1700,24 +1540,16 @@ boolean initializeIPCFacilities()
     res = semctl(wrPartSem, 0, SETALL, arg);
     SEMCTL_TEST_ERROR(res, "[MASTER]: semctl failed while initializing register partitions writing semaphores. Error: ");
 
-    /*
-    aux[0] = SO_USERS_NUM + SO_NODES_NUM + 1;
-    aux[1] = SO_USERS_NUM + SO_NODES_NUM + 1;
-    aux[2] = SO_USERS_NUM + SO_NODES_NUM + 1;
-    arg.array = aux;*/
     res = semctl(rdPartSem, 0, SETALL, arg);
     SEMCTL_TEST_ERROR(res, "[MASTER]: semctl failed while initializing register partitions reading semaphores. Error: ");
 
     res = semctl(mutexPartSem, 0, SETALL, arg);
     SEMCTL_TEST_ERROR(res, "[MASTER]: semctl failed while initializing register partitions mutex semaphores. Error: ");
 
-    /*CORREGGERE mettendolo nel master, prima della sleep su fairStart*/
     arg.array = aux;
     res = semctl(userListSem, 0, SETALL, arg); /* mutex, read, write*/
     SEMCTL_TEST_ERROR(res, "[MASTER]: semctl failed while initializing users list semaphore. Error: ");
 
-    /*CORREGGERE*/
-    /*arg.val = 1;*/
     res = semctl(nodeListSem, 0, SETALL, arg); /* mutex, read, write*/
     SEMCTL_TEST_ERROR(res, "[MASTER]: semctl failed while initializing nodes list semaphore. Error: ");
 
@@ -1730,43 +1562,6 @@ boolean initializeIPCFacilities()
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during processes global queue creation. Error: ");
     procQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     MSG_TEST_ERROR(procQueue, "[MASTER]: msgget failed during processes global queue creation. Error: ");
-
-    /*
-    printf("[MASTER]: setting global queue size...\n");
-    if (msgctl(globalQueueId, IPC_STAT, &globalQueueStruct) == -1)
-    {
-        unsafeErrorPrint("[MASTER]: failed to retrive global queue size. Error: ", __LINE__);
-        endOfSimulation(-1);
-    }
-    else
-    {*/
-    /*
-        La dimensione è espressa in base al corpo del messaggio
-
-    globalQueueStruct.msg_qbytes = (sizeof(MsgGlobalQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
-    if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
-    {
-        unsafeErrorPrint("[MASTER]: failed to set global queue size. Error: ", __LINE__);
-        endOfSimulation(-1);
-    }*/
-    /*
-    printf("Master: dimensione coda globale: %ld\n", globalQueueStruct.msg_qbytes);
-    globalQueueStruct.msg_qbytes = 65536;
-    if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
-    {
-        unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
-        endOfSimulation(-1);
-    }*/
-    /*
-    if (sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM) < globalQueueStruct.msg_qbytes){
-        globalQueueStruct.msg_qbytes = sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM);
-        if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
-        {
-            unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
-            endOfSimulation(-1);
-        }
-    }*/
-    /*}*/
 
     /* Creation of the processes global queue*/
     key = ftok(MSGFILEPATH, NODE_CREATION_QUEUE_SEED);
@@ -1860,7 +1655,6 @@ boolean initializeIPCFacilities()
     */
     *noUserSegReadersPtr = 0;
 
-    /* AGGIUNTO DA STEFANO */
     key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during nodes list's shared variable creation. Error: ");
     noNodeSegReaders = shmget(key, sizeof(SO_NODES_NUM), IPC_CREAT | MASTERPERMITS);
@@ -1868,7 +1662,6 @@ boolean initializeIPCFacilities()
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
     TEST_SHMAT_ERROR(noNodeSegReadersPtr, "[MASTER]: failed to attach to nodes list's shared variable segment. Error: ");
     *noNodeSegReadersPtr = 0;
-    /* END */
 
     key = ftok(SHMFILEPATH, NOALLTIMESNODESSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during number of all times nodes' shared variable creation. Error: ");
@@ -1880,10 +1673,11 @@ boolean initializeIPCFacilities()
 
     return TRUE;
 }
-/****************************************************************************/
-/****************************************************************************/
 
-/* Function to frees the space dedicated to the budget list p passed as argument */
+/**
+ * @brief Function to frees the space dedicated to the budget list p passed as argument.
+ * @param p pointer to linked list budgetlist
+ */
 void budgetlist_free(budgetlist p)
 {
     if (p == NULL)
@@ -1895,9 +1689,12 @@ void budgetlist_free(budgetlist p)
         free(p);
 }
 
-/*
- * Function that inserts in the global list bud_list the node passed as
+/**
+ * @brief Function that inserts in the global list bud_list the node passed as
  * argument in an ordered way (the list is ordered in ascending order).
+ * We want to keep the list sorted to implement a more efficient
+ * budget calculation.
+ * @param new_el pointer to a new element to insert into linked list budgetlist
  */
 void insert_ordered(budgetlist new_el)
 {
@@ -1952,17 +1749,15 @@ void insert_ordered(budgetlist new_el)
     }
 }
 
-/*
- * Function that searches in the gloabl list bud_list for an element with
+/**
+ * @brief Function that searches in the gloabl list bud_list for an element with
  * proc_pid as the one passed as first argument; if it's found, upgrades its budget
  * adding the second argument, which is a positive or negative amount.
+ * @param remove_pid pid of the item to be searched for in the budgetlist.
+ * @param amount_changing positive or negative amount.
  */
 int update_budget(pid_t remove_pid, double amount_changing)
 {
-    /*
-        Dobbiamo rimuovere il nodo e poi reinserirlo
-        per mantenere la lista dei budget ordinata
-    */
     budgetlist new_el;
     budgetlist el;
     budgetlist prev;
@@ -1979,8 +1774,8 @@ int update_budget(pid_t remove_pid, double amount_changing)
 
     if (bud_list_head->proc_pid == remove_pid)
     {
-        /* se il nodo di cui aggiornare il budget è il primo della lista,
-        allora lo togliamo dalla lista (dopo lo reinseriremo) */
+        /* if the node to update the budget is the first in the list,
+         then we remove it from the list (afterwards we will reinsert it) */
         new_el = bud_list_head;
         bud_list_head = bud_list_head->next;
         bud_list_head->prev = NULL;
@@ -1988,8 +1783,8 @@ int update_budget(pid_t remove_pid, double amount_changing)
     }
     else if (bud_list_tail->proc_pid == remove_pid)
     {
-        /* se il nodo di cui aggiornare il budget è l'ultimo della lista,
-        allora lo togliamo dalla lista (dopo lo reinseriremo) */
+        /* if the node to update the budget is the last one in the list,
+         then we remove it from the list (afterwards we will reinsert it) */
         new_el = bud_list_tail;
         bud_list_tail = bud_list_tail->prev;
         bud_list_tail->next = NULL;
@@ -1997,16 +1792,16 @@ int update_budget(pid_t remove_pid, double amount_changing)
     }
     else
     {
-        /* il nodo di cui aggiornare il budget si trova a metà della lista,
-        dobbiamo cercarlo e rimuoverlo dalla lista (dopo lo reinseriremo) */
+        /* the node to update the budget is in the middle of the list,
+         we have to search for it and remove it from the list (we will re-insert it later) */
         prev = bud_list_head;
 
         for (el = bud_list_head->next; el != NULL && !found; el = el->next)
         {
             if (el->proc_pid == remove_pid)
             {
-                /* ho trovato il nodo da aggiornare, devo rimuoverlo */
-                /* devo modificare sia il riferimento al next che al prev */
+                /* I found the node to update, I need to remove it */
+                /* I have to change both the reference to next and prev */
                 prev->next = el->next;
                 (el->next)->prev = prev;
                 new_el = el;
@@ -2031,6 +1826,9 @@ int update_budget(pid_t remove_pid, double amount_changing)
     return 0;
 }
 
+/**
+ * @param sig signal that fired the handler
+ */
 void tmpHandler(int sig)
 {
     printf("ONE LAST KEKW OF PID %ld\n", (long)getpid());
@@ -2038,48 +1836,42 @@ void tmpHandler(int sig)
     exit(EXIT_SUCCESS);
 }
 
+/**
+ * @brief Function that ends the execution of the user; this can happen in three different ways,
+ * rappresented by the values that the parameter might assume.
+ * @param sig the parameters value are: 0 -> only end of execution; -1 -> end of execution and deallocation (called from error);
+ * SIGUSR1 -> end of execution and deallocation (called by signal from master)
+ */
 void endOfSimulation(int sig)
-{ /* IT MUST BE REENTRANT!!!!
-    // Notify children
-    // sends termination signal to all the processes
-    // that are part of the master's group (in this case we
-    // reach every children with just one system call).
-    // how to check if everyone was signaled (it returns true even if
-    // only one signal was sent)*/
+{
+    /*
+     *Notify children
+     *sends termination signal to all the processes
+     *that are part of the master's group (in this case we
+     *reach every children with just one system call).
+     *how to check if everyone was signaled (it returns true even if
+     *only one signal was sent)
+     */
     int i = 0, ret = -1;
     char *terminationMessage = (char *)calloc(100, sizeof(char));
     char *aus = (char *)calloc(200, sizeof(char));
     /*
-    // Contiene una exit, perchè potrebbe essere ivocato in maniera
-    // asincrona durante l'esecuzione del ciclo di vita
-    // in tal caso l'esecuzione dovrebbe terminare dopo l'esecuzione
-    // dell'handler senza eseguire il codice rimanente del ciclo di vita
-    // cosa che potrebbe anche causare degli errori
-    // per il riferimento a zone di memoria non più allocate
-    // in case of error we don't stop the whole procedure
-    // but we signal it by setting the exit code to EXIT_FAILURE*/
+     * Contains an exit, because it could be invoked in such a way
+     * asynchronous during life cycle execution
+     * in that case execution should terminate after execution
+     * of the handler without running the rest of the lifecycle code
+     * which could also cause errors
+     * for referencing areas of memory that are no longer allocated
+     * in case of error we don't stop the whole procedure
+     * but we signal it by setting the exit code to EXIT_FAILURE
+     */
     int exitCode = EXIT_SUCCESS;
     boolean done = FALSE;
 
-    /*
-    // viene inviato anche al master stesso ? Sì
-    // come assicurarsi che venga inviato a tutti?
-    // fallisce se non viene inviato a nessuno
-    // ma inviato != consegnato???*/
-    /*
-        Aggiornare tenendo conto del fatto che gli utenti potrebbero già essere terminati:
-        in tal caso il meccanismo di retry è inutile
-        Bisogna fare solo la wait senza mandare il segnale
-        In ogni caso, se non si riescono a terminare i processi dopo n tentativi deallocare comunque le facilities
-    */
-    /*printf("[MASTER]: PID %ld\n[MASTER]: parent PID %ld\n", (long int)getpid(), (long)getppid());*/
     if (terminationMessage == NULL || aus == NULL || getpid() != masterPid)
         safeErrorPrint("[MASTER]: failed to alloacate memory. Error: ", __LINE__);
     else
     {
-        /*
-            CORREGGERE: reimpostare maschera ed associazione segnaliip
-        */
         signal(SIGUSR1, SIG_IGN);
 
         printf("[MASTER]: received signal %d\n", sig);
@@ -2090,22 +1882,14 @@ void endOfSimulation(int sig)
             "[MASTER]: trying to terminate simulation...\n");
         /* error check*/
         fflush(stdout);
-        /*if (noTerminatedUsers + noTerminatedNodes <= noEffectiveNodes + noEffectiveUsers)*/
         if (noEffectiveNodes > 0 || noEffectiveUsers > 0)
         {
             /*
-                Caso in cui non tutti i processi sono terminati prima della fine della simulazione
-            */
-            /*
-                There are still active children that need
-                to be notified the end of simulation
-            */
+             *   There are still active children that need
+             *    to be notified the end of simulation
+             */
             for (i = 0; i < NO_ATTEMPS_TERM && !done; i++)
             {
-                /*
-                    Correggere; verificare se ci siano problemi
-                    derivanti dall'invio ad un processo zombie
-                */
                 if (kill(0, SIGUSR1) == -1)
                 {
                     safeErrorPrint("[MASTER]: failed to signal children for end of simulation. Error: ", __LINE__);
@@ -2120,45 +1904,29 @@ void endOfSimulation(int sig)
         }
         else
             done = TRUE;
-        /*
-            // wait for children
-            // dovremmo aspettare solo la ricezione del segnale di terminazione????
-            // mettere nell'handler
-            // dovremmo usare waitpid e teastare che i figli siano
-            // terminati correttamente ? Sarebbe complicato
-            // meglio inserire nel figlio un meccanismo che tenta più volte la stampa
-            // in caso di errore
-            // in teoria questo si sblocca solo dopo la terminazione di tutti i figli
-            // quindi ha senso fare così*/
+
         if (done)
         {
             printf(
                 "[MASTER]: waiting for children to terminate...\n");
-            /*
-                Conviene fare comunque la wait anche se tutti sono già terminati
-                in modo che non ci siano zombies
-            */
+
             while (wait(NULL) != -1)
                 ;
             if (errno == ECHILD)
             {
                 /*
-                // print report: we use the write system call: slower, but async-signal-safe
-                // Termination message composition
-                // we use only one system call for performances' sake.
-                // termination reason*/
+                 * print report: we use the write system call: slower, but async-signal-safe
+                 * Termination message composition
+                 * we use only one system call for performances' sake.
+                 * termination reason
+                 */
                 printf(
                     "[MASTER]: simulation terminated successfully. Printing report...\n");
 
-                /* Users and nodes budgets*/
-                /*printBudget();*/
+                /* Users and nodes budgets */
                 printRemainedTransactions();
 
-                /*Per la stampa degli errori non si può usare perror, perchè non è elencata* tra la funzioni signal
-                in teoria non si può usare nemmno sprintf*/
-
                 /* processes terminated before end of simulation*/
-                /*printf("Processes terminated before end of simulation: %d\n", noTerminatedUsers);*/
                 printf("Processes terminated before end of simulation: %ld\n", noTerminatedUsers);
 
                 /* Blocks in register*/
@@ -2199,53 +1967,34 @@ void endOfSimulation(int sig)
                 "[MASTER]: failed to terminate children. IPC facilties will be deallocated anyway.\n");
         }
     }
-    /* Releasing local variables' memory*/
-    /*if (terminationMessage != NULL)
-        free(terminationMessage);*/
-
-    /*
-                CORREGGERE: perchè la free va in errore ??
-                (Forse è per strcat)
-            */
-    /*if (aus != NULL)
-        free(aus);*/
     exit(exitCode);
 }
 
+/**
+ * @brief Function that deallocates the IPC facilities for the user.
+ * @param exitcode indicates whether the simulation ends successfully or not
+ * @return Returns TRUE if successfull, FALSE in case an error occurrs.
+ */
 boolean deallocateFacilities(int *exitCode)
 {
     /*
-    // Ovviamente i processi figli dovranno scollegarsi
-    // dai segmenti e chiudere i loro riferimenti alla coda
-    // ed ai semafori prima di terminare
+     * Obviously the child processes will have to disconnect
+     * from the segments and close their references to the queue
+     * and at the semaphores before ending
+     *
+     * Precondition: all child processes have disconnected from memory segments
+     * In general, all children have closed their references to IPC facilities
+     * we are sure because this procedure is called only after waiting for the termination of each child
 
-    // Precondizione: tutti i processi figli si sono scollegati dai segmenti di memoria
-    // In generale, tutti i figli hanno chiuso i loro riferimenti alle facilities IPC
-    // ne siamo certi perchè questa procedura viene richiamata solo dopo aver atteso la terminazione di ogni figlio
-
-    // Cosa fare se una delle system call usate per la deallocazione fallisce?*/
-    /*
-        L'idea è quella di implementare l'eliminazione di ogni facility in maniera indipendente
-        dalle altre (i.e. l'eliminazione della n + 1 viene effettuata anche se quella dell'n-esima è fallita)
-        ma di non implementare un meccanismo tale per cui si tenta ripetutamente di eliminare
-        la facility n-esima qualora una delle system call coinvolte fallisca
-    */
-
-    /*
-        TODO:
-            -dellocate registers partition: OK
-            -deallocate registers ids' array: OK
-            -deallocate users and nodes lists (serve fare la malloc o basta deallocare il segmento???): Ok
-            -deallocate friensd' shared memory segment: OK
-            -deallocate transaction pools' message queues: OK
-            -deallocate semaphores: Ok
-            -free dynamically allocated memory: Ok
+     * The idea is to implement the elimination of each facility independently
+     * from the others (i.e. the elimination of the n + 1 is carried out even if that of the nth has failed)
+     * but not to implement a mechanism whereby repeated attempts are made to eliminate
+     * the nth facility if one of the system calls involved fails
     */
 
     char *printMsg;
     int msgLength = 0;
     int i = 0;
-    /*TPElement *tmp;*/
 
     printMsg = (char *)calloc(200, sizeof(char));
 
@@ -2258,11 +2007,11 @@ boolean deallocateFacilities(int *exitCode)
         for (i = 0; i < REG_PARTITION_COUNT; i++)
         {
             /*
-                We don't want to display any error if the shared memory
-                segment we are trying to detach doesn't exist:
-                since no one can remove it, this case can only happen
-                when the IPC allocation procedure fails
-            */
+             * We don't want to display any error if the shared memory
+             *  segment we are trying to detach doesn't exist:
+             *   since no one can remove it, this case can only happen
+             *    when the IPC allocation procedure fails
+             */
             if (shmdt(regPtrs[i]) == -1 && errno != EINVAL)
             {
                 if (errno != EINVAL)
@@ -2352,10 +2101,6 @@ boolean deallocateFacilities(int *exitCode)
         {
             printf(
                 "[MASTER]: nodes' list memory segment successfully removed.\n");
-            /*
-                Non serve: abbiamo già deallocato il segmento di memoria condivisa
-            */
-            /*free(nodesList);*/
         }
     }
 
@@ -2403,9 +2148,6 @@ boolean deallocateFacilities(int *exitCode)
     {
         for (i = 0; i < tplLength; i++)
         {
-            /*printf("Id coda: %d\n", tpList[i].msgQId);
-            printf("Id Processo: %ld\n", tpList[i].procId);
-            fflush(stdout);*/
             if (msgctl(tpList[i].msgQId, IPC_RMID, NULL) == -1)
             {
                 if (errno != EINVAL)
@@ -2426,17 +2168,7 @@ boolean deallocateFacilities(int *exitCode)
         free(tpList);
     }
 
-    /* Deallocating process friends array*/
-    /*free(processesFriends);*/
-    /*Non serve più: ora è responsabilità del nodo
-    deallocare il suo vettore di amici valorizzato
-    con i messaggi inviati sulla coda globale
-    */
-
     /* Global queue deallocation*/
-    /*printf(
-          "[MASTER]: deallocating global processes queue...\n",
-          strlen("[MASTER]: deallocating global processes queue...\n"));*/
     printf("[MASTER]: deallocating global processes queue...\n");
     if (msgctl(procQueue, IPC_RMID, NULL) == -1)
     {
@@ -2452,10 +2184,6 @@ boolean deallocateFacilities(int *exitCode)
     else
     {
         printf("[MASTER]: global processes queue successfully removed.\n");
-        /*
-            printf(
-                  "[MASTER]: global message processes successfully removed.\n",
-                  strlen("[MASTER]: global message processes successfully removed.\n"));*/
     }
 
     printf("[MASTER]: deallocating global nodes queue...\n");
@@ -2692,15 +2420,11 @@ boolean deallocateFacilities(int *exitCode)
     return TRUE;
 }
 
+/**
+ * @brief Function that checks for node creation requests.
+ */
 void checkNodeCreationRequests()
 {
-    /*
-        CORREGGERE: vogliamo fare un ciclo??
-        Anche in questo caso secondo me è meglio di no
-        perchè così è possibile ripartire le chiamante in
-        modo uniforme tra le varie iterazioni del ciclo
-        di vita del master
-    */
     NodeCreationQueue ausNode;
     TransQueue ausTrans;
     ProcQueue ausProc;
@@ -2720,19 +2444,14 @@ void checkNodeCreationRequests()
 
     printMsg = (char *)calloc(200, sizeof(char));
 
-    /* Siamo passati dall'if al while per aumentare il numero di richieste servite ad ogni ciclo del master */
     while (attempts < NO_ATTEMPTS_NEW_NODE_REQUESTS && msgrcv(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1)
     {
 
         /* Increasing the number of attempts to check for new node requests*/
         attempts++;
 
-        /*
-            Su questa coda l'unico tipo di messaggio per il master è NEWNODE
-        */
         if (ausNode.msgContent == NEWNODE)
         {
-
             /* entering critical section for number of all times nodes' shared variable */
             sops[0].sem_num = 0;
             sops[0].sem_op = -1;
@@ -2760,7 +2479,7 @@ void checkNodeCreationRequests()
                     endOfSimulation(-1);
                 }
 
-                /* imposto il semaforo per far aspettare a partire il nuovo nodo */
+                /* Set the traffic light to make the new node wait to start */
                 arg.val = 1;
                 semctl(fairStartSem, 0, SETVAL, arg);
                 if (fairStartSem == -1)
@@ -2775,9 +2494,6 @@ void checkNodeCreationRequests()
                         sops[0].sem_flg = 0;
                         if (semop(fairStartSem, &sops[0], 1) == -1)
                         {
-                            /*
-                                See comment above (**)
-                            */
                             snprintf(printMsg, 199, "[NODE %5ld]: failed to wait for zero on start semaphore. Error: ", (long)getpid());
                             safeErrorPrint(printMsg, __LINE__);
                             exit(EXIT_FAILURE);
@@ -2790,17 +2506,6 @@ void checkNodeCreationRequests()
                     }
                     else if (procPid > 0)
                     {
-                        /*
-                            CORREGERE: Queste operazioni andrebber ofatte nel master??
-                            Il punto è che si manipolano dati normalmente scrivibili solo dal master
-                        */
-                        /*
-                        1) Creazione tp: Ok
-                        2) aggiunta messaggio: Ok
-                        3) Assegnazione amici: Ok
-                        4) Eseguire codice nodo (opportunamente modificato): Ok
-                        */
-
                         sops[0].sem_flg = 0;
                         sops[0].sem_num = 1;
                         sops[0].sem_op = -1;
@@ -2848,7 +2553,6 @@ void checkNodeCreationRequests()
                             tpList[tplLength - 1].procId = (long)procPid;
                             tpList[tplLength - 1].msgQId = tpId;
 
-                            /* Questo controllo non è quello che si fa già sopra ? */
                             if (tpList[tplLength - 1].msgQId == -1)
                             {
                                 safeErrorPrint("[MASTER]: failed to create the message queue for the transaction pool of the new node process. Error: ", __LINE__);
@@ -2863,9 +2567,9 @@ void checkNodeCreationRequests()
                             else
                             {
                                 /*
-                                    tpStruct.msg_qbytes was set to the maximum possible value
-                                    during the msgget
-                                */
+                                 *   tpStruct.msg_qbytes was set to the maximum possible value
+                                 *    during the msgget
+                                 */
 
                                 if (tpStruct.msg_qbytes < (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
                                 {
@@ -2880,9 +2584,9 @@ void checkNodeCreationRequests()
                                     endOfSimulation(-1);
                                 }
                                 /*
-                                    Se la dimensione è maggiore della dimensione massima allora
-                                    non facciamo alcuna modifica
-                                */
+                                 *  If the size is larger than the maximum size then
+                                 *   we do not make any changes
+                                 */
                             }
 
                             firstTrans.mtype = (long)procPid;
@@ -2899,7 +2603,6 @@ void checkNodeCreationRequests()
 
                                 if (msgsnd(transQueue, &ausTrans, sizeof(TransQueue) - sizeof(long), 0) == -1)
                                 {
-                                    /* Che facciamo in questo caso ???*/
                                     safeErrorPrint("[MASTER]: failed to inform sender of transaction that the transaction wasn't processed. Error: ", __LINE__);
                                 }
                             }
@@ -2922,7 +2625,6 @@ void checkNodeCreationRequests()
 
                                         if (msgsnd(transQueue, &ausTrans, sizeof(TransQueue) - sizeof(long), 0) == -1)
                                         {
-                                            /* Che facciamo in questo caso ???*/
                                             safeErrorPrint("[MASTER]: failed to inform sender of transaction that the transaction wasn't processed. Error: ", __LINE__);
                                         }
                                     }
@@ -2930,13 +2632,6 @@ void checkNodeCreationRequests()
                             }
                         }
 
-                        /*
-                        1) Chiedere ad altri nodi
-                        di aggiungere il nuovo processo agli amici:Ok
-                */
-                        /*
-                    CORREGGERE: è giusto passare noEffectiveNodes????
-                */
                         sops[0].sem_flg = 0;
                         sops[0].sem_num = 1;
                         sops[0].sem_op = -1;
@@ -2982,10 +2677,6 @@ void checkNodeCreationRequests()
                             ausNode.mtype = nodesList[extractedFriendsIndex[j]].procId;
                             if (msgsnd(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), 0) == -1)
                             {
-                                /*
-                                            CORREGGERE: possiamo semplicemente segnalare l'errore senza fare nulla?
-                                            Io direi di sì, non mi sembra che gestioni più complicate siano utili
-                                        */
                                 safeErrorPrint("[MASTER]: failed to ask a node to add the new process to its friends' list. Error: ", __LINE__);
                             }
                         }
@@ -3021,7 +2712,7 @@ void checkNodeCreationRequests()
                             endOfSimulation(-1);
                         }
 
-                        /* faccio partire il nodo appena creato */
+                        /* Starts the node just created*/
                         sops[0].sem_op = -1;
                         sops[0].sem_num = 0;
                         sops[0].sem_flg = 0;
@@ -3036,16 +2727,6 @@ void checkNodeCreationRequests()
                     else
                     {
                         safeErrorPrint("[MASTER]: no more resources for new node. Simulation will be terminated.", __LINE__);
-                        /*
-                    Sono finite le risorse, cosa facciamo?
-                        1) Segnaliamo stampando la cosa a video e basta (del resto
-                        nodi ed utenti esistenti possono continuare, però una transazione viene scartata
-                        quindi sarebbe carino segnalarlo al sender)
-                        2) Terminiamo la simulazione: mi sembra eccessivo
-
-                        Io propenderei per la prima soluzione, cercando anche di segnalare il fallimento
-                        al sender
-                */
                         endOfSimulation(-1);
                     }
                 }
@@ -3062,19 +2743,11 @@ void checkNodeCreationRequests()
                 }
 
                 safeErrorPrint("[MASTER]: no space left for storing new node information. Simulation will be terminated.", __LINE__);
-                /*
-                    CORREGGERE: Mettere qui la segnalazione di fine simulazione
-                    oppure quella di fallimento transazione
-                */
                 endOfSimulation(-1);
             }
         }
         else
         {
-            /*write(STDOUT_FILENO,
-                  "[MASTER]: no node creation requests to be served.\n",
-                  strlen("[MASTER]: no node creation requests to be served.\n"));*/
-
             /* Reinserting the message that we have consumed from the global queue */
             if (msgsnd(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), 0) == -1)
             {
@@ -3095,6 +2768,9 @@ void checkNodeCreationRequests()
             "[MASTER]: no more node creation requests to be served.\n");
 }
 
+/**
+ * @brief Function that print remained transactions.
+ */
 void printRemainedTransactions()
 {
     int i = 0;
@@ -3128,6 +2804,49 @@ void printRemainedTransactions()
             printf("[MASTER]: no transactions left.\n");
     }
 }
+
+/**
+ * @brief Upload the location to extractedFriendsIndex in friends' nodesList
+ * (doing so extracts friends)
+ * @param k index of the process that cannot be extracted, i.e. the one calling the function.
+ */
+void estrai(int k)
+{
+    int x, count, n, i = 0;
+
+    for (count = 0; count < SO_FRIENDS_NUM; count++)
+    {
+        do
+        {
+            clock_gettime(CLOCK_REALTIME, &now);
+            n = now.tv_nsec % maxNumNode;
+        } while (k == n);
+        extractedFriendsIndex[count] = n;
+    }
+
+    while (i < SO_FRIENDS_NUM)
+    {
+        int r;
+        do
+        {
+            clock_gettime(CLOCK_REALTIME, &now);
+            r = now.tv_nsec % SO_NODES_NUM;
+        } while (r == k);
+
+        for (x = 0; x < i; x++)
+        {
+            if (extractedFriendsIndex[x] == r)
+            {
+                break;
+            }
+        }
+        if (x == i)
+        {
+            extractedFriendsIndex[i++] = r;
+        }
+    }
+}
+
 /**
  * @brief Function that catches any segmentation fault error during execution and
  * avoids brutal termination.
