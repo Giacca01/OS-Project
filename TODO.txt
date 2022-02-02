@@ -82,7 +82,13 @@ boolean readConfigParameters()
 16) Risolvere problema abort
 17) Testare configurazione 2
 18) Capire perchè l'utente si blocchi poco prima di terminare: perchè la coda globale è piena
-19) Capire perchè ci sia la double free
+19) Capire perchè ci sia la double free: Ok ??
 20) Capire perchè il ctrl + c non funzioni con tanti processi
 21) Sistemare stampa transazioni rimanenti
-22) Capire perchè i nuovi nodi non facciano nulla
+22) Capire perchè i nuovi nodi non facciano nulla: a quanto pare funzionino
+23) Rimettere controllo coda globale e testare cosa viene fuori
+24) Test: Ok
+25) Togliere write nodo e user
+26) Testare segnale generazione transazione 
+27) SIstemare makefile
+28) Vedere se con ctrl+c rimane una coda da eliminare
