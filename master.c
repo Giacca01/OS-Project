@@ -12,7 +12,7 @@
 #define NO_ATTEMPS_TERM 3                    /* Maximum number of attemps to terminate the simulation*/
 #define MAX_PRINT_PROCESSES 15               /* Maximum number of processes of which we show budget, if noEffectiveNodes + noEffectiveUsers > MAX_PRINT_PROCESSES we only print max and min budget */
 #define NO_ATTEMPTS_UPDATE_BUDGET 3          /* Number of attempts to update budget reading a block on register */
-#define NO_ATTEMPTS_NEW_NODE_REQUESTS 10     /* Number of attempts to check for new node requests */
+#define NO_ATTEMPTS_NEW_NODE_REQUESTS 5      /* Number of attempts to check for new node requests */
 #define NO_ATTEMPTS_CHECK_USER_TERMINATION 5 /* Number of attempts to check for user terminations */
 #define NO_ATTEMPTS_CHECK_NODE_TERMINATION 5 /* Number of attempts to check for node terminations */
 /**** End of Constants definition ****/
@@ -103,8 +103,8 @@ int *noUserSegReadersPtr = NULL;
 /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write nodes list */
 int nodeListSem = -1;
 /*
- * Serve una variabile per contare il lettori perchè per estrarre un nodo a cui mandare la
- * transazione da processare bisogna leggere la lista dei nodi.
+ * We need a variable to count the number of readers because to extract a node which
+ * to send the transaction to process we need to read the nodes' list.
  */
 
 /* Id of the shared memory segment that contains the variable used to syncronize readers and writers access to nodes list */
@@ -126,10 +126,10 @@ int *noAllTimesNodesPtr = NULL;
     We use a long int variable to handle an outstanding number
     of child processes
 */
-/* NUmber of users that terminated before end of simulation*/
+/* Number of users that terminated before end of simulation*/
 long noTerminatedUsers = 0;
 
-/* NUmber of processes that terminated before end of simulation*/
+/* Number of processes that terminated before end of simulation*/
 long noTerminatedNodes = 0;
 
 /* Holds the effective number of nodes */
@@ -167,13 +167,13 @@ typedef struct proc_budget
 } proc_budget;
 
 /*
-    The idea is that the ledger is immutable and therefore is not
-    need to go through it all every time.
-    To improve the efficiency of budget calculation
-    we can just update the budgets on the basis
-    of transactions entered in the ledger only
-    between updates
-*/
+ * The idea is that the register is immutable and therefore is not
+ * need to go through it all every time.
+ * To improve the efficiency of budget calculation
+ * we can just update the budgets on the basis
+ * of transactions entered in the register only
+ * between updates
+ */
 /* linked list of budgets for every user and node process */
 typedef proc_budget *budgetlist;
 
@@ -205,6 +205,8 @@ budgetlist bud_list_tail = NULL;
 long masterPid = -1;
 /* keep track if simulation is terminated */
 boolean simTerminated = FALSE;
+/* keeps track of segmentation fault catched by handler */
+int segFaultHappened = 0;
 #pragma endregion
 /*** END GLOBAL VARIABLES ***/
 
@@ -307,6 +309,9 @@ void segmentationFaultHandler(int);
 /*** MAIN FUNCTION ***/
 int main(int argc, char *argv[])
 {
+    /* ONLY FOR DEBUG!!!!*/
+    int fdReport;
+
     pid_t child_pid;
     struct sembuf sops[3];
     sigset_t set;
@@ -354,7 +359,8 @@ int main(int argc, char *argv[])
     /* Number of user/node attempts of termination */
     int noAttemptsCheckUserTerm = 0;
     int noAttemptsCheckNodeTerm = 0;
-
+    
+    /* initializing print string message */
     char *aus = NULL;
 
     /* Set common semaphore options*/
@@ -629,6 +635,10 @@ int main(int argc, char *argv[])
                                                 unsafeErrorPrint("[MASTER]: failed to initialize process' transaction pool. Error: ", __LINE__);
                                                 endOfSimulation(-1);
                                             }
+
+                                            fdReport = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+                                            dprintf(fdReport, "q;%d\n", tpList[i].msgQId);
+                                            close(fdReport);
 
                                             if (msgctl(tpList[i].msgQId, IPC_STAT, &tpStruct) == -1)
                                             {
@@ -1135,7 +1145,7 @@ int main(int argc, char *argv[])
                                             /* printing minimum budget in budgetlist - we print all processes' budget that is minimum */
                                             /*
                                              *Here we take advantage of the sorted budget list: finding the minimum budget
-                                             *is just a matter of checking if it's equal tot that on top of the list
+                                             *is just a matter of checking if it's equal to that on top of the list
                                              */
 
                                             /* Printing budget of process with minimum budget */
@@ -1169,6 +1179,9 @@ int main(int argc, char *argv[])
 
                                         while (noAttemptsCheckUserTerm < NO_ATTEMPTS_CHECK_USER_TERMINATION && msgrcv(procQueue, &msg_from_user, sizeof(ProcQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                         {
+                                            fdReport = open("master_msgrcv_content.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+                                            dprintf(fdReport, "MASTER: in user termination check msgContent is %d\n", msg_from_user.msgContent);
+                                            close(fdReport);
 
                                             noAttemptsCheckUserTerm++;
                                             /* as size we specify sizeof (msg_from_user) -sizeof (long) because you have to specify the size of the text, not the whole structure */
@@ -1250,6 +1263,10 @@ int main(int argc, char *argv[])
                                         /* Check if a node process has terminated to update the nodes list */
                                         while (noAttemptsCheckNodeTerm < NO_ATTEMPTS_CHECK_NODE_TERMINATION && msgrcv(procQueue, &msg_from_node, sizeof(ProcQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                         {
+                                            fdReport = open("master_msgrcv_content.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+                                            dprintf(fdReport, "MASTER: in node termination check msgContent is %d\n", msg_from_user.msgContent);
+                                            close(fdReport);
+
                                             noAttemptsCheckNodeTerm++;
 
                                             if (msg_from_node.msgContent == TERMINATEDNODE)
@@ -1401,7 +1418,7 @@ boolean assignEnvironmentVariables()
  */
 boolean readConfigParameters()
 {
-    char *filename = "params_mine.txt";
+    char *filename = "params_3.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1493,6 +1510,7 @@ boolean initializeIPCFacilities()
     unsigned short aux[REG_PARTITION_COUNT] = {1, 1, 1};
     int res = -1;
     struct msqid_ds globalQueueStruct;
+    int fd;
 
     /* Initialization of semaphores*/
     key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
@@ -1501,35 +1519,63 @@ boolean initializeIPCFacilities()
     fairStartSem = semget(key, 1, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
     SEM_TEST_ERROR(fairStartSem, "[MASTER]: semget failed during fair start semaphore creation. Error: ");
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "s;%d\n", fairStartSem);
+    close(fd);
+
     key = ftok(SEMFILEPATH, WRPARTSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during partitions writing semaphores creation. Error: ");
     wrPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
     SEM_TEST_ERROR(wrPartSem, "[MASTER]: semget failed during partitions writing semaphores creation. Error: ");
+
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "s;%d\n", wrPartSem);
+    close(fd);
 
     key = ftok(SEMFILEPATH, RDPARTSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during partitions reading semaphores creation. Error: ");
     rdPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
     SEM_TEST_ERROR(rdPartSem, "[MASTER]: semget failed during partitions reading semaphores creation. Error: ");
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "s;%d\n", rdPartSem);
+    close(fd);
+
     key = ftok(SEMFILEPATH, USERLISTSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during user list semaphore creation. Error: ");
     userListSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
     SEM_TEST_ERROR(userListSem, "[MASTER]: semget failed during user list semaphore creation. Error: ");
+
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "s;%d\n", userListSem);
+    close(fd);
 
     key = ftok(SEMFILEPATH, NODESLISTSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during nodes list semaphore creation. Error: ");
     nodeListSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
     SEM_TEST_ERROR(nodeListSem, "[MASTER]: semget failed during nodes list semaphore creation. Error: ");
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "s;%d\n", nodeListSem);
+    close(fd);
+
     key = ftok(SEMFILEPATH, PARTMUTEXSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during partitions mutex semaphores creation. Error: ");
     mutexPartSem = semget(key, 3, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
     SEM_TEST_ERROR(mutexPartSem, "[MASTER]: semget failed during partitions mutex semaphores creation. Error: ");
+    
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "s;%d\n", mutexPartSem);
+    close(fd);
 
     key = ftok(SEMFILEPATH, NOALLTIMESNODESSEMSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during number of all times nodes' shared variable semaphore creation. Error: ");
     noAllTimesNodesSem = semget(key, 1, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
     SEM_TEST_ERROR(noAllTimesNodesSem, "[MASTER]: semget failed during number of all times nodes' shared variable semaphore creation. Error: ");
+
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "s;%d\n", noAllTimesNodesSem);
+    close(fd);
 
     /*
         Each process will subtract one by waiting on the sempahore
@@ -1589,6 +1635,10 @@ boolean initializeIPCFacilities()
     nodeCreationQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     MSG_TEST_ERROR(nodeCreationQueue, "[MASTER]: msgget failed during nodes global queue creation. Error: ");
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "q;%d\n", nodeCreationQueue);
+    close(fd);
+    
     printf("[MASTER]: setting nodes global queue size...\n");
     if (msgctl(nodeCreationQueue, IPC_STAT, &globalQueueStruct) == -1)
     {
@@ -1612,6 +1662,9 @@ boolean initializeIPCFacilities()
     transQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     MSG_TEST_ERROR(transQueue, "[MASTER]: msgget failed during transactions global queue creation. Error: ");
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "q;%d\n", transQueue);
+    close(fd);
     
     printf("[MASTER]: setting transactions global queue size...\n");
     if (msgctl(transQueue, IPC_STAT, &globalQueueStruct) == -1)
@@ -1637,15 +1690,27 @@ boolean initializeIPCFacilities()
     regPartsIds[0] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(regPartsIds[0], "[MASTER]: shmget failed during partition one creation. Error: ");
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "m;%d\n", regPartsIds[0]);
+    close(fd);
+
     key = ftok(SHMFILEPATH, REGPARTTWOSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during register parition two creation. Error: ");
     regPartsIds[1] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(regPartsIds[1], "[MASTER]: shmget failed during partition two creation. Error: ");
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "m;%d\n", regPartsIds[1]);
+    close(fd);
+
     key = ftok(SHMFILEPATH, REGPARTTHREESEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during register parition three creation. Error: ");
     regPartsIds[2] = shmget(key, REG_PARTITION_SIZE * sizeof(Register), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(regPartsIds[2], "[MASTER]: shmget failed during partition three creation. Error: ");
+
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "m;%d\n", regPartsIds[2]);
+    close(fd);
 
     regPtrs[0] = (Register *)shmat(regPartsIds[0], NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(regPtrs[0], "[MASTER]: failed to attach to partition one's memory segment. Error: ");
@@ -1666,12 +1731,20 @@ boolean initializeIPCFacilities()
     usersList = (ProcListElem *)shmat(usersListId, NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(usersList, "[MASTER]: failed to attach to users list's memory segment. Error: ");
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "m;%d\n", usersListId);
+    close(fd);
+
     key = ftok(SHMFILEPATH, NODESLISTSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during nodes list creation. Error: ");
     nodesListId = shmget(key, maxNumNode * sizeof(ProcListElem), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(nodesListId, "[MASTER]: shmget failed during nodes list creation. Error: ");
     nodesList = (ProcListElem *)shmat(nodesListId, NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(nodesList, "[MASTER]: failed to attach to nodes list's memory segment. Error: ");
+
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "m;%d\n", nodesListId);
+    close(fd);
 
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during parition one's shared variable creation. Error: ");
@@ -1684,6 +1757,10 @@ boolean initializeIPCFacilities()
     */
     *(noReadersPartitionsPtrs[0]) = 0;
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "m;%d\n", noReadersPartitions[0]);
+    close(fd);
+
     key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during parition two's shared variable creation. Error: ");
     noReadersPartitions[1] = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
@@ -1692,6 +1769,10 @@ boolean initializeIPCFacilities()
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "[MASTER]: failed to attach to parition rwo's shared variable segment. Error: ");
     *(noReadersPartitionsPtrs[1]) = 0;
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "m;%d\n", noReadersPartitions[1]);
+    close(fd);
+
     key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during parition three's shared variable creation. Error: ");
     noReadersPartitions[2] = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
@@ -1699,6 +1780,10 @@ boolean initializeIPCFacilities()
     noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "[MASTER]: failed to attach to parition three's shared variable segment. Error: ");
     *(noReadersPartitionsPtrs[2]) = 0;
+
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "m;%d\n", noReadersPartitions[2]);
+    close(fd);
 
     key = ftok(SHMFILEPATH, NOUSRSEGRDERSSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during users list's shared variable creation. Error: ");
@@ -1712,6 +1797,10 @@ boolean initializeIPCFacilities()
     */
     *noUserSegReadersPtr = 0;
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "m;%d\n", noUserSegReaders);
+    close(fd);
+
     key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during nodes list's shared variable creation. Error: ");
     noNodeSegReaders = shmget(key, sizeof(SO_NODES_NUM), IPC_CREAT | MASTERPERMITS);
@@ -1720,6 +1809,10 @@ boolean initializeIPCFacilities()
     TEST_SHMAT_ERROR(noNodeSegReadersPtr, "[MASTER]: failed to attach to nodes list's shared variable segment. Error: ");
     *noNodeSegReadersPtr = 0;
 
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "m;%d\n", noNodeSegReaders);
+    close(fd);
+
     key = ftok(SHMFILEPATH, NOALLTIMESNODESSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during number of all times nodes' shared variable creation. Error: ");
     noAllTimesNodes = shmget(key, sizeof(long), IPC_CREAT | MASTERPERMITS);
@@ -1727,6 +1820,10 @@ boolean initializeIPCFacilities()
     noAllTimesNodesPtr = (int *)shmat(noAllTimesNodes, NULL, 0);
     TEST_SHMAT_ERROR(noAllTimesNodesPtr, "[MASTER]: failed to attach to number of all times nodes' shared variable segment. Error: ");
     *noAllTimesNodesPtr = 0;
+
+    fd = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+    dprintf(fd, "m;%d\n", noAllTimesNodes);
+    close(fd);
 
     return TRUE;
 }
@@ -2498,17 +2595,25 @@ void checkNodeCreationRequests()
     char *printMsg;
     union semun arg;
     struct msqid_ds tpStruct;
+    int fdReport; /* ONLY FOR DEBUG PURPOSE */
 
     printMsg = (char *)calloc(200, sizeof(char));
 
     while (attempts < NO_ATTEMPTS_NEW_NODE_REQUESTS && msgrcv(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1)
     {
-
+        fdReport = open("master_msgrcv_content.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+        dprintf(fdReport, "MASTER: in new node requests check msgContent is %d\n", ausNode.msgContent);
+        close(fdReport);
+        
         /* Increasing the number of attempts to check for new node requests*/
         attempts++;
 
         if (ausNode.msgContent == NEWNODE)
         {
+            /* ONLY FOR DEBUG PURPOSE */
+            fdReport = open("node_creation_report.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+            dprintf(fdReport, "MASTER: handled creation of new node request\n");
+            close(fdReport);
 
             printf("[MASTER]: creating new node...\n");
             /* entering critical section for number of all times nodes' shared variable */
@@ -2548,6 +2653,9 @@ void checkNodeCreationRequests()
                     procPid = fork();
                     if (procPid == 0)
                     {
+                        signal(SIGALRM, SIG_IGN);
+                        signal(SIGUSR1, tmpHandler);
+
                         sops[0].sem_op = 0;
                         sops[0].sem_num = 0;
                         sops[0].sem_flg = 0;
@@ -2566,46 +2674,88 @@ void checkNodeCreationRequests()
                     }
                     else if (procPid > 0)
                     {
-                        sops[0].sem_flg = 0;
-                        sops[0].sem_num = 1;
-                        sops[0].sem_op = -1;
-                        sops[1].sem_flg = 0;
-                        sops[1].sem_num = 2;
-                        sops[1].sem_op = -1;
-                        if (semop(nodeListSem, sops, 2) == -1)
-                        {
-                            safeErrorPrint("[MASTER]: failed to reserve nodes' list semphore. Error: ", __LINE__);
-                            endOfSimulation(-1);
-                        }
-
-                        nodesList[indexNodesList].procId = (long)procPid;
-                        nodesList[indexNodesList].procState = ACTIVE;
-
-                        sops[0].sem_flg = 0;
-                        sops[0].sem_num = 2;
-                        sops[0].sem_op = 1;
-                        sops[1].sem_flg = 0;
-                        sops[1].sem_num = 1;
-                        sops[1].sem_op = 1;
-
-                        if (semop(nodeListSem, sops, 2) == -1)
-                        {
-                            safeErrorPrint("[MASTER]: failed to release nodes' list semphore. Error: ", __LINE__);
-                            endOfSimulation(-1);
-                        }
-
-                        /* Adding new node to budgetlist */
-                        new_el = malloc(sizeof(*new_el));
-                        new_el->proc_pid = procPid;
-                        new_el->budget = 0;
-                        new_el->p_type = 1;
-                        insert_ordered(new_el);
-
                         tpId = msgget(ftok(MSGFILEPATH, (int)procPid), IPC_CREAT | IPC_EXCL | MASTERPERMITS);
                         if (tpId == -1)
+                        {
                             safeErrorPrint("[MASTER]: failed to create additional node's transaction pool. Error: ", __LINE__);
+                            
+                            /* Kill the node processes, it won't start */
+                            kill(procPid, SIGUSR1);
+
+                            /* Reinserting the message that we have consumed from the global queue */
+                            if (msgsnd(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), 0) == -1)
+                            {
+                                /* This is necessary, otherwise the message won't be reinserted in queue and lost forever */
+                                safeErrorPrint("[MASTER]: failed to reinsert the message read from the global queue of new node creation requests. Error: ", __LINE__);
+                                /* Dovremmo segnalare all'utente il fallimento della transazione o terminare la simulazione ??? */
+                                endOfSimulation(-1);
+                            }
+                            else
+                            {
+                                /* entering critical section for number of all times nodes' shared variable */
+                                sops[0].sem_num = 0;
+                                sops[0].sem_op = -1;
+                                if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
+                                {
+                                    safeErrorPrint("[MASTER]: failed to reserve number of all times nodes' shared variable semaphore. Error: ", __LINE__);
+                                    endOfSimulation(-1);
+                                }
+
+                                /* decrementing the number of effective and all times node processes */
+                                noEffectiveNodes--;
+                                (*noAllTimesNodesPtr)--;
+
+                                /* exiting the critical section entered before */
+                                sops[0].sem_num = 0;
+                                sops[0].sem_op = 1;
+                                if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
+                                {
+                                    safeErrorPrint("[MASTER]: failed to release number of all times nodes' shared variable semaphore. Error: ", __LINE__);
+                                    endOfSimulation(-1);
+                                }
+                            }
+                        }
                         else
                         {
+                            fdReport = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+                            dprintf(fdReport, "q;%d\n", tpId);
+                            close(fdReport);
+
+                            sops[0].sem_flg = 0;
+                            sops[0].sem_num = 1;
+                            sops[0].sem_op = -1;
+                            sops[1].sem_flg = 0;
+                            sops[1].sem_num = 2;
+                            sops[1].sem_op = -1;
+                            if (semop(nodeListSem, sops, 2) == -1)
+                            {
+                                safeErrorPrint("[MASTER]: failed to reserve nodes' list semphore. Error: ", __LINE__);
+                                endOfSimulation(-1);
+                            }
+
+                            nodesList[indexNodesList].procId = (long)procPid;
+                            nodesList[indexNodesList].procState = ACTIVE;
+
+                            sops[0].sem_flg = 0;
+                            sops[0].sem_num = 2;
+                            sops[0].sem_op = 1;
+                            sops[1].sem_flg = 0;
+                            sops[1].sem_num = 1;
+                            sops[1].sem_op = 1;
+
+                            if (semop(nodeListSem, sops, 2) == -1)
+                            {
+                                safeErrorPrint("[MASTER]: failed to release nodes' list semphore. Error: ", __LINE__);
+                                endOfSimulation(-1);
+                            }
+
+                            /* Adding new node to budgetlist */
+                            new_el = malloc(sizeof(*new_el));
+                            new_el->proc_pid = procPid;
+                            new_el->budget = 0;
+                            new_el->p_type = 1;
+                            insert_ordered(new_el);
+
                             /* add a new entry to the tpList array */
                             tplLength++;
                             tpList = (TPElement *)realloc(tpList, sizeof(TPElement) * tplLength);
@@ -2691,97 +2841,97 @@ void checkNodeCreationRequests()
                                         }
                                     }
                                 }
+
+                                sops[0].sem_flg = 0;
+                                sops[0].sem_num = 1;
+                                sops[0].sem_op = -1;
+                                sops[1].sem_flg = 0;
+                                sops[1].sem_num = 0;
+                                sops[1].sem_op = -1;
+                                if (semop(nodeListSem, sops, 2) == -1)
+                                {
+                                    safeErrorPrint("[MASTER]: failed to reserve nodes' list read/mutex semphore. Error: ", __LINE__);
+                                    endOfSimulation(-1);
+                                }
+
+                                (*noNodeSegReadersPtr)++;
+                                if (*noNodeSegReadersPtr == 1)
+                                {
+                                    sops[2].sem_flg = 0;
+                                    sops[2].sem_num = 2;
+                                    sops[2].sem_op = -1;
+                                    if (semop(nodeListSem, &sops[2], 1) == -1)
+                                    {
+                                        safeErrorPrint("[MASTER]: failed to reserve nodes' list write semphore. Error: ", __LINE__);
+                                        endOfSimulation(-1);
+                                    }
+                                }
+
+                                sops[0].sem_flg = 0;
+                                sops[0].sem_num = 0;
+                                sops[0].sem_op = 1;
+                                sops[1].sem_flg = 0;
+                                sops[1].sem_num = 1;
+                                sops[1].sem_op = 1;
+                                if (semop(nodeListSem, sops, 2) == -1)
+                                {
+                                    safeErrorPrint("[MASTER]: failed to release nodes' list mutex/read semphore. Error: ", __LINE__);
+                                    endOfSimulation(-1);
+                                }
+
+                                ausNode.procPid = procPid;
+                                ausNode.msgContent = NEWFRIEND;
+                                estrai(noEffectiveNodes);
+                                for (j = 0; j < SO_FRIENDS_NUM; j++)
+                                {
+                                    ausNode.mtype = nodesList[extractedFriendsIndex[j]].procId;
+                                    if (msgsnd(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), 0) == -1)
+                                    {
+                                        safeErrorPrint("[MASTER]: failed to ask a node to add the new process to its friends' list. Error: ", __LINE__);
+                                    }
+                                }
+
+                                sops[0].sem_flg = 0;
+                                sops[0].sem_num = 0;
+                                sops[0].sem_op = -1;
+                                if (semop(nodeListSem, sops, 1) == -1)
+                                {
+                                    safeErrorPrint("[MASTER]: failed to reserve nodes' list mutex semphore. Error: ", __LINE__);
+                                    endOfSimulation(-1);
+                                }
+
+                                (*noNodeSegReadersPtr)--;
+                                if (*noNodeSegReadersPtr == 0)
+                                {
+                                    sops[2].sem_flg = 0;
+                                    sops[2].sem_num = 2;
+                                    sops[2].sem_op = 1;
+                                    if (semop(nodeListSem, &sops[2], 1) == -1)
+                                    {
+                                        safeErrorPrint("[MASTER]: failed to release nodes' list write semphore. Error: ", __LINE__);
+                                        endOfSimulation(-1);
+                                    }
+                                }
+
+                                sops[0].sem_flg = 0;
+                                sops[0].sem_num = 0;
+                                sops[0].sem_op = 1;
+                                if (semop(nodeListSem, sops, 1) == -1)
+                                {
+                                    safeErrorPrint("[MASTER]: failed to release nodes' list mutex semphore. Error: ", __LINE__);
+                                    endOfSimulation(-1);
+                                }
+
+                                /* faccio partire il nodo appena creato */
+                                sops[0].sem_op = -1;
+                                sops[0].sem_num = 0;
+                                sops[0].sem_flg = 0;
+                                semop(fairStartSem, &sops[0], 1);
+
+                                msg_length = snprintf(printMsg, 199, "[MASTER]: created new node on request with pid %5ld\n", (long)procPid);
+                                write(STDOUT_FILENO, printMsg, msg_length);
                             }
                         }
-
-                        sops[0].sem_flg = 0;
-                        sops[0].sem_num = 1;
-                        sops[0].sem_op = -1;
-                        sops[1].sem_flg = 0;
-                        sops[1].sem_num = 0;
-                        sops[1].sem_op = -1;
-                        if (semop(nodeListSem, sops, 2) == -1)
-                        {
-                            safeErrorPrint("[MASTER]: failed to reserve nodes' list read/mutex semphore. Error: ", __LINE__);
-                            endOfSimulation(-1);
-                        }
-
-                        (*noNodeSegReadersPtr)++;
-                        if (*noNodeSegReadersPtr == 1)
-                        {
-                            sops[2].sem_flg = 0;
-                            sops[2].sem_num = 2;
-                            sops[2].sem_op = -1;
-                            if (semop(nodeListSem, &sops[2], 1) == -1)
-                            {
-                                safeErrorPrint("[MASTER]: failed to reserve nodes' list write semphore. Error: ", __LINE__);
-                                endOfSimulation(-1);
-                            }
-                        }
-
-                        sops[0].sem_flg = 0;
-                        sops[0].sem_num = 0;
-                        sops[0].sem_op = 1;
-                        sops[1].sem_flg = 0;
-                        sops[1].sem_num = 1;
-                        sops[1].sem_op = 1;
-                        if (semop(nodeListSem, sops, 2) == -1)
-                        {
-                            safeErrorPrint("[MASTER]: failed to release nodes' list mutex/read semphore. Error: ", __LINE__);
-                            endOfSimulation(-1);
-                        }
-
-                        ausNode.procPid = procPid;
-                        ausNode.msgContent = NEWFRIEND;
-                        estrai(noEffectiveNodes);
-                        for (j = 0; j < SO_FRIENDS_NUM; j++)
-                        {
-                            ausNode.mtype = nodesList[extractedFriendsIndex[j]].procId;
-                            if (msgsnd(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), 0) == -1)
-                            {
-                                safeErrorPrint("[MASTER]: failed to ask a node to add the new process to its friends' list. Error: ", __LINE__);
-                            }
-                        }
-
-                        sops[0].sem_flg = 0;
-                        sops[0].sem_num = 0;
-                        sops[0].sem_op = -1;
-                        if (semop(nodeListSem, sops, 1) == -1)
-                        {
-                            safeErrorPrint("[MASTER]: failed to reserve nodes' list mutex semphore. Error: ", __LINE__);
-                            endOfSimulation(-1);
-                        }
-
-                        (*noNodeSegReadersPtr)--;
-                        if (*noNodeSegReadersPtr == 0)
-                        {
-                            sops[2].sem_flg = 0;
-                            sops[2].sem_num = 2;
-                            sops[2].sem_op = 1;
-                            if (semop(nodeListSem, &sops[2], 1) == -1)
-                            {
-                                safeErrorPrint("[MASTER]: failed to release nodes' list write semphore. Error: ", __LINE__);
-                                endOfSimulation(-1);
-                            }
-                        }
-
-                        sops[0].sem_flg = 0;
-                        sops[0].sem_num = 0;
-                        sops[0].sem_op = 1;
-                        if (semop(nodeListSem, sops, 1) == -1)
-                        {
-                            safeErrorPrint("[MASTER]: failed to release nodes' list mutex semphore. Error: ", __LINE__);
-                            endOfSimulation(-1);
-                        }
-
-                        /* Starts the node just created*/
-                        sops[0].sem_op = -1;
-                        sops[0].sem_num = 0;
-                        sops[0].sem_flg = 0;
-                        semop(fairStartSem, &sops[0], 1);
-
-                        msg_length = snprintf(printMsg, 199, "[MASTER]: created new node on request with pid %5ld\n", (long)procPid);
-                        printf(printMsg, msg_length);
 
                         if (printMsg != NULL)
                             free(printMsg);
@@ -2921,19 +3071,26 @@ void segmentationFaultHandler(int sig)
     int * exitCode;
 
     fprintf(stderr, "[MASTER]: a segmentation fault error happened. Terminating...\n");
-
-    /*
-        Dato che a causa del segmentatio fault alcune facilities potrebbero
-        non essere state allocate (nel caso in cui SO_REGISTRY_SIZE == 0 le partizioni non esistono)
-        quindi si verifica un altro segmentation fault
-    */
-    /*
-    if (!simTerminated)
+    if(segFaultHappened == 0)
+        segFaultHappened++;
+    else if(segFaultHappened == 1)
+    {
+        /* 
+            abbiamo ottenuto due segmentation fault di fila, l'errore potrebbe essere grave.
+            Proviamo a terminare la simulazione con la funzione dedicata.
+        */
+        segFaultHappened++;
         endOfSimulation(-1);
-    else
+    }
+    else 
+    {
+        /* 
+            sono avvenuti più segmentation fault, non possiamo terminare usando la 
+            funzione dedicata. Bisogna terminare brutalmente.
+        */
+        kill(0, SIGUSR1); /* l'idea sarebbe di far terminare tutti i figli anche, ma non so se va bene così */
         exit(EXIT_FAILURE);
-    */
-   *exitCode = EXIT_FAILURE;
-   deallocateFacilities(exitCode);
-   exit(*exitCode);
+    }
+
+    
 }
