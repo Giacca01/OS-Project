@@ -641,18 +641,19 @@ int main(int argc, char *argv[])
                                                     tpStruct.msg_qbytes was set to the maximum possible value
                                                     during the msgget
                                                 */
-                                                if (tpStruct.msg_qbytes < (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
+                                                if (tpStruct.msg_qbytes > (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
                                                 {
                                                     tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
+                                                    if (msgctl(tpList[i].msgQId, IPC_SET, &tpStruct) == -1)
+                                                    {
+                                                        unsafeErrorPrint("[MASTER]: failed to set process transaction pool's size. Error", __LINE__);
+                                                        endOfSimulation(-1);
+                                                    }
                                                     printf("Master: impostata nuova dimensione coda.\n");
                                                 }
 
                                                 /*tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;*/
-                                                if (msgctl(tpList[i].msgQId, IPC_SET, &tpStruct) == -1)
-                                                {
-                                                    unsafeErrorPrint("[MASTER]: failed to set process transaction pool's size. Error", __LINE__);
-                                                    endOfSimulation(-1);
-                                                }
+                                                
                                                 /*
                                                  *   If the size is larger than the maximum size then
                                                  *   we do not make any changes
@@ -1400,7 +1401,7 @@ boolean assignEnvironmentVariables()
  */
 boolean readConfigParameters()
 {
-    char *filename = "params_1.txt";
+    char *filename = "params_mine.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1572,24 +1573,15 @@ boolean initializeIPCFacilities()
     }
     else
     {
-        globalQueueStruct.msg_qbytes = (sizeof(ProcQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
-        if (msgctl(procQueue, IPC_SET, &globalQueueStruct) == -1)
-        {
-            unsafeErrorPrint("[MASTER]: failed to set processes global queue size. Error: ", __LINE__);
-            endOfSimulation(-1);
+        if (globalQueueStruct.msg_qbytes > (sizeof(ProcQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM)){
+            globalQueueStruct.msg_qbytes = (sizeof(ProcQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
+            if (msgctl(procQueue, IPC_SET, &globalQueueStruct) == -1)
+            {
+                unsafeErrorPrint("[MASTER]: failed to set processes global queue size. Error: ", __LINE__);
+                endOfSimulation(-1);
+            }
         }
     }
-    
-    /*
-    if (sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM) < globalQueueStruct.msg_qbytes){
-        globalQueueStruct.msg_qbytes = sizeof(MsgGlobalQueue) * (SO_USERS_NUM + SO_NODES_NUM);
-        if (msgctl(globalQueueId, IPC_SET, &globalQueueStruct) == -1)
-        {
-            unsafeErrorPrint("[MASTER]: failed to set global queue size. Error", __LINE__);
-            endOfSimulation(-1);
-        }
-    }*/
-    /*}*/
 
     /* Creation of the processes global queue*/
     key = ftok(MSGFILEPATH, NODE_CREATION_QUEUE_SEED);
@@ -1605,11 +1597,13 @@ boolean initializeIPCFacilities()
     }
     else
     {
-        globalQueueStruct.msg_qbytes = (sizeof(NodeCreationQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
-        if (msgctl(nodeCreationQueue, IPC_SET, &globalQueueStruct) == -1)
-        {
-            unsafeErrorPrint("[MASTER]: failed to set nodes global queue size. Error: ", __LINE__);
-            endOfSimulation(-1);
+        if (globalQueueStruct.msg_qbytes > (sizeof(NodeCreationQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM)){
+            globalQueueStruct.msg_qbytes = (sizeof(NodeCreationQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
+            if (msgctl(nodeCreationQueue, IPC_SET, &globalQueueStruct) == -1)
+            {
+                unsafeErrorPrint("[MASTER]: failed to set nodes global queue size. Error: ", __LINE__);
+                endOfSimulation(-1);
+            }
         }
     }
 
@@ -1618,6 +1612,7 @@ boolean initializeIPCFacilities()
     transQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     MSG_TEST_ERROR(transQueue, "[MASTER]: msgget failed during transactions global queue creation. Error: ");
 
+    
     printf("[MASTER]: setting transactions global queue size...\n");
     if (msgctl(transQueue, IPC_STAT, &globalQueueStruct) == -1)
     {
@@ -1626,11 +1621,13 @@ boolean initializeIPCFacilities()
     }
     else
     {
-        globalQueueStruct.msg_qbytes = (sizeof(TransQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
-        if (msgctl(transQueue, IPC_SET, &globalQueueStruct) == -1)
-        {
-            unsafeErrorPrint("[MASTER]: failed to set transactions global queue size. Error: ", __LINE__);
-            endOfSimulation(-1);
+        if (globalQueueStruct.msg_qbytes > (sizeof(TransQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM)){
+            globalQueueStruct.msg_qbytes = (sizeof(TransQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
+            if (msgctl(transQueue, IPC_SET, &globalQueueStruct) == -1)
+            {
+                unsafeErrorPrint("[MASTER]: failed to set transactions global queue size. Error: ", __LINE__);
+                endOfSimulation(-1);
+            }
         }
     }
 
@@ -2072,7 +2069,7 @@ boolean deallocateFacilities(int *exitCode)
              *   since no one can remove it, this case can only happen
              *    when the IPC allocation procedure fails
              */
-            if (shmdt(regPtrs[i]) == -1 && errno != EINVAL)
+            if (regPtrs[i] != NULL && shmdt(regPtrs[i]) == -1 && errno != EINVAL)
             {
                 if (errno != EINVAL)
                 {
@@ -2169,7 +2166,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         for (i = 0; i < REG_PARTITION_COUNT; i++)
         {
-            if (shmdt(noReadersPartitionsPtrs[i]) == -1)
+            if (noReadersPartitionsPtrs[i] != NULL && shmdt(noReadersPartitionsPtrs[i]) == -1)
             {
                 if (errno != EINVAL)
                 {
@@ -2634,18 +2631,20 @@ void checkNodeCreationRequests()
                                  *    during the msgget
                                  */
 
-                                if (tpStruct.msg_qbytes < (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
+
+                                if (tpStruct.msg_qbytes > (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
                                 {
                                     tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
+                                    /*tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;*/
+                                    if (msgctl(tpList[tplLength - 1].msgQId, IPC_SET, &tpStruct) == -1)
+                                    {
+                                        unsafeErrorPrint("[MASTER]: failed to set new node transaction pool's size. Error", __LINE__);
+                                        endOfSimulation(-1);
+                                    }
                                     printf("Master: impostata nuova dimensione coda per nuovo nodo.\n");
                                 }
 
-                                /*tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;*/
-                                if (msgctl(tpList[tplLength - 1].msgQId, IPC_SET, &tpStruct) == -1)
-                                {
-                                    unsafeErrorPrint("[MASTER]: failed to set new node transaction pool's size. Error", __LINE__);
-                                    endOfSimulation(-1);
-                                }
+                                
                                 /*
                                  *  If the size is larger than the maximum size then
                                  *   we do not make any changes
@@ -2918,19 +2917,23 @@ void estrai(int k)
  */
 void segmentationFaultHandler(int sig)
 {
-    char *aus = NULL;
     int msg_length;
+    int * exitCode;
 
-    aus = (char *)calloc(200, sizeof(char));
+    fprintf(stderr, "[MASTER]: a segmentation fault error happened. Terminating...\n");
 
-    msg_length = snprintf(aus, 199, "[MASTER]: a segmentation fault error happened. Terminating...\n");
-    write(STDOUT_FILENO, aus, msg_length);
-
-    if (aus != NULL)
-        free(aus);
-
+    /*
+        Dato che a causa del segmentatio fault alcune facilities potrebbero
+        non essere state allocate (nel caso in cui SO_REGISTRY_SIZE == 0 le partizioni non esistono)
+        quindi si verifica un altro segmentation fault
+    */
+    /*
     if (!simTerminated)
         endOfSimulation(-1);
     else
         exit(EXIT_FAILURE);
+    */
+   *exitCode = EXIT_FAILURE;
+   deallocateFacilities(exitCode);
+   exit(*exitCode);
 }

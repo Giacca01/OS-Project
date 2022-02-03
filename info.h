@@ -118,12 +118,16 @@ i figli lo preleveranno dalla lista dei nodi*/
 #define REWARD_TRANSACTION -1
 #define INIT_TRANSACTION -1
 #define REG_PARTITION_COUNT 3
-#define SO_BLOCK_SIZE 100       /* Modificato 10/12/2021*/
+#define SO_BLOCK_SIZE 10       /* Modificato 10/12/2021*/
                                /* Modificato 10/12/2021*/
 #define CONF_MAX_LINE_SIZE 128 /* Configuration file's line maximum bytes length*/
 #define CONF_MAX_LINE_NO 14    /* Configuration file's maximum lines count*/
 #define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + REG_PARTITION_COUNT - 1) / REG_PARTITION_COUNT)
 #define MASTERPERMITS 0600
+
+// 11 * 10 = 110
+// 2 * 10
+// REGISTRO = SO_BLOCK_SIZE * SO_REGISTRY_SIZE = 10 * 1 = 
 
 /*
     By using this new datatype we're able

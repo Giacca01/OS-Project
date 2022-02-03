@@ -556,15 +556,21 @@ int main(int argc, char *argv[], char *envp[])
                                                                                     */
                                                                             for (i = 0; i < REG_PARTITION_COUNT && !available; i++)
                                                                             {
-                                                                                if (regPtrs[i]->nBlocks != REG_PARTITION_SIZE)
+                                                                                newBlockPos = &(regPtrs[i]->nBlocks);
+                                                                                printf("[NODE %5ld]: iteration number %i\n", my_pid, i);
+                                                                                printf("[NODE %5ld] Partiition size is: %d: \n",my_pid, REG_PARTITION_SIZE);
+                                                                                printf("[NODE %5ld] Block counter BEFORE UPDATE is %d \n", my_pid,*newBlockPos);
+                                                                                if (regPtrs[i]->nBlocks < REG_PARTITION_SIZE){
+                                                                                    printf("[NODE %5ld] free block is %d\n", my_pid, i);
                                                                                     available = TRUE;
+                                                                                }
                                                                             }
 
                                                                             /*
                                                                                         Postcondizione: i == indirizzo della partizione libera
                                                                                         se available == FALSE ==> registro pieno
                                                                                     */
-
+                                                                            i = i - 1;
                                                                             if (available)
                                                                             {
                                                                                 /*
@@ -582,11 +588,16 @@ int main(int argc, char *argv[], char *envp[])
                                                                                 /*
                                                                                             regPtrs[i] PUNTATORE ad un di tipo register allocato nel segmento
                                                                                             di memoria condivisa, che rappresenta l'i-esima partizione del registro
-                                                                                        */
+                                                                                  
+                                                                                      */
+                                                                                printf("[NODE %5ld] free block AFTER CYCLE is %d\n", my_pid, i);
+                                                                                printf("[NODE %5ld] Block counter SHORTLY BEFORE UPDATE is %d \n", my_pid, regPtrs[i]->nBlocks);
                                                                                 newBlockPos = &(regPtrs[i]->nBlocks);
                                                                                 regPtrs[i]->blockList[*newBlockPos] = candidateBlock;
                                                                                 (*newBlockPos)++;
-                                                                                printf("[NODE %5ld]: transaction inserted successfully!\n", my_pid);
+                                                                                printf("[NODE %5ld] Block counter AFTER UPDATE is %d \n", my_pid, regPtrs[i]->nBlocks);
+                                                                                printf("[NODE %5ld] newBlockPos is %d \n", my_pid, *newBlockPos);
+                                                                                printf("[NODE %5ld]: transactions block inserted successfully!\n", my_pid);
                                                                             }
                                                                             else
                                                                             {

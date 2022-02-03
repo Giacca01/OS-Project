@@ -85,10 +85,16 @@ boolean readConfigParameters()
 19) Capire perchè ci sia la double free: Ok ??
 20) Capire perchè il ctrl + c non funzioni con tanti processi
 21) Sistemare stampa transazioni rimanenti
-22) Capire perchè i nuovi nodi non facciano nulla: a quanto pare funzionino
+22) Capire perchè i nuovi nodi non facciano nulla: ok
 23) Rimettere controllo coda globale e testare cosa viene fuori
 24) Test: Ok
 25) Togliere write nodo e user
-26) Testare segnale generazione transazione 
+26) Testare segnale generazione transazione: Ok
 27) SIstemare makefile
-28) Vedere se con ctrl+c rimane una coda da eliminare
+28) Vedere se rimane una coda da eliminare: sì, nei casi di terminazione anticipata PER COLPA DI UN ERRORE sembra rimanere una coda
+
+1) Registro pieno: Ok
+2) vedere se malloc unsorted sia colpa della dimensione delle tp: Ok, no
+3) sistemare nodo ed utente 
+4) sistemare il makefile
+5) sisteamare terminazione in caso di segmentation fault
