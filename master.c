@@ -651,6 +651,16 @@ int main(int argc, char *argv[])
                                                     tpStruct.msg_qbytes was set to the maximum possible value
                                                     during the msgget
                                                 */
+                                               /*
+                                                tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
+                                                if (msgctl(tpList[i].msgQId, IPC_SET, &tpStruct) == -1)
+                                                {
+                                                    unsafeErrorPrint("[MASTER]: failed to set process transaction pool's size. Error", __LINE__);
+                                                    endOfSimulation(-1);
+                                                }
+                                                printf("Master: impostata nuova dimensione coda.\n");*/
+
+                                                
                                                 if (tpStruct.msg_qbytes > (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
                                                 {
                                                     tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
@@ -1418,7 +1428,7 @@ boolean assignEnvironmentVariables()
  */
 boolean readConfigParameters()
 {
-    char *filename = "params_3.txt";
+    char *filename = "params_2.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1611,6 +1621,7 @@ boolean initializeIPCFacilities()
     procQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     MSG_TEST_ERROR(procQueue, "[MASTER]: msgget failed during processes global queue creation. Error: ");
 
+    
     printf("[MASTER]: setting processes global queue size...\n");
     if (msgctl(procQueue, IPC_STAT, &globalQueueStruct) == -1)
     {
@@ -1619,6 +1630,7 @@ boolean initializeIPCFacilities()
     }
     else
     {
+        
         if (globalQueueStruct.msg_qbytes > (sizeof(ProcQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM)){
             globalQueueStruct.msg_qbytes = (sizeof(ProcQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
             if (msgctl(procQueue, IPC_SET, &globalQueueStruct) == -1)
@@ -1627,6 +1639,13 @@ boolean initializeIPCFacilities()
                 endOfSimulation(-1);
             }
         }
+        /*
+        globalQueueStruct.msg_qbytes = (sizeof(ProcQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
+        if (msgctl(procQueue, IPC_SET, &globalQueueStruct) == -1)
+        {
+            unsafeErrorPrint("[MASTER]: failed to set processes global queue size. Error: ", __LINE__);
+            endOfSimulation(-1);
+        }*/
     }
 
     /* Creation of the processes global queue*/
@@ -1647,6 +1666,7 @@ boolean initializeIPCFacilities()
     }
     else
     {
+        
         if (globalQueueStruct.msg_qbytes > (sizeof(NodeCreationQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM)){
             globalQueueStruct.msg_qbytes = (sizeof(NodeCreationQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
             if (msgctl(nodeCreationQueue, IPC_SET, &globalQueueStruct) == -1)
@@ -1655,6 +1675,15 @@ boolean initializeIPCFacilities()
                 endOfSimulation(-1);
             }
         }
+
+        /*
+        printf("Queue size: %ld\n", globalQueueStruct.msg_qbytes);
+        globalQueueStruct.msg_qbytes = (sizeof(NodeCreationQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
+        if (msgctl(nodeCreationQueue, IPC_SET, &globalQueueStruct) == -1)
+        {
+            unsafeErrorPrint("[MASTER]: failed to set nodes global queue size. Error: ", __LINE__);
+            endOfSimulation(-1);
+        }*/
     }
 
     key = ftok(MSGFILEPATH, TRANS_QUEUE_SEED);
@@ -1674,6 +1703,7 @@ boolean initializeIPCFacilities()
     }
     else
     {
+        
         if (globalQueueStruct.msg_qbytes > (sizeof(TransQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM)){
             globalQueueStruct.msg_qbytes = (sizeof(TransQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
             if (msgctl(transQueue, IPC_SET, &globalQueueStruct) == -1)
@@ -1682,6 +1712,14 @@ boolean initializeIPCFacilities()
                 endOfSimulation(-1);
             }
         }
+
+        /*
+        globalQueueStruct.msg_qbytes = (sizeof(TransQueue) - sizeof(long)) * (SO_USERS_NUM + SO_NODES_NUM);
+        if (msgctl(transQueue, IPC_SET, &globalQueueStruct) == -1)
+        {
+            unsafeErrorPrint("[MASTER]: failed to set transactions global queue size. Error: ", __LINE__);
+            endOfSimulation(-1);
+        }*/
     }
 
     /* Creation of register's partitions */
@@ -2781,11 +2819,18 @@ void checkNodeCreationRequests()
                                  *    during the msgget
                                  */
 
-
+                                printf("Queue size: %ld\n", tpStruct.msg_qbytes);
+                                /*
+                                tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
+                                if (msgctl(tpList[tplLength - 1].msgQId, IPC_SET, &tpStruct) == -1)
+                                {
+                                    unsafeErrorPrint("[MASTER]: failed to set new node transaction pool's size. Error", __LINE__);
+                                    endOfSimulation(-1);
+                                }*/
+                                
                                 if (tpStruct.msg_qbytes > (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
                                 {
                                     tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
-                                    /*tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;*/
                                     if (msgctl(tpList[tplLength - 1].msgQId, IPC_SET, &tpStruct) == -1)
                                     {
                                         unsafeErrorPrint("[MASTER]: failed to set new node transaction pool's size. Error", __LINE__);
