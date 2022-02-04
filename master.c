@@ -55,7 +55,8 @@ int nodesListId = -1;
 ProcListElem *nodesList = NULL;
 
 /* Pointer to the tp list */
-TPElement *tpList = NULL;
+/*TPElement *tpList = NULL;*/
+TPElement tpList[5000];
 
 /* Id of the global message queue where users, nodes and master communicate */
 int nodeCreationQueue = -1;
@@ -1498,8 +1499,9 @@ boolean allocateGlobalStructures()
     regPartsIds = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
     TEST_MALLOC_ERROR(regPartsIds, "[MASTER]: failed to allocate register paritions' ids array. Error: ");
 
+    /*
     tpList = (TPElement *)calloc(SO_NODES_NUM, sizeof(TPElement));
-    TEST_MALLOC_ERROR(tpList, "[MASTER]: failed to allocate transaction pools list. Error: ");
+    TEST_MALLOC_ERROR(tpList, "[MASTER]: failed to allocate transaction pools list. Error: ");*/
 
     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
     TEST_MALLOC_ERROR(noReadersPartitions, "[MASTER]: failed to allocate registers partitions' shared variables ids. Error: ");
@@ -1939,6 +1941,8 @@ void insert_ordered(budgetlist new_el)
         }
         prev = el;
     }
+
+    
 }
 
 /**
@@ -2358,7 +2362,7 @@ boolean deallocateFacilities(int *exitCode)
             }
         }
 
-        free(tpList);
+        //free(tpList);
     }
 
     /* Global queue deallocation*/
@@ -2772,8 +2776,10 @@ void checkNodeCreationRequests()
                                 endOfSimulation(-1);
                             }
 
+                            printf("Lista nodi nuovo nodo\n");
                             nodesList[indexNodesList].procId = (long)procPid;
                             nodesList[indexNodesList].procState = ACTIVE;
+                            printf("FIne Lista nodi nuovo nodo\n");
 
                             sops[0].sem_flg = 0;
                             sops[0].sem_num = 2;
@@ -2789,15 +2795,19 @@ void checkNodeCreationRequests()
                             }
 
                             /* Adding new node to budgetlist */
+                            printf("Iniziato budget list nuovo nodo");
                             new_el = malloc(sizeof(*new_el));
+                            printf("Finito budget list nuovo nodo");
                             new_el->proc_pid = procPid;
                             new_el->budget = 0;
                             new_el->p_type = 1;
+                            
                             insert_ordered(new_el);
+                            
 
                             /* add a new entry to the tpList array */
                             tplLength++;
-                            tpList = (TPElement *)realloc(tpList, sizeof(TPElement) * tplLength);
+                            /*tpList = (TPElement *)realloc(tpList, sizeof(TPElement) * tplLength);*/
                             /* Initialize messages queue for transactions pools */
                             tpList[tplLength - 1].procId = (long)procPid;
                             tpList[tplLength - 1].msgQId = tpId;
@@ -2848,6 +2858,7 @@ void checkNodeCreationRequests()
                                  */
                             }
 
+                            printf("Coda nuovo nodo ok\n");
                             firstTrans.mtype = (long)procPid;
                             firstTrans.transaction = ausNode.transaction;
 
