@@ -55,8 +55,7 @@ int nodesListId = -1;
 ProcListElem *nodesList = NULL;
 
 /* Pointer to the tp list */
-/*TPElement *tpList = NULL;*/
-TPElement tpList[5000];
+TPElement *tpList = NULL;
 
 /* Id of the global message queue where users, nodes and master communicate */
 int nodeCreationQueue = -1;
@@ -360,6 +359,7 @@ int main(int argc, char *argv[])
     /* Number of user/node attempts of termination */
     int noAttemptsCheckUserTerm = 0;
     int noAttemptsCheckNodeTerm = 0;
+    int k = 0;
     
     /* initializing print string message */
     char *aus = NULL;
@@ -424,6 +424,7 @@ int main(int argc, char *argv[])
                     unsafeErrorPrint("[MASTER]: failed to set end of simulation disposition. Error: ", __LINE__);
                 else
                 {
+                    /*
                     actSegFaultHandler.sa_handler = segmentationFaultHandler;
                     actSegFaultHandler.sa_mask = set;
                     if (sigaction(SIGSEGV, &actSegFaultHandler, NULL) == -1)
@@ -431,7 +432,7 @@ int main(int argc, char *argv[])
                         unsafeErrorPrint("[MASTER]: failed to set segmentation fault handler. Error: ", __LINE__);
                     }
                     else
-                    {
+                    {*/
                         actSegFaultHandler.sa_handler = segmentationFaultHandler;
                         actSegFaultHandler.sa_mask = set;
                         if (sigaction(SIGABRT, &actSegFaultHandler, NULL) == -1)
@@ -974,8 +975,10 @@ int main(int argc, char *argv[])
                                                     endOfSimulation(-1);
                                                 }
 
-                                                (*noReadersPartitionsPtrs[i])++;
-                                                if ((*noReadersPartitionsPtrs[i]) == 1)
+                                                k = *(noReadersPartitionsPtrs[i]);
+                                                *(noReadersPartitionsPtrs[i]) = *(noReadersPartitionsPtrs[i]) + 1;
+                                                k++;
+                                                if (k == 1)
                                                 {
                                                     sops[0].sem_num = i;
                                                     sops[0].sem_op = -1;
@@ -1078,8 +1081,8 @@ int main(int argc, char *argv[])
                                                     }
                                                     else
                                                     {
-                                                        (*noReadersPartitionsPtrs[i])--;
-                                                        if ((*noReadersPartitionsPtrs[i]) == 0)
+                                                        *(noReadersPartitionsPtrs[i])--;
+                                                        if (*(noReadersPartitionsPtrs[i]) == 0)
                                                         {
                                                             sops[0].sem_num = i;
                                                             sops[0].sem_op = 1;
@@ -1190,9 +1193,10 @@ int main(int argc, char *argv[])
 
                                         while (noAttemptsCheckUserTerm < NO_ATTEMPTS_CHECK_USER_TERMINATION && msgrcv(procQueue, &msg_from_user, sizeof(ProcQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                         {
+                                            /*
                                             fdReport = open("master_msgrcv_content.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
                                             dprintf(fdReport, "MASTER: in user termination check msgContent is %d\n", msg_from_user.msgContent);
-                                            close(fdReport);
+                                            close(fdReport);*/
 
                                             noAttemptsCheckUserTerm++;
                                             /* as size we specify sizeof (msg_from_user) -sizeof (long) because you have to specify the size of the text, not the whole structure */
@@ -1274,9 +1278,10 @@ int main(int argc, char *argv[])
                                         /* Check if a node process has terminated to update the nodes list */
                                         while (noAttemptsCheckNodeTerm < NO_ATTEMPTS_CHECK_NODE_TERMINATION && msgrcv(procQueue, &msg_from_node, sizeof(ProcQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1)
                                         {
+                                            /*
                                             fdReport = open("master_msgrcv_content.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
                                             dprintf(fdReport, "MASTER: in node termination check msgContent is %d\n", msg_from_user.msgContent);
-                                            close(fdReport);
+                                            close(fdReport);*/
 
                                             noAttemptsCheckNodeTerm++;
 
@@ -1360,7 +1365,7 @@ int main(int argc, char *argv[])
                             }
                             deallocateFacilities(&exitCode);
                         }
-                    }
+                    /*}*/
                 }
             }
         }
@@ -1429,7 +1434,7 @@ boolean assignEnvironmentVariables()
  */
 boolean readConfigParameters()
 {
-    char *filename = "params_2.txt";
+    char *filename = "params_3.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1499,9 +1504,9 @@ boolean allocateGlobalStructures()
     regPartsIds = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
     TEST_MALLOC_ERROR(regPartsIds, "[MASTER]: failed to allocate register paritions' ids array. Error: ");
 
-    /*
+    
     tpList = (TPElement *)calloc(SO_NODES_NUM, sizeof(TPElement));
-    TEST_MALLOC_ERROR(tpList, "[MASTER]: failed to allocate transaction pools list. Error: ");*/
+    TEST_MALLOC_ERROR(tpList, "[MASTER]: failed to allocate transaction pools list. Error: ");
 
     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
     TEST_MALLOC_ERROR(noReadersPartitions, "[MASTER]: failed to allocate registers partitions' shared variables ids. Error: ");
@@ -2334,8 +2339,9 @@ boolean deallocateFacilities(int *exitCode)
             }
         }
 
+        /*
         if (noReadersPartitions != NULL)
-            free(noReadersPartitions);
+            free(noReadersPartitions);*/
     }
 
     /* Transaction pools list deallocation*/
@@ -2362,7 +2368,7 @@ boolean deallocateFacilities(int *exitCode)
             }
         }
 
-        //free(tpList);
+        free(tpList);
     }
 
     /* Global queue deallocation*/
@@ -2644,9 +2650,10 @@ void checkNodeCreationRequests()
 
     while (attempts < NO_ATTEMPTS_NEW_NODE_REQUESTS && msgrcv(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1)
     {
+        /*
         fdReport = open("master_msgrcv_content.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
         dprintf(fdReport, "MASTER: in new node requests check msgContent is %d\n", ausNode.msgContent);
-        close(fdReport);
+        close(fdReport);*/
         
         /* Increasing the number of attempts to check for new node requests*/
         attempts++;
@@ -2654,9 +2661,10 @@ void checkNodeCreationRequests()
         if (ausNode.msgContent == NEWNODE)
         {
             /* ONLY FOR DEBUG PURPOSE */
+            /*
             fdReport = open("node_creation_report.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
             dprintf(fdReport, "MASTER: handled creation of new node request\n");
-            close(fdReport);
+            close(fdReport);*/
 
             printf("[MASTER]: creating new node...\n");
             /* entering critical section for number of all times nodes' shared variable */
@@ -2760,9 +2768,10 @@ void checkNodeCreationRequests()
                         }
                         else
                         {
+                            /*
                             fdReport = open(IPCREMOVERFILEPATH, O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
                             dprintf(fdReport, "q;%d\n", tpId);
-                            close(fdReport);
+                            close(fdReport);*/
 
                             sops[0].sem_flg = 0;
                             sops[0].sem_num = 1;
@@ -2986,6 +2995,7 @@ void checkNodeCreationRequests()
                                 sops[0].sem_flg = 0;
                                 semop(fairStartSem, &sops[0], 1);
 
+                                printf("Ciao\n");
                                 msg_length = snprintf(printMsg, 199, "[MASTER]: created new node on request with pid %5ld\n", (long)procPid);
                                 write(STDOUT_FILENO, printMsg, msg_length);
                             }
