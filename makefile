@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-ansi -pedantic-errors -Wall
+CFLAGS=-ansi -pedantic-errors -Wall -ggdb
 
 all: rm error master node user
 allDebug: rm error masterDebug nodeDebug userDebug

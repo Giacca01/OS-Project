@@ -659,6 +659,7 @@ int main(int argc, char *argv[], char *envp[])
                                                                                 sops[2].sem_flg = 0;
                                                                                 sops[2].sem_num = 2;
                                                                                 sops[2].sem_op = 1;
+                                                                                printf("Kekw NODO");
                                                                                 if (semop(rdPartSem, sops, REG_PARTITION_COUNT) == -1)
                                                                                 {
                                                                                     snprintf(printMsg, 199, "[NODE %5ld]: failed to release register partitions' reading semaphore. Error: ", my_pid);
@@ -666,6 +667,8 @@ int main(int argc, char *argv[], char *envp[])
                                                                                     printMsg[0] = 0; /* resetting string's content */
                                                                                 }
                                                                             }
+
+                                                                            printf("Kekw NODO 2");
                                                                         }
                                                                     }
                                                                 }
@@ -1244,6 +1247,7 @@ void sendTransaction()
     /*
         Recupero transazioni in eccesso
     */
+   printf("Kekw nodo 3");
     while (msgrcv(transQueue, &trans, sizeof(TransQueue) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
     {
         /*
@@ -1388,7 +1392,7 @@ void sendTransaction()
                                 {
                                     msg_length = snprintf(printMsg, 199, "[NODE %5ld]: transaction successfully dispatched to friend via global queue.\n", my_pid);
                                     write(STDOUT_FILENO, printMsg, msg_length);
-                                    printMsg[0] = 0; /* resetting string's content
+                                    printMsg[0] = 0; /* resetting string's content*/
                                 }
                                 else
                                 {
@@ -1432,6 +1436,7 @@ void sendTransaction()
         }
     }
 
+    printf("Kekw nodo 4");
     while (msgrcv(nodeCreationQueue, &ausNode, sizeof(ausNode) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
     {
         if (ausNode.msgContent == NEWFRIEND)
@@ -1465,6 +1470,8 @@ void sendTransaction()
                 */
         }
     }
+
+    printf("Kekw nodo 5");
 
     if (errno != ENOMSG && errno != EINTR)
     {

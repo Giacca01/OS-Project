@@ -2330,7 +2330,8 @@ boolean deallocateFacilities(int *exitCode)
             }
         }
 
-        free(noReadersPartitions);
+        if (noReadersPartitions != NULL)
+            free(noReadersPartitions);
     }
 
     /* Transaction pools list deallocation*/
@@ -2827,6 +2828,7 @@ void checkNodeCreationRequests()
                                     unsafeErrorPrint("[MASTER]: failed to set new node transaction pool's size. Error", __LINE__);
                                     endOfSimulation(-1);
                                 }*/
+                                
                                 
                                 if (tpStruct.msg_qbytes > (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
                                 {
