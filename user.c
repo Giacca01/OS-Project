@@ -320,66 +320,54 @@ int main(int argc, char *argv[], char *envp[])
                             }
                             else
                             {
-                                actSegFaultHandler.sa_handler = segmentationFaultHandler;
-                                actSegFaultHandler.sa_mask = mask;
-                                if (sigaction(SIGABRT, &actSegFaultHandler, NULL) == -1)
+                                printf("[USER %5ld]: starting lifecycle...\n", my_pid);
+
+                                /*
+                                    User's lifecycle
+                                */
+                                while (TRUE)
                                 {
-                                    snprintf(printMsg, 199, "[USER %5ld]: failed to set up abort signal handler. Error: ", my_pid);
-                                    unsafeErrorPrint(printMsg, __LINE__);
-                                    printMsg[0] = 0; /* resetting string's content */
-                                    endOfExecution(-1);
-                                }
-                                else
-                                {
-                                    printf("[USER %5ld]: starting lifecycle...\n", my_pid);
+                                    printf("[USER %5ld]: checking if there are failed transactions...\n", my_pid);
+                                    /* check on global queue if a sent transaction failed */
+                                    if (msgrcv(transQueue, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
+                                    {
+
+                                        /* got a message for this user from global queue */
+                                        if (msgCheckFailedTrans.msgContent == FAILEDTRANS)
+                                        {
+                                            printf("[USER %5ld]: failed transaction found. Removing it from list...\n", my_pid);
+                                            /* the transaction failed, so we remove it from the list of sent transactions */
+                                            transactionsSent = removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
+                                            function_we_into = "main";
+                                        }
+                                        else
+                                        {
+                                            printf("[USER %5ld]: no failed transactions found.\n", my_pid);
+                                            /* the message wasn't the one we were looking for, reinserting it on the global queue */
+                                            if (msgsnd(transQueue, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), 0) == -1)
+                                            {
+                                                snprintf(printMsg, 199, "[USER %5ld]: failed to reinsert the message read from global queue while checking for failed transactions. Error: ", my_pid);
+                                                unsafeErrorPrint(printMsg, __LINE__);
+                                                printMsg[0] = 0; /* resetting string's content */
+                                            }
+                                        }
+                                    }
+                                    else if (errno != ENOMSG)
+                                    {
+                                        snprintf(printMsg, 199, "[USER %5ld]: failed to check for failed transaction messages on global queue. Error: ", my_pid);
+                                        unsafeErrorPrint(printMsg, __LINE__);
+                                        printMsg[0] = 0; /* resetting string's content */
+                                    }
+                                    /* else errno == ENOMSG, so no transaction has failed */
+
+                                    /* generate a transaction */
+                                    transactionGeneration(0);
+                                    function_we_into = "main";
 
                                     /*
-                                        User's lifecycle
+                                        CORREGGERE
                                     */
-                                    while (TRUE)
-                                    {
-                                        printf("[USER %5ld]: checking if there are failed transactions...\n", my_pid);
-                                        /* check on global queue if a sent transaction failed */
-                                        if (msgrcv(transQueue, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
-                                        {
-
-                                            /* got a message for this user from global queue */
-                                            if (msgCheckFailedTrans.msgContent == FAILEDTRANS)
-                                            {
-                                                printf("[USER %5ld]: failed transaction found. Removing it from list...\n", my_pid);
-                                                /* the transaction failed, so we remove it from the list of sent transactions */
-                                                transactionsSent = removeTransaction(transactionsSent, &(msgCheckFailedTrans.transaction));
-                                                function_we_into = "main";
-                                            }
-                                            else
-                                            {
-                                                printf("[USER %5ld]: no failed transactions found.\n", my_pid);
-                                                /* the message wasn't the one we were looking for, reinserting it on the global queue */
-                                                if (msgsnd(transQueue, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), 0) == -1)
-                                                {
-                                                    snprintf(printMsg, 199, "[USER %5ld]: failed to reinsert the message read from global queue while checking for failed transactions. Error: ", my_pid);
-                                                    unsafeErrorPrint(printMsg, __LINE__);
-                                                    printMsg[0] = 0; /* resetting string's content */
-                                                }
-                                            }
-                                        }
-                                        else if (errno != ENOMSG)
-                                        {
-                                            snprintf(printMsg, 199, "[USER %5ld]: failed to check for failed transaction messages on global queue. Error: ", my_pid);
-                                            unsafeErrorPrint(printMsg, __LINE__);
-                                            printMsg[0] = 0; /* resetting string's content */
-                                        }
-                                        /* else errno == ENOMSG, so no transaction has failed */
-
-                                        /* generate a transaction */
-                                        transactionGeneration(0);
-                                        function_we_into = "main";
-
-                                        /*
-                                            CORREGGERE
-                                        */
-                                        sleep(1);
-                                    }
+                                    sleep(1);
                                 }
                             }
                         }
