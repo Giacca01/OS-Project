@@ -424,7 +424,7 @@ int main(int argc, char *argv[])
                     unsafeErrorPrint("[MASTER]: failed to set end of simulation disposition. Error: ", __LINE__);
                 else
                 {
-                    
+                    /*
                     actSegFaultHandler.sa_handler = segmentationFaultHandler;
                     actSegFaultHandler.sa_mask = set;
                     if (sigaction(SIGSEGV, &actSegFaultHandler, NULL) == -1)
@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
                         unsafeErrorPrint("[MASTER]: failed to set segmentation fault handler. Error: ", __LINE__);
                     }
                     else
-                    {
+                    {*/
                         maxNumNode = SO_NODES_NUM + MAX_ADDITIONAL_NODES;
 
                         printf("[MASTER]: creating IPC facilitites...\n");
@@ -1363,7 +1363,7 @@ int main(int argc, char *argv[])
                                 printf("**** [MASTER]: starting a new lifecycle ****\n");
                             }
                         }
-                    }
+                    /*}*/
                     deallocateFacilities(&exitCode);
                 }
             }
