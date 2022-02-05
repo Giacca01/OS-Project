@@ -162,20 +162,9 @@ typedef struct proc_budget
     pid_t proc_pid;
     double budget;
     int p_type;               /* type of node: 0 if user, 1 if node */
-    struct proc_budget *prev; /* keeps link to previous node */
-    struct proc_budget *next; /* keeps link to next node */
+    /*struct proc_budget *prev;/* /* keeps link to previous node */
+    /*struct proc_budget *next;*/ /* keeps link to next node */
 } proc_budget;
-
-/*
- * The idea is that the register is immutable and therefore is not
- * need to go through it all every time.
- * To improve the efficiency of budget calculation
- * we can just update the budgets on the basis
- * of transactions entered in the register only
- * between updates
- */
-/* linked list of budgets for every user and node process */
-typedef proc_budget *budgetlist;
 
 /***** Configuration parameters *****/
 long SO_USERS_NUM,
@@ -197,10 +186,22 @@ long SO_USERS_NUM,
 long maxNumNode = 0;
 /* used in file reading */
 char line[CONF_MAX_LINE_NO][CONF_MAX_LINE_SIZE];
-/* initialization of the budgetlist head - array to maintain budgets read from ledger */
-budgetlist bud_list_head = NULL;
-/* initialization of the budgetlist tail - array to maintain budgets read from ledger */
-budgetlist bud_list_tail = NULL;
+
+/* arrays that keeps nodes and users' budgets */
+proc_budget * budgetsList = NULL;
+
+/*
+ * The idea is that the register is immutable and therefore is not
+ * need to go through it all every time.
+ * To improve the efficiency of budget calculation
+ * we can just update the budgets on the basis
+ * of transactions entered in the register only
+ * between updates
+ */
+
+/* variable that keeps the length of budgetsList array (also number of allocated entries)*/
+int budgetsListLength = 0;
+
 /* master's pid */
 long masterPid = -1;
 /* keep track if simulation is terminated */
@@ -257,12 +258,6 @@ boolean deallocateFacilities(int *);
 void checkNodeCreationRequests();
 
 /**
- * @brief Function to frees the space dedicated to the budget list p passed as argument.
- * @param p pointer to linked list budgetlist
- */
-void budgetlist_free(budgetlist);
-
-/**
  * @brief Function that inserts in the global list bud_list the node passed as
  * argument in an ordered way (the list is ordered in ascending order).
  * We want to keep the list sorted to implement a more efficient
@@ -278,7 +273,9 @@ void insert_ordered(pid_t, double, int);
  * proc_pid as the one passed as first argument; if it's found, upgrades its budget
  * adding the second argument, which is a positive or negative amount.
  * @param remove_pid pid of the item to be searched for in the budgetlist.
- * @param amount_changing positive or negative amount.
+ * @param amount_changing positive or negative amount used to update process' budget.
+ * @return int the method returns -1 if the processes with pid remove_pid it's not 
+ * in the array, 0 otherwise.
  */
 int update_budget(pid_t, double);
 
@@ -322,11 +319,7 @@ int main(int argc, char *argv[])
     int fullRegister = TRUE;
     int exitCode = EXIT_FAILURE;
     key_t key;
-    int i = 0, j = 0;
-
-    /* elements for creation of budgetlist */
-    budgetlist new_el;
-    budgetlist el_list;
+    int i = 0, j = 0, indexForBL = 0;
 
     /* definition of objects necessary for nanosleep */
     struct timespec onesec, tim;
@@ -455,20 +448,20 @@ int main(int argc, char *argv[])
                                         /*Handle error*/
                                         unsafeErrorPrint("[MASTER]: fork failed. Error: ", __LINE__);
                                         /*
-                                            *    (**)
-                                            *    In case we failed to create a process we end
-                                            *    the simulation.
-                                            *    This solution is extended to every operation required to create a node/user.
-                                            *    This solution is quite restrictive, but we have to consider
-                                            *    that loosing even one process before it even started
-                                            *    means violating the project requirments
-                                            */
+                                         *    (**)
+                                         *    In case we failed to create a process we end
+                                         *    the simulation.
+                                         *    This solution is extended to every operation required to create a node/user.
+                                         *    This solution is quite restrictive, but we have to consider
+                                         *    that loosing even one process before it even started
+                                         *    means violating the project requirments
+                                         */
                                         endOfSimulation(-1);
                                     case 0:
                                         /*
-                                            * The process tells the father that it is ready to run
-                                            *and that it waits for all processes to be ready
-                                            */
+                                         * The process tells the father that it is ready to run
+                                         * and that it waits for all processes to be ready
+                                         */
                                         printf("[USER %5ld]: starting execution....\n", (long)getpid());
                                         signal(SIGALRM, SIG_IGN);
                                         signal(SIGUSR1, tmpHandler);
@@ -517,13 +510,13 @@ int main(int argc, char *argv[])
                                         }
 
                                         /*
-                                            *    No user or node is writing or reading on the
-                                            *    read but it's better to be one hundred percent
-                                            *    to check no one is reading or writing from the list
-                                            *
-                                            *    ENTRY SECTION:
-                                            *    Reserve read semaphore and Reserve write semaphore
-                                            */
+                                         *    No user or node is writing or reading on the
+                                         *    read but it's better to be one hundred percent
+                                         *    to check no one is reading or writing from the list
+                                         *
+                                         *    ENTRY SECTION:
+                                         *    Reserve read semaphore and Reserve write semaphore
+                                         */
                                         sops[0].sem_op = -1;
                                         sops[0].sem_num = 1;
 
@@ -573,9 +566,9 @@ int main(int argc, char *argv[])
                                         endOfSimulation(-1);
                                     case 0:
                                         /*
-                                            * The process tells the father that it is ready to run
-                                            *and that it waits for all processes to be ready
-                                            */
+                                         * The process tells the father that it is ready to run
+                                         * and that it waits for all processes to be ready
+                                         */
                                         printf("[NODE %5ld]: starting execution....\n", (long)getpid());
 
                                         signal(SIGALRM, SIG_IGN);
@@ -679,9 +672,9 @@ int main(int argc, char *argv[])
                                             /*tpStruct.msg_qbytes = sizeof(MsgTP) * SO_TP_SIZE;*/
                                             
                                             /*
-                                                *   If the size is larger than the maximum size then
-                                                *   we do not make any changes
-                                                */
+                                             * If the size is larger than the maximum size then
+                                             * we do not make any changes
+                                             */
                                         }
 
                                         /* updating tpList length */
@@ -743,12 +736,12 @@ int main(int argc, char *argv[])
                                         endOfSimulation(-1);
                                     }
                                     /*
-                                        * if the writer is writing, then the first reader who will enter this
-                                        * branch will fall asleep on this traffic light.
-                                        * if the writer is not writing, then the first reader will decrement the by 1
-                                        * traffic light value, so if the writer wants to write, he will fall asleep
-                                        * on the traffic light
-                                        */
+                                     * if the writer is writing, then the first reader who will enter this
+                                     * branch will fall asleep on this traffic light.
+                                     * if the writer is not writing, then the first reader will decrement the by 1
+                                     * traffic light value, so if the writer wants to write, he will fall asleep
+                                     * on the traffic light
+                                     */
                                 }
 
                                 /* We exit the critical section for the noUserSegReadersPtr variabile */
@@ -763,14 +756,8 @@ int main(int argc, char *argv[])
                                 }
 
                                 printf("[MASTER]: initializing budget users processes...\n");
-                                bud_list_head = NULL;
-                                bud_list_tail = NULL;
                                 for (i = 0; i < SO_USERS_NUM; i++)
                                 {
-                                    /*new_el = malloc(sizeof(*new_el));
-                                    new_el->proc_pid = usersList[i].procId;
-                                    new_el->budget = SO_BUDGET_INIT;
-                                    new_el->p_type = 0;*/
                                     insert_ordered(usersList[i].procId, SO_BUDGET_INIT, 0); /* insert user on budgetlist */
                                 }
 
@@ -848,10 +835,6 @@ int main(int argc, char *argv[])
 
                                 for (i = 0; i < SO_NODES_NUM; i++)
                                 {
-                                    /*new_el = malloc(sizeof(*new_el));
-                                    new_el->proc_pid = nodesList[i].procId;
-                                    new_el->budget = 0;
-                                    new_el->p_type = 1;*/
                                     insert_ordered(nodesList[i].procId, 0, 1); /* insert node on budgetlist */
                                 }
                                 /****************************************************/
@@ -1144,45 +1127,45 @@ int main(int argc, char *argv[])
                                     if (noAllTimeProcesses <= MAX_PRINT_PROCESSES)
                                     {
                                         /*
-                                            * the number of effective processes is lower or equal than the maximum we established,
-                                            * so we print budget of all processes
-                                            */
+                                         * the number of effective processes is lower or equal than the maximum we established,
+                                         * so we print budget of all processes
+                                         */
                                         printf("[MASTER]: Printing budget of all the processes.\n");
 
-                                        for (el_list = bud_list_head; el_list != NULL; el_list = el_list->next)
+                                        for (indexForBL = 0; indexForBL < budgetsListLength; indexForBL++)
                                         {
-                                            if (el_list->p_type) /* Budget of node process */
-                                                printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
+                                            if (budgetsList[indexForBL].p_type) /* Budget of node process */
+                                                printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)budgetsList[indexForBL].proc_pid, budgetsList[indexForBL].budget);
                                             else /* Budget of user process */
-                                                printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)el_list->proc_pid, el_list->budget);
+                                                printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)budgetsList[indexForBL].proc_pid, budgetsList[indexForBL].budget);
                                         }
                                     }
                                     else
                                     {
                                         /*
-                                            * the number of effective processes is bigger than the maximum we established, so
-                                            * we print only the maximum and minimum budget in the list
-                                            */
+                                         * the number of effective processes is bigger than the maximum we established, so
+                                         * we print only the maximum and minimum budget in the list
+                                         */
 
                                         printf("[MASTER]: There are too many processes. Printing only minimum and maximum budgets.\n");
 
-                                        /* printing minimum budget in budgetlist - we print all processes' budget that is minimum */
                                         /*
-                                            *Here we take advantage of the sorted budget list: finding the minimum budget
-                                            *is just a matter of checking if it's equal to that on top of the list
-                                            */
+                                         * Here we take advantage of the sorted budgets list: the process with minimum budget
+                                         * is the one at the first entry in the array, while the process with maximum budget 
+                                         * is the one at the last occupied entry in the array (budgetsListLength-1).
+                                         */
 
                                         /* Printing budget of process with minimum budget */
-                                        if (bud_list_head->p_type) /* Budget of node process */
-                                            printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_head->proc_pid, bud_list_head->budget);
-                                        else /* Budget of user process */
-                                            printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_head->proc_pid, bud_list_head->budget);
-
+                                        printf("[MASTER]:  - %s PROCESS PID %5ld: actual budget %4.2f\n", 
+                                                (budgetsList[0].p_type == 0 ? "USER" : "NODE"), 
+                                                (long)budgetsList[0].proc_pid, 
+                                                budgetsList[0].budget);
+                                        
                                         /* Printing budget of process with maximum budget */
-                                        if (bud_list_tail->p_type) /* Budget of node process */
-                                            printf("[MASTER]:  - NODE PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_tail->proc_pid, bud_list_tail->budget);
-                                        else /* Budget of user process */
-                                            printf("[MASTER]:  - USER PROCESS PID %5ld: actual budget %4.2f\n", (long)bud_list_tail->proc_pid, bud_list_tail->budget);
+                                        printf("[MASTER]:  - %s PROCESS PID %5ld: actual budget %4.2f\n", 
+                                                (budgetsList[budgetsListLength-1].p_type == 0 ? "USER" : "NODE"), 
+                                                (long)budgetsList[budgetsListLength-1].proc_pid, 
+                                                budgetsList[budgetsListLength-1].budget);
                                     }
 
                                     /* Printing number of active nodes and users */
@@ -1522,6 +1505,9 @@ boolean allocateGlobalStructures()
 
     noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
     TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "[MASTER]: failed to allocate registers partitions' shared variables pointers. Error: ");
+
+    budgetsList = (proc_budget *)calloc((SO_USERS_NUM + SO_NODES_NUM + MAX_ADDITIONAL_NODES), sizeof(proc_budget));
+    TEST_MALLOC_ERROR(budgetsList, "[MASTER]: failed to allocate budgets list's array. Error: ");
 
     return TRUE;
 }
@@ -1886,21 +1872,6 @@ boolean initializeIPCFacilities()
 }
 
 /**
- * @brief Function to frees the space dedicated to the budget list p passed as argument.
- * @param p pointer to linked list budgetlist
- */
-void budgetlist_free(budgetlist p)
-{
-    if (p == NULL)
-        return;
-
-    budgetlist_free(p->next);
-
-    if (p != NULL)
-        free(p);
-}
-
-/**
  * @brief Function that inserts in the global list bud_list the node passed as
  * argument in an ordered way (the list is ordered in ascending order).
  * We want to keep the list sorted to implement a more efficient
@@ -1911,62 +1882,46 @@ void budgetlist_free(budgetlist p)
  */
 void insert_ordered(pid_t pid, double budget, int p_type)
 {
-    budgetlist el;
-    budgetlist prev;
-    budgetlist new_el;
+    int i = 0, j = 0;
 
-    new_el = (budgetlist)malloc(sizeof(*new_el));
-    new_el->proc_pid = pid;
-    new_el->budget = budget;
-    new_el->p_type = p_type;
+    /* find the position where to insert the new process */
+    while(i < budgetsListLength && budgetsList[i].budget < budget)
+        i++;
 
-    /* insertion on empty list */
-    if (bud_list_head == NULL)
+    /* 
+        when we exit the cycle, we have two cases:
+        - the index i is equal to budgetListLength: we have to add the element at the end of the array
+        - the budget of the process to insert is bigger/equal to the one at index i: we have 
+    */
+    if(i == budgetsListLength)
     {
-        new_el->prev = NULL;
-        new_el->next = NULL;
-        bud_list_head = new_el;
-        bud_list_tail = new_el;
-        return;
+        /* we have to insert the new process at the end of the array */
+        budgetsListLength++;
+        budgetsList[i].proc_pid = pid;
+        budgetsList[i].budget = budget;
+        budgetsList[i].p_type = p_type;
     }
-
-    /* insertion on head of list */
-    if (new_el->budget <= bud_list_head->budget)
+    else
     {
-        new_el->prev = NULL;
-        new_el->next = bud_list_head;
-        bud_list_head->prev = new_el;
-        bud_list_head = new_el;
-        return;
-    }
-
-    /* insertion on tail of list */
-    if (new_el->budget >= bud_list_tail->budget)
-    {
-        new_el->next = NULL;
-        new_el->prev = bud_list_tail;
-        bud_list_tail->next = new_el;
-        bud_list_tail = new_el;
-        return;
-    }
-
-    /* insertion in middle of list */
-    prev = bud_list_head;
-
-    for (el = bud_list_head->next; el != NULL; el = el->next)
-    {
-        if (new_el->budget <= el->budget)
+        /* 
+         * worst case, we need to shift all the elements to the right to make 
+         * space for the new process
+         */
+        j = budgetsListLength; /* save last entry */
+        budgetsListLength++;
+        
+        /* shifting to right */
+        while(j > i)
         {
-            new_el->next = el;
-            el->prev = new_el;
-
-            prev->next = new_el;
-            new_el->prev = prev;
-            return;
+            budgetsList[j] = budgetsList[j-1];
+            j--;
         }
-        prev = el;
-    }
 
+        /* inserting new process */
+        budgetsList[i].proc_pid = pid;
+        budgetsList[i].budget = budget;
+        budgetsList[i].p_type = p_type;
+    }
     
 }
 
@@ -1975,75 +1930,28 @@ void insert_ordered(pid_t pid, double budget, int p_type)
  * proc_pid as the one passed as first argument; if it's found, upgrades its budget
  * adding the second argument, which is a positive or negative amount.
  * @param remove_pid pid of the item to be searched for in the budgetlist.
- * @param amount_changing positive or negative amount.
+ * @param amount_changing positive or negative amount used to update process' budget.
+ * @return int the method returns -1 if the processes with pid remove_pid it's not 
+ * in the array, 0 otherwise.
  */
 int update_budget(pid_t remove_pid, double amount_changing)
 {
-    budgetlist new_el;
-    budgetlist el;
-    budgetlist prev;
-    int found = 0;
-    char *msg = NULL;
-    msg = (char *)calloc(100, sizeof(char));
+    int i = 0;
 
-    /* check if budgetlist is NULL, if yes its an error */
-    if (bud_list_head == NULL)
-    {
-        safeErrorPrint("[MASTER]: Error in function update_budget: NULL list passed to the function.", __LINE__);
-        return -1;
-    }
+    /*
+     * we have to search for the process with pid remove_pid. The processes in the 
+     * array are ordered for budget, so we have to to a linear search.
+     */
 
-    if (bud_list_head->proc_pid == remove_pid)
-    {
-        /* if the node to update the budget is the first in the list,
-         then we remove it from the list (afterwards we will reinsert it) */
-        new_el = bud_list_head;
-        bud_list_head = bud_list_head->next;
-        bud_list_head->prev = NULL;
-        found = 1;
-    }
-    else if (bud_list_tail->proc_pid == remove_pid)
-    {
-        /* if the node to update the budget is the last one in the list,
-         then we remove it from the list (afterwards we will reinsert it) */
-        new_el = bud_list_tail;
-        bud_list_tail = bud_list_tail->prev;
-        bud_list_tail->next = NULL;
-        found = 1;
-    }
-    else
-    {
-        /* the node to update the budget is in the middle of the list,
-         we have to search for it and remove it from the list (we will re-insert it later) */
-        prev = bud_list_head;
+    while(i < budgetsListLength && budgetsList[i].proc_pid == remove_pid)
+        i++;
 
-        for (el = bud_list_head->next; el != NULL && !found; el = el->next)
-        {
-            if (el->proc_pid == remove_pid)
-            {
-                /* I found the node to update, I need to remove it */
-                /* I have to change both the reference to next and prev */
-                prev->next = el->next;
-                (el->next)->prev = prev;
-                new_el = el;
-                found = 1;
-            }
-            prev = el;
-        }
-    }
+    if(i == budgetsListLength)
+        return -1; /* the process of pid remove_pid it's not in the array */
 
-    if (found == 0)
-    {
-        snprintf(msg, 99, "[MASTER]: Trying to update budget but no element in budgetlist with pid %5ld\n", (long)remove_pid);
-        safeErrorPrint(msg, __LINE__);
-        return -1;
-    }
+    /* update the process' budget */
+    budgetsList[i].budget += amount_changing;
 
-    /* update budget of removed element */
-    new_el->budget += amount_changing; /* amount_changing is a positive or negative value */
-
-    insert_ordered(new_el->proc_pid, new_el->budget, new_el->p_type);
-    free(msg);
     return 0;
 }
 
@@ -2635,6 +2543,10 @@ boolean deallocateFacilities(int *exitCode)
             "[MASTER]: Number of all times nodes' shared variable semaphore successfully removed.\n");
     }
 
+    /* Releasing space allocated for budgets list's array */
+    if(budgetsList != NULL)
+        free(budgetsList);
+
     /* Releasing local variables' memory*/
     /*if (printMsg != NULL)
         free(printMsg);*/
@@ -2654,7 +2566,6 @@ void checkNodeCreationRequests()
     int tpId = -1, j = 0;
     pid_t currPid = getpid();
     MsgTP firstTrans;
-    budgetlist new_el;
     struct sembuf sops[3];
     long childPid = -1;
     long indexNodesList = 0;
@@ -2680,10 +2591,10 @@ void checkNodeCreationRequests()
         if (ausNode.msgContent == NEWNODE)
         {
             /* ONLY FOR DEBUG PURPOSE */
-            /*
+            
             fdReport = open("node_creation_report.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
             dprintf(fdReport, "MASTER: handled creation of new node request\n");
-            close(fdReport);*/
+            close(fdReport);
 
             printf("[MASTER]: creating new node...\n");
             /* entering critical section for number of all times nodes' shared variable */
@@ -2754,7 +2665,7 @@ void checkNodeCreationRequests()
                             safeErrorPrint("[MASTER]: failed to create additional node's transaction pool. Error: ", __LINE__);
                             
                             /* Kill the node processes, it won't start */
-                            kill(procPid, SIGUSR1);
+                            kill(procPid, SIGTERM);
 
                             /* Reinserting the message that we have consumed from the global queue */
                             if (msgsnd(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), 0) == -1)
@@ -2826,13 +2737,7 @@ void checkNodeCreationRequests()
                                 endOfSimulation(-1);
                             }
 
-                            /* Adding new node to budgetlist */
-                            /*printf("Iniziato budget list nuovo nodo");
-                            new_el = malloc(sizeof(*new_el));
-                            printf("Finito budget list nuovo nodo");
-                            new_el->proc_pid = procPid;
-                            new_el->budget = 0;
-                            new_el->p_type = 1;*/
+                            /* Adding new node to budgetslist */
                             insert_ordered(procPid, 0, 1);
 
                             /* add a new entry to the tpList array */
@@ -3017,13 +2922,11 @@ void checkNodeCreationRequests()
                                 semop(fairStartSem, &sops[0], 1);
 
                                 printf("Ciao\n");
-                                msg_length = snprintf(printMsg, 199, "[MASTER]: created new node on request with pid %5ld\n", (long)procPid);
-                                write(STDOUT_FILENO, printMsg, msg_length);
+                                printf("[MASTER]: created new node on request with pid %5ld\n", (long)procPid);
+                                /*msg_length = snprintf(printMsg, 199, "[MASTER]: created new node on request with pid %5ld\n", (long)procPid);
+                                write(STDOUT_FILENO, printMsg, msg_length);*/
                             }
                         }
-
-                        if (printMsg != NULL)
-                            free(printMsg);
                     }
                     else
                     {
@@ -3067,6 +2970,9 @@ void checkNodeCreationRequests()
     else if (attempts > 0)
         printf(
             "[MASTER]: no more node creation requests to be served.\n");
+
+    if (printMsg != NULL)
+        free(printMsg);
 }
 
 /**
