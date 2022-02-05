@@ -20,12 +20,14 @@ void unsafeErrorPrint(char *msg, int line)
     {
         /* If errno was set we dispaly the internal message*/
         perror(msg);
+        errno = 0;
     }
     else
     {
         /* If errno is unset we can only rely on user-defined message*/
-        strcat(msg, "\n");
-        fputs(msg, stderr);
+        /*strcat(msg, "\n");
+        fputs(msg, stderr);*/
+        fprintf(stderr, "%s\n", msg);
     }
 }
 

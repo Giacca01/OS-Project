@@ -413,7 +413,7 @@ int main(int argc, char *argv[], char *envp[])
                                                                 }
                                                                 else
                                                                 {
-                                                                    if (errno != EINTR)
+                                                                    if (errno != 0 && errno != EINTR)
                                                                     {
                                                                         sprintf(printMsg, "[NODE %5ld]: failed to retrieve transaction from Transaction Pool. Error", my_pid);
                                                                         unsafeErrorPrint(printMsg, __LINE__);
@@ -670,7 +670,7 @@ int main(int argc, char *argv[], char *envp[])
                                                                 snprintf(printMsg, 199, "[NODE %5ld]: an unexpected event occured before the end of the computation. Error: ", my_pid);
                                                                 unsafeErrorPrint(printMsg, __LINE__);
                                                                 printMsg[0] = 0; /* resetting string's content */
-                                                                if (errno != EINTR)
+                                                                if (errno != 0 && errno != EINTR)
                                                                 {
                                                                     /* Si è verificato un errore nella nanosleep (può succedere in caso di errore di settaggio di simTime) */
                                                                 }
@@ -964,7 +964,7 @@ boolean initializeIPCFacilities()
     nodesList = (ProcListElem *)shmat(nodesListId, NULL, SHM_RDONLY);
     TEST_SHMAT_ERROR(nodesList, "[NODE]: failed to attach to nodes list's memory segment. Error: ");
 
-    noNodeSegReaders = shmget(ftok(SHMFILEPATH, NONODESEGRDERSSEED), sizeof(SO_NODES_NUM), 0600);
+    noNodeSegReaders = shmget(ftok(SHMFILEPATH, NONODESEGRDERSSEED), sizeof(int), 0600);
     SHM_TEST_ERROR(noNodeSegReaders, "[NODE]: ftok failed during nodes list's shared variable creation. Error: ");
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
     TEST_SHMAT_ERROR(noNodeSegReadersPtr, "[NODE]: shmget failed during nodes list's shared variable creation. Error: ");
@@ -1086,7 +1086,7 @@ void dispatchToFriend()
 
     if (msgrcv(tpId, &aus, sizeof(MsgTP) - sizeof(long), my_pid, IPC_NOWAIT) == -1)
     {
-        if (errno != ENOMSG && errno != EINTR)
+        if (errno != 0 && errno != ENOMSG && errno != EINTR)
         {
             snprintf(printMsg, 199, "[NODE %5ld]: failed to extract a transaction to send it to a friend. Error: ", my_pid);
             safeErrorPrint(printMsg, __LINE__);
@@ -1471,7 +1471,7 @@ void sendTransaction()
 
     printf("Kekw nodo 5");
 
-    if (errno != ENOMSG && errno != EINTR)
+    if (errno != 0 && errno != ENOMSG && errno != EINTR)
     {
         snprintf(printMsg, 199, "[NODE %5ld]: failed to check existence of transactions on global queue. Error: ", my_pid);
         safeErrorPrint(printMsg, __LINE__);
@@ -1704,7 +1704,7 @@ void deallocateIPCFacilities()
         {
             if (shmdt(regPtrs[i]) == -1)
             {
-                if (errno != EINVAL)
+                if (errno != 0 && errno != EINVAL)
                 {
                     /*
                         Implementare un meccanismo di retry??
@@ -1731,7 +1731,7 @@ void deallocateIPCFacilities()
 
     if (nodesList != NULL && shmdt(nodesList) == -1)
     {
-        if (errno != EAGAIN)
+        if (errno != 0 && errno != EAGAIN)
         {
             snprintf(printMsg, 199, "[NODE %5ld]: failed to detach from nodes list. Error: ", my_pid);
             safeErrorPrint(printMsg, __LINE__);
@@ -1745,7 +1745,7 @@ void deallocateIPCFacilities()
 
     if (noNodeSegReadersPtr != NULL && shmdt(noNodeSegReadersPtr) == -1)
     {
-        if (errno != EAGAIN)
+        if (errno != 0 && errno != EAGAIN)
         {
             snprintf(printMsg, 199, "[NODE %5ld]: failed to detach from nodes list's number of readers shared variable. Error: ", my_pid);
             safeErrorPrint(printMsg, __LINE__);

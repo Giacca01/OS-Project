@@ -89,7 +89,7 @@ int *noReadersPartitions = NULL;
  * noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
  * noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable
  */
-unsigned long **noReadersPartitionsPtrs = NULL;
+int **noReadersPartitionsPtrs;
 
 /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write users list */
 int userListSem = -1;
@@ -120,7 +120,7 @@ int noAllTimesNodesSem = -1;
 int noAllTimesNodes = -1;
 
 /* Pointer to the variable that counts the number of all times node processes */
-int *noAllTimesNodesPtr = NULL;
+long *noAllTimesNodesPtr = NULL;
 
 /*
     We use a long int variable to handle an outstanding number
@@ -267,9 +267,11 @@ void budgetlist_free(budgetlist);
  * argument in an ordered way (the list is ordered in ascending order).
  * We want to keep the list sorted to implement a more efficient
  * budget calculation.
- * @param new_el pointer to a new element to insert into linked list budgetlist
+ * @param pid pid of new process to insert
+ * @param budget budget of new node to insert
+ * @param p_type type of new node to insert (0 = user, 1 = node)
  */
-void insert_ordered(budgetlist);
+void insert_ordered(pid_t, double, int);
 
 /**
  * @brief Function that searches in the gloabl list bud_list for an element with
@@ -425,23 +427,15 @@ int main(int argc, char *argv[])
                 else
                 {
                     
-                    actSegFaultHandler.sa_handler = segmentationFaultHandler;
+                    /*actSegFaultHandler.sa_handler = segmentationFaultHandler;
                     actSegFaultHandler.sa_mask = set;
                     if (sigaction(SIGSEGV, &actSegFaultHandler, NULL) == -1)
                     {
                         unsafeErrorPrint("[MASTER]: failed to set segmentation fault handler. Error: ", __LINE__);
                     }
                     else
-                    {
-                        actSegFaultHandler.sa_handler = segmentationFaultHandler;
-                        actSegFaultHandler.sa_mask = set;
-                        if (sigaction(SIGABRT, &actSegFaultHandler, NULL) == -1)
-                        {
-                            unsafeErrorPrint("[MASTER]: failed to set abort signal handler. Error: ", __LINE__);
-                        }
-                        else
-                        {
-                            maxNumNode = SO_NODES_NUM + MAX_ADDITIONAL_NODES;
+                    {*/
+                        maxNumNode = SO_NODES_NUM + MAX_ADDITIONAL_NODES;
 
                         printf("[MASTER]: creating IPC facilitites...\n");
                         if (allocateGlobalStructures() == TRUE)
@@ -773,11 +767,11 @@ int main(int argc, char *argv[])
                                 bud_list_tail = NULL;
                                 for (i = 0; i < SO_USERS_NUM; i++)
                                 {
-                                    new_el = malloc(sizeof(*new_el));
+                                    /*new_el = malloc(sizeof(*new_el));
                                     new_el->proc_pid = usersList[i].procId;
                                     new_el->budget = SO_BUDGET_INIT;
-                                    new_el->p_type = 0;
-                                    insert_ordered(new_el); /* insert user on budgetlist */
+                                    new_el->p_type = 0;*/
+                                    insert_ordered(usersList[i].procId, SO_BUDGET_INIT, 0); /* insert user on budgetlist */
                                 }
 
                                 /* we enter the critical section for the noUserSegReadersPtr variabile */
@@ -854,11 +848,11 @@ int main(int argc, char *argv[])
 
                                 for (i = 0; i < SO_NODES_NUM; i++)
                                 {
-                                    new_el = malloc(sizeof(*new_el));
+                                    /*new_el = malloc(sizeof(*new_el));
                                     new_el->proc_pid = nodesList[i].procId;
                                     new_el->budget = 0;
-                                    new_el->p_type = 1;
-                                    insert_ordered(new_el); /* insert node on budgetlist */
+                                    new_el->p_type = 1;*/
+                                    insert_ordered(nodesList[i].procId, 0, 1); /* insert node on budgetlist */
                                 }
                                 /****************************************************/
                                 /****************************************************/
@@ -983,11 +977,15 @@ int main(int argc, char *argv[])
                                                 endOfSimulation(-1);
                                             }
 
-                                            printf("Yo soy un puntator %p valor %ld\n", noReadersPartitionsPtrs[i], *(noReadersPartitionsPtrs[i]));
-                                            k = *(noReadersPartitionsPtrs[i]);
+                                            printf("Yo soy un puntator %p valor %d\n", noReadersPartitionsPtrs[i], *(noReadersPartitionsPtrs[i]));
+                                            /*fdReport = open("pointer_values.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+                                            dprintf(fdReport, "[MASTER]: before increment %d puntatore %p valore %ld\n", __LINE__, noReadersPartitionsPtrs[i], *(noReadersPartitionsPtrs[i]));
+                                            close(fdReport);*/
+                                            /*k = *(noReadersPartitionsPtrs[i]);
                                             *(noReadersPartitionsPtrs[i]) = *(noReadersPartitionsPtrs[i]) + 1;
-                                            k++;
-                                            if (k == 1)
+                                            k++;*/
+                                            *(noReadersPartitionsPtrs[i])++;
+                                            if (*(noReadersPartitionsPtrs[i]) == 1)
                                             {
                                                 sops[0].sem_num = i;
                                                 sops[0].sem_op = -1;
@@ -1090,6 +1088,9 @@ int main(int argc, char *argv[])
                                                 }
                                                 else
                                                 {
+                                                    /*fdReport = open("pointer_values.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+                                                    dprintf(fdReport, "[MASTER]: before decrement %d puntatore %p valore %ld\n", __LINE__, noReadersPartitionsPtrs[i], *(noReadersPartitionsPtrs[i]));
+                                                    close(fdReport);*/
                                                     *(noReadersPartitionsPtrs[i])--;
                                                     if (*(noReadersPartitionsPtrs[i]) == 0)
                                                     {
@@ -1271,7 +1272,7 @@ int main(int argc, char *argv[])
                                     }
 
                                     /* If errno is ENOMSG, no message of user termination on global queue, otherwise an error occured */
-                                    if (errno != ENOMSG)
+                                    if (errno != 0 && errno != ENOMSG)
                                     {
                                         unsafeErrorPrint("[MASTER]: failed to retrieve user termination messages from global queue. Error: ", __LINE__);
                                         endOfSimulation(-1);
@@ -1347,7 +1348,7 @@ int main(int argc, char *argv[])
                                     }
 
                                     /* If errno is ENOMSG, no message of user termination on global queue, otherwise an error occured */
-                                    if (errno != ENOMSG)
+                                    if (errno != 0 && errno != ENOMSG)
                                     {
                                         unsafeErrorPrint("[MASTER]: failed to retrieve node termination messages from global queue. Error: ", __LINE__);
                                         endOfSimulation(-1);
@@ -1372,9 +1373,8 @@ int main(int argc, char *argv[])
                                 }
                             }
                         }
-                    }
                         deallocateFacilities(&exitCode);
-                    }
+                    /*}*/
                 }
             }
         }
@@ -1520,7 +1520,7 @@ boolean allocateGlobalStructures()
     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
     TEST_MALLOC_ERROR(noReadersPartitions, "[MASTER]: failed to allocate registers partitions' shared variables ids. Error: ");
 
-    noReadersPartitionsPtrs = (unsigned long **)calloc(REG_PARTITION_COUNT, sizeof(unsigned long *));
+    noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
     TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "[MASTER]: failed to allocate registers partitions' shared variables pointers. Error: ");
 
     return TRUE;
@@ -1805,9 +1805,9 @@ boolean initializeIPCFacilities()
 
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during parition one's shared variable creation. Error: ");
-    noReadersPartitions[0] = shmget(key, sizeof(unsigned long), IPC_CREAT | MASTERPERMITS);
+    noReadersPartitions[0] = shmget(key, sizeof(int), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(noReadersPartitions[0], "[MASTER]: shmget failed during parition one's shared variable creation. Error: ");
-    noReadersPartitionsPtrs[0] = (unsigned long *)shmat(noReadersPartitions[0], NULL, MASTERPERMITS);
+    noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "[MASTER]: failed to attach to parition one's shared variable segment. Error: ");
     /*
         At the beginning we have no processes reading from the register's paritions
@@ -1820,9 +1820,9 @@ boolean initializeIPCFacilities()
 
     key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during parition two's shared variable creation. Error: ");
-    noReadersPartitions[1] = shmget(key, sizeof(unsigned long), IPC_CREAT | MASTERPERMITS);
+    noReadersPartitions[1] = shmget(key, sizeof(int), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(noReadersPartitions[1], "[MASTER]: shmget failed during parition two's shared variable creation. Error: ");
-    noReadersPartitionsPtrs[1] = (unsigned long *)shmat(noReadersPartitions[1], NULL, MASTERPERMITS);
+    noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "[MASTER]: failed to attach to parition rwo's shared variable segment. Error: ");
     *(noReadersPartitionsPtrs[1]) = 0;
 
@@ -1832,9 +1832,9 @@ boolean initializeIPCFacilities()
 
     key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during parition three's shared variable creation. Error: ");
-    noReadersPartitions[2] = shmget(key, sizeof(unsigned long), IPC_CREAT | MASTERPERMITS);
+    noReadersPartitions[2] = shmget(key, sizeof(int), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(noReadersPartitions[2], "[MASTER]: shmget failed during parition three's shared variable creation. Error: ");
-    noReadersPartitionsPtrs[2] = (unsigned long *)shmat(noReadersPartitions[2], NULL, MASTERPERMITS);
+    noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "[MASTER]: failed to attach to parition three's shared variable segment. Error: ");
     *(noReadersPartitionsPtrs[2]) = 0;
 
@@ -1844,7 +1844,7 @@ boolean initializeIPCFacilities()
 
     key = ftok(SHMFILEPATH, NOUSRSEGRDERSSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during users list's shared variable creation. Error: ");
-    noUserSegReaders = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
+    noUserSegReaders = shmget(key, sizeof(int), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(key, "[MASTER]: shmget failed during users list's shared variable creation. Error: ");
     noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
     TEST_SHMAT_ERROR(noUserSegReadersPtr, "[MASTER]: failed to attach to users list's shared variable segment. Error: ");
@@ -1860,7 +1860,7 @@ boolean initializeIPCFacilities()
 
     key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during nodes list's shared variable creation. Error: ");
-    noNodeSegReaders = shmget(key, sizeof(SO_NODES_NUM), IPC_CREAT | MASTERPERMITS);
+    noNodeSegReaders = shmget(key, sizeof(int), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(noNodeSegReaders, "[MASTER]: shmget failed during nodes list's shared variable creation. Error: ");
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
     TEST_SHMAT_ERROR(noNodeSegReadersPtr, "[MASTER]: failed to attach to nodes list's shared variable segment. Error: ");
@@ -1874,7 +1874,7 @@ boolean initializeIPCFacilities()
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during number of all times nodes' shared variable creation. Error: ");
     noAllTimesNodes = shmget(key, sizeof(long), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(noAllTimesNodes, "[MASTER]: shmget failed during number of all times nodes' shared variable creation. Error: ");
-    noAllTimesNodesPtr = (int *)shmat(noAllTimesNodes, NULL, 0);
+    noAllTimesNodesPtr = (long *)shmat(noAllTimesNodes, NULL, 0);
     TEST_SHMAT_ERROR(noAllTimesNodesPtr, "[MASTER]: failed to attach to number of all times nodes' shared variable segment. Error: ");
     *noAllTimesNodesPtr = 0;
 
@@ -1905,12 +1905,20 @@ void budgetlist_free(budgetlist p)
  * argument in an ordered way (the list is ordered in ascending order).
  * We want to keep the list sorted to implement a more efficient
  * budget calculation.
- * @param new_el pointer to a new element to insert into linked list budgetlist
+ * @param pid pid of new process to insert
+ * @param budget budget of new node to insert
+ * @param p_type type of new node to insert (0 = user, 1 = node)
  */
-void insert_ordered(budgetlist new_el)
+void insert_ordered(pid_t pid, double budget, int p_type)
 {
     budgetlist el;
     budgetlist prev;
+    budgetlist new_el;
+
+    new_el = (budgetlist)malloc(sizeof(*new_el));
+    new_el->proc_pid = pid;
+    new_el->budget = budget;
+    new_el->p_type = p_type;
 
     /* insertion on empty list */
     if (bud_list_head == NULL)
@@ -2034,7 +2042,7 @@ int update_budget(pid_t remove_pid, double amount_changing)
     /* update budget of removed element */
     new_el->budget += amount_changing; /* amount_changing is a positive or negative value */
 
-    insert_ordered(new_el);
+    insert_ordered(new_el->proc_pid, new_el->budget, new_el->p_type);
     free(msg);
     return 0;
 }
@@ -2224,9 +2232,9 @@ boolean deallocateFacilities(int *exitCode)
              *   since no one can remove it, this case can only happen
              *    when the IPC allocation procedure fails
              */
-            if (regPtrs[i] != NULL && shmdt(regPtrs[i]) == -1 && errno != EINVAL)
+            if (regPtrs[i] != NULL && shmdt(regPtrs[i]) == -1 && errno != 0 && errno != EINVAL)
             {
-                if (errno != EINVAL)
+                if (errno != 0 && errno != EINVAL)
                 {
                     printf("[MASTER]: failed to detach from register's partition number %d.\n",
                            (i + 1));
@@ -2235,9 +2243,9 @@ boolean deallocateFacilities(int *exitCode)
             }
             else
             {
-                if (shmctl(regPartsIds[i], IPC_RMID, NULL) == -1 && errno != EINVAL)
+                if (shmctl(regPartsIds[i], IPC_RMID, NULL) == -1 && errno != 0 && errno != EINVAL)
                 {
-                    if (errno != EINVAL)
+                    if (errno != 0 && errno != EINVAL)
                     {
                         printf(
                             "[MASTER]: failed to remove register's partition number %d.\n",
@@ -2265,7 +2273,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating users' list segment...\n");
     if (usersList != NULL && shmdt(usersList) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             safeErrorPrint("[MASTER]: failed to detach from users' list segment. Error: ", __LINE__);
             *exitCode = EXIT_FAILURE;
@@ -2275,7 +2283,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (shmctl(usersListId, IPC_RMID, NULL) == -1)
         {
-            if (errno != EAGAIN)
+            if (errno != 0 && errno != EAGAIN)
             {
                 safeErrorPrint("[MASTER]: failed to remove users' list segment. Error: ", __LINE__);
                 *exitCode = EXIT_FAILURE;
@@ -2293,7 +2301,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating nodes' list segment...\n");
     if (nodesList != NULL && shmdt(nodesList) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             safeErrorPrint("[MASTER]: failed to detach from nodes' list segment. Error: ", __LINE__);
             *exitCode = EXIT_FAILURE;
@@ -2303,7 +2311,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (shmctl(nodesListId, IPC_RMID, NULL) == -1)
         {
-            if (errno != EINVAL)
+            if (errno != 0 && errno != EINVAL)
             {
                 safeErrorPrint("[MASTER]: failed to remove nodes' list segment. Error: ", __LINE__);
                 *exitCode = EXIT_FAILURE;
@@ -2323,7 +2331,7 @@ boolean deallocateFacilities(int *exitCode)
         {
             if (noReadersPartitionsPtrs[i] != NULL && shmdt(noReadersPartitionsPtrs[i]) == -1)
             {
-                if (errno != EINVAL)
+                if (errno != 0 && errno != EINVAL)
                 {
                     printf("[MASTER]: failed to detach from partition number %d shared variable segment.\n",
                            (i + 1));
@@ -2334,7 +2342,7 @@ boolean deallocateFacilities(int *exitCode)
             {
                 if (shmctl(noReadersPartitions[i], IPC_RMID, NULL) == -1)
                 {
-                    if (errno != EINVAL)
+                    if (errno != 0 && errno != EINVAL)
                     {
                         printf("[MASTER]: failed to remove partition number %d shared variable segment.\n",
                                (i + 1));
@@ -2364,7 +2372,7 @@ boolean deallocateFacilities(int *exitCode)
         {
             if (msgctl(tpList[i].msgQId, IPC_RMID, NULL) == -1)
             {
-                if (errno != EINVAL)
+                if (errno != 0 && errno != EINVAL)
                 {
                     printf("[MASTER]: failed to remove transaction pool of process %ld.\n",
                            (long)tpList[i].procId);
@@ -2386,7 +2394,7 @@ boolean deallocateFacilities(int *exitCode)
     printf("[MASTER]: deallocating global processes queue...\n");
     if (msgctl(procQueue, IPC_RMID, NULL) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             perror("[MASTER]: failed to remove global processes queue: ");
             /*
@@ -2403,7 +2411,7 @@ boolean deallocateFacilities(int *exitCode)
     printf("[MASTER]: deallocating global nodes queue...\n");
     if (msgctl(nodeCreationQueue, IPC_RMID, NULL) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             perror("[MASTER]: failed to remove global nodes queue: ");
             *exitCode = EXIT_FAILURE;
@@ -2417,7 +2425,7 @@ boolean deallocateFacilities(int *exitCode)
     printf("[MASTER]: deallocating global transactions queue...\n");
     if (msgctl(transQueue, IPC_RMID, NULL) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             perror("[MASTER]: failed to remove global transactions queue: ");
             *exitCode = EXIT_FAILURE;
@@ -2433,7 +2441,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating writing semaphores...\n");
     if (semctl(wrPartSem, 0, IPC_RMID) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             printf("[MASTER]: failed to remove partions' writing semaphores.\n");
             *exitCode = EXIT_FAILURE;
@@ -2450,7 +2458,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating reading semaphores...\n");
     if (semctl(rdPartSem, 0, IPC_RMID) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             printf("[MASTER]: failed to remove partions' reading semaphores.\n");
             *exitCode = EXIT_FAILURE;
@@ -2467,7 +2475,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating fair start semaphores...\n");
     if (semctl(fairStartSem, 0, IPC_RMID) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             printf("[MASTER]: failed to remove fair start semaphore.\n");
             *exitCode = EXIT_FAILURE;
@@ -2484,7 +2492,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating users' list semaphores...\n");
     if (semctl(userListSem, 0, IPC_RMID) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             printf("[MASTER]: failed to remove users' list semaphores.\n");
             *exitCode = EXIT_FAILURE;
@@ -2501,7 +2509,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating register's paritions mutex semaphores...\n");
     if (semctl(mutexPartSem, 0, IPC_RMID) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             printf("[MASTER]: failed to remove register's paritions mutex semaphores.\n");
             *exitCode = EXIT_FAILURE;
@@ -2517,7 +2525,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating user list's shared variable...\n");
     if (noUserSegReadersPtr != NULL && shmdt(noUserSegReadersPtr) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             safeErrorPrint("[MASTER]: failed to detach from user list's shared variable. Error: ", __LINE__);
             *exitCode = EXIT_FAILURE;
@@ -2527,7 +2535,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (shmctl(noUserSegReaders, IPC_RMID, NULL) == -1)
         {
-            if (errno != EINVAL)
+            if (errno != 0 && errno != EINVAL)
             {
                 safeErrorPrint("[MASTER]: failed to remove user list's shared variable. Error: ", __LINE__);
                 *exitCode = EXIT_FAILURE;
@@ -2544,7 +2552,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating nodes list's semaphores...\n");
     if (semctl(nodeListSem, 0, IPC_RMID) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             printf("[MASTER]: failed to remove nodes list's semaphores.\n");
             *exitCode = EXIT_FAILURE;
@@ -2560,7 +2568,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating node list's shared variable...\n");
     if (noNodeSegReadersPtr != NULL && shmdt(noNodeSegReadersPtr) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             safeErrorPrint("[MASTER]: failed to detach from node list's shared variable. Error: ", __LINE__);
             *exitCode = EXIT_FAILURE;
@@ -2570,7 +2578,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (shmctl(noNodeSegReaders, IPC_RMID, NULL) == -1)
         {
-            if (errno != EINVAL)
+            if (errno != 0 && errno != EINVAL)
             {
                 safeErrorPrint("[MASTER]: failed to remove node list's shared variable. Error: ", __LINE__);
                 *exitCode = EXIT_FAILURE;
@@ -2587,7 +2595,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating number of all times nodes' shared variable...\n");
     if (noAllTimesNodesPtr != NULL && shmdt(noAllTimesNodesPtr) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             safeErrorPrint("[MASTER]: failed to detach from number of all times nodes' shared variable. Error: ", __LINE__);
             *exitCode = EXIT_FAILURE;
@@ -2597,7 +2605,7 @@ boolean deallocateFacilities(int *exitCode)
     {
         if (shmctl(noAllTimesNodes, IPC_RMID, NULL) == -1)
         {
-            if (errno != EINVAL)
+            if (errno != 0 && errno != EINVAL)
             {
                 safeErrorPrint("[MASTER]: failed to remove number of all times nodes' shared variable. Error: ", __LINE__);
                 *exitCode = EXIT_FAILURE;
@@ -2615,7 +2623,7 @@ boolean deallocateFacilities(int *exitCode)
         "[MASTER]: deallocating number of all times nodes' shared variable semaphore...\n");
     if (semctl(noAllTimesNodesSem, 0, IPC_RMID) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             printf("[MASTER]: failed to remove number of all times nodes' shared variable semaphore.");
             *exitCode = EXIT_FAILURE;
@@ -2736,9 +2744,9 @@ void checkNodeCreationRequests()
                     }
                     else if (procPid > 0)
                     {
-                        fdReport = open("processes_killer/processes_created.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+                        /*fdReport = open("processes_killer/processes_created.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
                         dprintf(fdReport, "%d\n", procPid);
-                        close(fdReport);
+                        close(fdReport);*/
 
                         tpId = msgget(ftok(MSGFILEPATH, (int)procPid), IPC_CREAT | IPC_EXCL | MASTERPERMITS);
                         if (tpId == -1)
@@ -2819,19 +2827,17 @@ void checkNodeCreationRequests()
                             }
 
                             /* Adding new node to budgetlist */
-                            printf("Iniziato budget list nuovo nodo");
+                            /*printf("Iniziato budget list nuovo nodo");
                             new_el = malloc(sizeof(*new_el));
                             printf("Finito budget list nuovo nodo");
                             new_el->proc_pid = procPid;
                             new_el->budget = 0;
-                            new_el->p_type = 1;
-                            
-                            insert_ordered(new_el);
-                            
+                            new_el->p_type = 1;*/
+                            insert_ordered(procPid, 0, 1);
 
                             /* add a new entry to the tpList array */
                             tplLength++;
-                            /*tpList = (TPElement *)realloc(tpList, sizeof(TPElement) * tplLength);*/
+                            tpList = (TPElement *)realloc(tpList, sizeof(TPElement) * tplLength);
                             /* Initialize messages queue for transactions pools */
                             tpList[tplLength - 1].procId = (long)procPid;
                             tpList[tplLength - 1].msgQId = tpId;
@@ -3053,7 +3059,7 @@ void checkNodeCreationRequests()
         }
     }
 
-    if (errno != ENOMSG)
+    if (errno != 0 && errno != ENOMSG)
         safeErrorPrint("[MASTER]: failed to check for node creation requests on global queue. Error: ", __LINE__);
     else if (attempts == 0)
         printf(
@@ -3090,7 +3096,7 @@ void printRemainedTransactions()
             cnt++;
         }
 
-        if (errno != ENOMSG)
+        if (errno != 0 && errno != ENOMSG)
         {
             unsafeErrorPrint("[MASTER]: an error occurred while printing remaining transactions. Error: ", __LINE__);
             error = TRUE;
