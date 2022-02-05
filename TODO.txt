@@ -99,3 +99,4 @@ boolean readConfigParameters()
 4) sistemare il makefile
 5) sisteamare terminazione in caso di segmentation fault
 6) RImuovere i tre segmenti da  byte che non vengono cancellati
+7) Modificare in modo che il pathname del file di configurazione venga passato come parametro
