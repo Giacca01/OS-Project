@@ -98,3 +98,4 @@ boolean readConfigParameters()
 3) sistemare nodo ed utente 
 4) sistemare il makefile
 5) sisteamare terminazione in caso di segmentation fault
+6) RImuovere i tre segmenti da  byte che non vengono cancellati

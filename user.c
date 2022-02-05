@@ -69,7 +69,7 @@ int *noReadersPartitions = NULL;
  * noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
  * noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable
  */
-int **noReadersPartitionsPtrs = NULL;
+unsigned long **noReadersPartitionsPtrs = NULL;
 
 /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write users list */
 int userListSem = -1;
@@ -490,7 +490,7 @@ boolean allocateMemory()
     Non allochiamo il noReadersPartitionsPtrs[i] perchè esso dovrà
     contenere un puntatore alla shared memory
     */
-    noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
+    noReadersPartitionsPtrs = (unsigned long **)calloc(REG_PARTITION_COUNT, sizeof(unsigned long *));
     TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "[USER]: failed to allocate registers partitions' shared variables pointers. Error: ");
 
     return TRUE;
@@ -605,25 +605,25 @@ boolean initializeFacilities()
     /* Aggancio segmenti per variabili condivise*/
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
     FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition one's shared variable creation. Error: ");
-    noReadersPartitions[0] = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    noReadersPartitions[0] = shmget(key, sizeof(unsigned long), 0600);
     SHM_TEST_ERROR(nodesListId, "[USER]: shmget failed during parition one's shared variable creation. Error: ");
-    noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, 0);
+    noReadersPartitionsPtrs[0] = (long *)shmat(noReadersPartitions[0], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[0], "User");*/
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "[USER]: failed to attach to parition one's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
     FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition two's shared variable creation. Error: ");
-    noReadersPartitions[1] = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    noReadersPartitions[1] = shmget(key, sizeof(unsigned long), 0600);
     SHM_TEST_ERROR(noReadersPartitions[1], "[USER]: shmget failed during parition two's shared variable creation. Error: ")
-    noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, 0);
+    noReadersPartitionsPtrs[1] = (long *)shmat(noReadersPartitions[1], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[1], "User");*/
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "[USER]: failed to attach to parition rwo's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
     FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition three's shared variable creation. Error: ");
-    noReadersPartitions[2] = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    noReadersPartitions[2] = shmget(key, sizeof(unsigned long), 0600);
     SHM_TEST_ERROR(noReadersPartitions[2], "[USER]: shmget failed during parition three's shared variable creation. Error: ")
-    noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, 0);
+    noReadersPartitionsPtrs[2] = (long *)shmat(noReadersPartitions[2], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[2], "User");*/
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "[USER]: failed to attach to parition three's shared variable segment. Error: ");
 

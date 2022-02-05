@@ -89,7 +89,7 @@ int *noReadersPartitions = NULL;
  * noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
  * noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable
  */
-long **noReadersPartitionsPtrs = NULL;
+unsigned long **noReadersPartitionsPtrs = NULL;
 
 /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write users list */
 int userListSem = -1;
@@ -424,7 +424,7 @@ int main(int argc, char *argv[])
                     unsafeErrorPrint("[MASTER]: failed to set end of simulation disposition. Error: ", __LINE__);
                 else
                 {
-                    /*
+                    
                     actSegFaultHandler.sa_handler = segmentationFaultHandler;
                     actSegFaultHandler.sa_mask = set;
                     if (sigaction(SIGSEGV, &actSegFaultHandler, NULL) == -1)
@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
                         unsafeErrorPrint("[MASTER]: failed to set segmentation fault handler. Error: ", __LINE__);
                     }
                     else
-                    {*/
+                    {
                         actSegFaultHandler.sa_handler = segmentationFaultHandler;
                         actSegFaultHandler.sa_mask = set;
                         if (sigaction(SIGABRT, &actSegFaultHandler, NULL) == -1)
@@ -1366,7 +1366,7 @@ int main(int argc, char *argv[])
                             }
                             deallocateFacilities(&exitCode);
                         }
-                    /*}*/
+                    }
                 }
             }
         }
@@ -1435,7 +1435,7 @@ boolean assignEnvironmentVariables()
  */
 boolean readConfigParameters()
 {
-    char *filename = "params_2.txt";
+    char *filename = "params_mine.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1512,7 +1512,7 @@ boolean allocateGlobalStructures()
     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
     TEST_MALLOC_ERROR(noReadersPartitions, "[MASTER]: failed to allocate registers partitions' shared variables ids. Error: ");
 
-    noReadersPartitionsPtrs = (long **)calloc(REG_PARTITION_COUNT, sizeof(long *));
+    noReadersPartitionsPtrs = (unsigned long **)calloc(REG_PARTITION_COUNT, sizeof(unsigned long *));
     TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "[MASTER]: failed to allocate registers partitions' shared variables pointers. Error: ");
 
     return TRUE;
@@ -1794,9 +1794,9 @@ boolean initializeIPCFacilities()
 
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during parition one's shared variable creation. Error: ");
-    noReadersPartitions[0] = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
+    noReadersPartitions[0] = shmget(key, sizeof(unsigned long), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(noReadersPartitions[0], "[MASTER]: shmget failed during parition one's shared variable creation. Error: ");
-    noReadersPartitionsPtrs[0] = (long *)shmat(noReadersPartitions[0], NULL, MASTERPERMITS);
+    noReadersPartitionsPtrs[0] = (unsigned long *)shmat(noReadersPartitions[0], NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "[MASTER]: failed to attach to parition one's shared variable segment. Error: ");
     /*
         At the beginning we have no processes reading from the register's paritions
@@ -1809,9 +1809,9 @@ boolean initializeIPCFacilities()
 
     key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during parition two's shared variable creation. Error: ");
-    noReadersPartitions[1] = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
+    noReadersPartitions[1] = shmget(key, sizeof(unsigned long), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(noReadersPartitions[1], "[MASTER]: shmget failed during parition two's shared variable creation. Error: ");
-    noReadersPartitionsPtrs[1] = (long *)shmat(noReadersPartitions[1], NULL, MASTERPERMITS);
+    noReadersPartitionsPtrs[1] = (unsigned long *)shmat(noReadersPartitions[1], NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "[MASTER]: failed to attach to parition rwo's shared variable segment. Error: ");
     *(noReadersPartitionsPtrs[1]) = 0;
 
@@ -1821,9 +1821,9 @@ boolean initializeIPCFacilities()
 
     key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during parition three's shared variable creation. Error: ");
-    noReadersPartitions[2] = shmget(key, sizeof(SO_USERS_NUM), IPC_CREAT | MASTERPERMITS);
+    noReadersPartitions[2] = shmget(key, sizeof(unsigned long), IPC_CREAT | MASTERPERMITS);
     SHM_TEST_ERROR(noReadersPartitions[2], "[MASTER]: shmget failed during parition three's shared variable creation. Error: ");
-    noReadersPartitionsPtrs[2] = (long *)shmat(noReadersPartitions[2], NULL, MASTERPERMITS);
+    noReadersPartitionsPtrs[2] = (unsigned long *)shmat(noReadersPartitions[2], NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "[MASTER]: failed to attach to parition three's shared variable segment. Error: ");
     *(noReadersPartitionsPtrs[2]) = 0;
 
