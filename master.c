@@ -2350,9 +2350,9 @@ boolean deallocateFacilities(int *exitCode)
             }
         }
 
-        /*
+        
         if (noReadersPartitions != NULL)
-            free(noReadersPartitions);*/
+            free(noReadersPartitions);
     }
 
     /* Transaction pools list deallocation*/
