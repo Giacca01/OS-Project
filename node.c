@@ -16,14 +16,14 @@
  * regPartsIds[1]: id of the second partition segment
  * regPartsIds[2]: id of the third partition segment
  */
-int *regPartsIds = NULL;
+int regPartsIds[REG_PARTITION_COUNT] = {-1, -1, -1};
 
 /* Pointer to the array that contains the pointers to the the register's partitions.
  * regPtrs[0]: pointer to the first partition segment
  * regPtrs[1]: pointer to the second partition segment
  * regPtrs[2]: pointer to the third partition segment
  */
-Register **regPtrs = NULL;
+Register * regPtrs[REG_PARTITION_COUNT] = {NULL, NULL, NULL};
 
 /* Id of the shared memory segment that contains the nodes list */
 int nodesListId = -1;
@@ -871,11 +871,13 @@ boolean assignEnvironmentVariables()
  */
 boolean createIPCFacilties()
 {
+    /*
     regPtrs = (Register **)malloc(REG_PARTITION_COUNT * sizeof(Register *));
     TEST_MALLOC_ERROR(regPtrs, "[NODE]: failed to allocate register paritions' pointers array. Error: ");
-
+    */
+    /*
     regPartsIds = (int *)malloc(REG_PARTITION_COUNT * sizeof(int));
-    TEST_MALLOC_ERROR(regPartsIds, "[NODE]: failed to allocate register paritions' ids array. Error: ");
+    TEST_MALLOC_ERROR(regPartsIds, "[NODE]: failed to allocate register paritions' ids array. Error: ");*/
 
     return TRUE;
 }
@@ -1698,8 +1700,9 @@ void deallocateIPCFacilities()
     write(STDOUT_FILENO, printMsg, msg_length);
     printMsg[0] = 0; /* resetting string's content */
 
+    /*
     if (regPtrs != NULL)
-    {
+    {*/
         for (i = 0; i < REG_PARTITION_COUNT; i++)
         {
             if (shmdt(regPtrs[i]) == -1)
@@ -1719,11 +1722,13 @@ void deallocateIPCFacilities()
             }
         }
 
+        /*
         free(regPtrs);
-    }
+    }*/
 
+    /*
     if (regPartsIds != NULL)
-        free(regPartsIds);
+        free(regPartsIds);*/
 
     msg_length = snprintf(printMsg, 199, "[NODE %5ld]: detaching from nodes list...\n", my_pid);
     write(STDOUT_FILENO, printMsg, msg_length);

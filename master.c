@@ -33,14 +33,14 @@ union semun
  * regPartsIds[1]: id of the second partition segment
  * regPartsIds[2]: id of the third partition segment
  */
-int *regPartsIds = NULL;
+int regPartsIds[REG_PARTITION_COUNT] = {-1, -1, -1};
 
 /* Pointer to the array that contains the pointers to the the register's partitions.
  * regPtrs[0]: pointer to the first partition segment
  * regPtrs[1]: pointer to the second partition segment
  * regPtrs[2]: pointer to the third partition segment
  */
-Register **regPtrs = NULL;
+Register * regPtrs[REG_PARTITION_COUNT] = {NULL, NULL, NULL};
 
 /* Id of the shared memory segment that contains the users list */
 int usersListId = -1;
@@ -82,14 +82,14 @@ int mutexPartSem = -1;
  * noReadersPartitions[1]: id of second partition's shared variable
  * noReadersPartitions[2]: id of third partition's shared variable
  */
-int *noReadersPartitions = NULL;
+int noReadersPartitions[REG_PARTITION_COUNT] = {0, 0, 0};
 
 /* Pointer to the array containing the variables used to syncronize readers and writers access to register's partition.
  * noReadersPartitionsPtrs[0]: pointer to the first partition's shared variable
  * noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
  * noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable
  */
-int **noReadersPartitionsPtrs;
+int * noReadersPartitionsPtrs[REG_PARTITION_COUNT] = {NULL, NULL, NULL};
 
 /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write users list */
 int userListSem = -1;
@@ -1426,7 +1426,7 @@ boolean assignEnvironmentVariables()
  */
 boolean readConfigParameters()
 {
-    char *filename = "params_mine.txt";
+    char *filename = "params_1.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1490,21 +1490,26 @@ boolean readConfigParameters()
  */
 boolean allocateGlobalStructures()
 {
+    /*
     regPtrs = (Register **)calloc(REG_PARTITION_COUNT, sizeof(Register *));
-    TEST_MALLOC_ERROR(regPtrs, "[MASTER]: failed to allocate register paritions' pointers array. Error: ");
+    TEST_MALLOC_ERROR(regPtrs, "[MASTER]: failed to allocate register paritions' pointers array. Error: ");*/
 
+    /*
     regPartsIds = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(regPartsIds, "[MASTER]: failed to allocate register paritions' ids array. Error: ");
+    TEST_MALLOC_ERROR(regPartsIds, "[MASTER]: failed to allocate register paritions' ids array. Error: ");*/
 
     
     tpList = (TPElement *)calloc(SO_NODES_NUM, sizeof(TPElement));
     TEST_MALLOC_ERROR(tpList, "[MASTER]: failed to allocate transaction pools list. Error: ");
 
+    /*
     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(noReadersPartitions, "[MASTER]: failed to allocate registers partitions' shared variables ids. Error: ");
+    TEST_MALLOC_ERROR(noReadersPartitions, "[MASTER]: failed to allocate registers partitions' shared variables ids. Error: ");*/
 
+    /*
     noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
     TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "[MASTER]: failed to allocate registers partitions' shared variables pointers. Error: ");
+    */
 
     budgetsList = (proc_budget *)calloc((SO_USERS_NUM + SO_NODES_NUM + MAX_ADDITIONAL_NODES), sizeof(proc_budget));
     TEST_MALLOC_ERROR(budgetsList, "[MASTER]: failed to allocate budgets list's array. Error: ");
@@ -2130,8 +2135,9 @@ boolean deallocateFacilities(int *exitCode)
     printf(
         "[MASTER]: deallocating register's paritions...\n");
 
+    /*
     if (regPtrs != NULL)
-    {
+    {*/
         for (i = 0; i < REG_PARTITION_COUNT; i++)
         {
             /*
@@ -2169,12 +2175,13 @@ boolean deallocateFacilities(int *exitCode)
                 }
             }
         }
-
+        /*
         free(regPtrs);
-    }
+    }*/
 
+    /*
     if (regPartsIds != NULL)
-        free(regPartsIds);
+        free(regPartsIds);*/
 
     /* Users list deallocation*/
     printf(
@@ -2233,8 +2240,9 @@ boolean deallocateFacilities(int *exitCode)
     }
 
     /* Partitions' shared variable deallocation*/
+    /*
     if (noReadersPartitionsPtrs != NULL)
-    {
+    {*/
         for (i = 0; i < REG_PARTITION_COUNT; i++)
         {
             if (noReadersPartitionsPtrs[i] != NULL && shmdt(noReadersPartitionsPtrs[i]) == -1)
@@ -2269,7 +2277,7 @@ boolean deallocateFacilities(int *exitCode)
         /*
         if (noReadersPartitions != NULL)
             free(noReadersPartitions);*/
-    }
+    /*}*/
 
     /* Transaction pools list deallocation*/
     printf(

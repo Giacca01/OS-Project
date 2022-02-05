@@ -10,14 +10,14 @@ char *function_we_into = NULL;
  * regPartsIds[1]: id of the second partition segment
  * regPartsIds[2]: id of the third partition segment
  */
-int *regPartsIds = NULL;
+int regPartsIds[REG_PARTITION_COUNT] = {-1, -1, -1};
 
 /* Pointer to the array that contains the pointers to the the register's partitions.
  * regPtrs[0]: pointer to the first partition segment
  * regPtrs[1]: pointer to the second partition segment
  * regPtrs[2]: pointer to the third partition segment
  */
-Register **regPtrs = NULL;
+Register * regPtrs[REG_PARTITION_COUNT] = {NULL, NULL, NULL};
 
 /* Id of the shared memory segment that contains the users list */
 int usersListId = -1;
@@ -62,14 +62,14 @@ int mutexPartSem = -1;
  * noReadersPartitions[1]: id of second partition's shared variable
  * noReadersPartitions[2]: id of third partition's shared variable
  */
-int *noReadersPartitions = NULL;
+int noReadersPartitions[REG_PARTITION_COUNT] = {-1, -1, -1};
 
 /* Pointer to the array containing the variables used to syncronize readers and writers access to register's partition.
  * noReadersPartitionsPtrs[0]: pointer to the first partition's shared variable
  * noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
  * noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable
  */
-int **noReadersPartitionsPtrs = NULL;
+int * noReadersPartitionsPtrs[REG_PARTITION_COUNT] = {NULL, NULL, NULL};
 
 /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write users list */
 int userListSem = -1;
@@ -460,27 +460,31 @@ boolean readParams()
 boolean allocateMemory()
 {
     function_we_into = "allocateMemory";
+    /*
     regPtrs = (Register **)calloc(REG_PARTITION_COUNT, sizeof(Register *));
     TEST_MALLOC_ERROR(regPtrs, "[USER]: failed to allocate register paritions' pointers array. Error: ");
-
+    */
+    /*
     regPartsIds = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(regPartsIds, "[USER]: failed to allocate register paritions' ids array. Error: ");
+    TEST_MALLOC_ERROR(regPartsIds, "[USER]: failed to allocate register paritions' ids array. Error: ");*/
 
     /*
         noReadersPartitions e noReadersPartitionsPtrs vanno allocati
         perchè sono vettori, quindi dobbiamo allocare un'area di memoria
         abbastanza grande da contenere REG_PARTITION_COUNT interi/puntatori ad interi
     */
+   /*
     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
     TEST_MALLOC_ERROR(noReadersPartitions, "[USER]: failed to allocate registers partitions' shared variables ids. Error: ");
-
+    */
     /*
     Non allochiamo il noReadersPartitionsPtrs[i] perchè esso dovrà
     contenere un puntatore alla shared memory
     */
+    /*
     noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
     TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "[USER]: failed to allocate registers partitions' shared variables pointers. Error: ");
-
+    */
     return TRUE;
 }
 
@@ -1021,8 +1025,9 @@ void deallocateIPCFacilities()
     write(STDOUT_FILENO, aus, msg_length);
     aus[0] = 0; /* resetting string's content */
 
+    /*
     if (regPtrs != NULL)
-    {
+    {*/
         for (i = 0; i < REG_PARTITION_COUNT; i++)
         {
             if (shmdt(regPtrs[i]) == -1)
@@ -1041,12 +1046,13 @@ void deallocateIPCFacilities()
                 }
             }
         }
-
+        /*
         free(regPtrs);
-    }
+    }*/
 
+    /*
     if (regPartsIds != NULL)
-        free(regPartsIds);
+        free(regPartsIds);*/
 
     msg_length = snprintf(aus, 199, "[USER %5ld]: detaching from users list...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
@@ -1080,8 +1086,9 @@ void deallocateIPCFacilities()
     write(STDOUT_FILENO, aus, msg_length);
     aus[0] = 0; /* resetting string's content */
 
+    /*
     if (noReadersPartitionsPtrs != NULL)
-    {
+    {*/
         for (i = 0; i < REG_PARTITION_COUNT; i++)
         {
             if (shmdt(noReadersPartitionsPtrs[i]) == -1)
@@ -1094,13 +1101,15 @@ void deallocateIPCFacilities()
                 }
             }
         }
-
+        /*
         free(noReadersPartitions);
-    }
+        */
+    /*}*/
 
+    /*
     if (noReadersPartitionsPtrs != NULL)
         free(noReadersPartitionsPtrs);
-
+    */
     msg_length = snprintf(aus, 199, "[USER %5ld]: detaching from users list's number of readers shared variable...\n", my_pid);
     write(STDOUT_FILENO, aus, msg_length);
     aus[0] = 0; /* resetting string's content */
