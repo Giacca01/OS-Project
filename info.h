@@ -126,9 +126,11 @@ i figli lo preleveranno dalla lista dei nodi*/
 #define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + REG_PARTITION_COUNT - 1) / REG_PARTITION_COUNT)
 #define MASTERPERMITS 0600
 
-// 11 * 10 = 110
-// 2 * 10
-// REGISTRO = SO_BLOCK_SIZE * SO_REGISTRY_SIZE = 10 * 1 = 
+/*
+ * 11 * 10 = 110
+ * 2 * 10
+ * REGISTRO = SO_BLOCK_SIZE * SO_REGISTRY_SIZE = 10 * 1 = 
+ */
 
 /*
     By using this new datatype we're able
