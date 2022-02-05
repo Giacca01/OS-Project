@@ -69,7 +69,7 @@ int *noReadersPartitions = NULL;
  * noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
  * noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable
  */
-unsigned long **noReadersPartitionsPtrs = NULL;
+int **noReadersPartitionsPtrs = NULL;
 
 /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write users list */
 int userListSem = -1;
@@ -100,7 +100,7 @@ int noAllTimesNodesSem = -1;
 int noAllTimesNodes = -1;
 
 /* Pointer to the variable that counts the number of all times node processes */
-int *noAllTimesNodesPtr = NULL;
+long *noAllTimesNodesPtr = NULL;
 
 #pragma endregion
 /*** END GLOBAL VARIABLES FOR IPC ***/
@@ -352,7 +352,7 @@ int main(int argc, char *argv[], char *envp[])
                                             }
                                         }
                                     }
-                                    else if (errno != ENOMSG)
+                                    else if (errno != 0 && errno != ENOMSG)
                                     {
                                         snprintf(printMsg, 199, "[USER %5ld]: failed to check for failed transaction messages on global queue. Error: ", my_pid);
                                         unsafeErrorPrint(printMsg, __LINE__);
@@ -478,7 +478,7 @@ boolean allocateMemory()
     Non allochiamo il noReadersPartitionsPtrs[i] perchè esso dovrà
     contenere un puntatore alla shared memory
     */
-    noReadersPartitionsPtrs = (unsigned long **)calloc(REG_PARTITION_COUNT, sizeof(unsigned long *));
+    noReadersPartitionsPtrs = (int **)calloc(REG_PARTITION_COUNT, sizeof(int *));
     TEST_MALLOC_ERROR(noReadersPartitionsPtrs, "[USER]: failed to allocate registers partitions' shared variables pointers. Error: ");
 
     return TRUE;
@@ -593,31 +593,31 @@ boolean initializeFacilities()
     /* Aggancio segmenti per variabili condivise*/
     key = ftok(SHMFILEPATH, NOREADERSONESEED);
     FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition one's shared variable creation. Error: ");
-    noReadersPartitions[0] = shmget(key, sizeof(unsigned long), 0600);
+    noReadersPartitions[0] = shmget(key, sizeof(int), 0600);
     SHM_TEST_ERROR(nodesListId, "[USER]: shmget failed during parition one's shared variable creation. Error: ");
-    noReadersPartitionsPtrs[0] = (long *)shmat(noReadersPartitions[0], NULL, 0);
+    noReadersPartitionsPtrs[0] = (int *)shmat(noReadersPartitions[0], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[0], "User");*/
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[0], "[USER]: failed to attach to parition one's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOREADERSTWOSEED);
     FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition two's shared variable creation. Error: ");
-    noReadersPartitions[1] = shmget(key, sizeof(unsigned long), 0600);
+    noReadersPartitions[1] = shmget(key, sizeof(int), 0600);
     SHM_TEST_ERROR(noReadersPartitions[1], "[USER]: shmget failed during parition two's shared variable creation. Error: ")
-    noReadersPartitionsPtrs[1] = (long *)shmat(noReadersPartitions[1], NULL, 0);
+    noReadersPartitionsPtrs[1] = (int *)shmat(noReadersPartitions[1], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[1], "User");*/
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[1], "[USER]: failed to attach to parition rwo's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOREADERSTHREESEED);
     FTOK_TEST_ERROR(key, "[USER]: ftok failed during parition three's shared variable creation. Error: ");
-    noReadersPartitions[2] = shmget(key, sizeof(unsigned long), 0600);
+    noReadersPartitions[2] = shmget(key, sizeof(int), 0600);
     SHM_TEST_ERROR(noReadersPartitions[2], "[USER]: shmget failed during parition three's shared variable creation. Error: ")
-    noReadersPartitionsPtrs[2] = (long *)shmat(noReadersPartitions[2], NULL, 0);
+    noReadersPartitionsPtrs[2] = (int *)shmat(noReadersPartitions[2], NULL, 0);
     /*SHMAT_TEST_ERROR(noReadersPartitionsPtrs[2], "User");*/
     TEST_SHMAT_ERROR(noReadersPartitionsPtrs[2], "[USER]: failed to attach to parition three's shared variable segment. Error: ");
 
     key = ftok(SHMFILEPATH, NOUSRSEGRDERSSEED);
     FTOK_TEST_ERROR(key, "[USER]: ftok failed during users list's shared variable creation. Error: ");
-    noUserSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    noUserSegReaders = shmget(key, sizeof(int), 0600);
     SHM_TEST_ERROR(noUserSegReaders, "[USER]: shmget failed during users list's shared variable creation. Error: ")
     noUserSegReadersPtr = (int *)shmat(noUserSegReaders, NULL, 0);
     /*SHMAT_TEST_ERROR(noUserSegReadersPtr, "User");*/
@@ -625,7 +625,7 @@ boolean initializeFacilities()
 
     key = ftok(SHMFILEPATH, NONODESEGRDERSSEED);
     FTOK_TEST_ERROR(key, "[USER]: ftok failed during nodes list's shared variable creation. Error: ");
-    noNodeSegReaders = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    noNodeSegReaders = shmget(key, sizeof(int), 0600);
     SHM_TEST_ERROR(noNodeSegReaders, "[USER]: shmget failed during nodes list's shared variable creation. Error: ")
     noNodeSegReadersPtr = (int *)shmat(noNodeSegReaders, NULL, 0);
     /*SHMAT_TEST_ERROR(noNodeSegReadersPtr, "User");*/
@@ -633,9 +633,9 @@ boolean initializeFacilities()
 
     key = ftok(SHMFILEPATH, NOALLTIMESNODESSEED);
     FTOK_TEST_ERROR(key, "[USER]: ftok failed during number of all times nodes' shared variable creation. Error: ");
-    noAllTimesNodes = shmget(key, sizeof(SO_USERS_NUM), 0600);
+    noAllTimesNodes = shmget(key, sizeof(long), 0600);
     SHM_TEST_ERROR(noAllTimesNodes, "[USER]: shmget failed during number of all times nodes' shared variable creation. Error: ")
-    noAllTimesNodesPtr = (int *)shmat(noAllTimesNodes, NULL, 0);
+    noAllTimesNodesPtr = (long *)shmat(noAllTimesNodes, NULL, 0);
     TEST_SHMAT_ERROR(noAllTimesNodesPtr, "[USER]: failed to attach to number of all times nodes' shared variable segment. Error: ");
 
     return TRUE;
@@ -657,6 +657,7 @@ double computeBalance()
     struct sembuf op;
     boolean errBeforeComputing = FALSE, errAfterComputing = FALSE;
     char *aus;
+    int fdReport; /* ONLY FOR DEBUG PURPOSE */
     function_we_into = "computeBalance";
     aus = (char *)calloc(200, sizeof(char));
 
@@ -705,8 +706,11 @@ double computeBalance()
             }
             else
             {
-                *(noReadersPartitionsPtrs[i])++;
-                if (*(noReadersPartitionsPtrs[i]) == 1)
+                /*fdReport = open("pointer_values.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+                dprintf(fdReport, "[USER %5ld]: before increment %d puntatore %p valore %ld\n", my_pid, __LINE__, noReadersPartitionsPtrs[i], *(noReadersPartitionsPtrs[i]));
+                close(fdReport);*/
+                (*noReadersPartitionsPtrs[i])++;
+                if ((*noReadersPartitionsPtrs[i]) == 1)
                 {
                     if (semop(wrPartSem, &op, 1) == -1)
                     {
@@ -786,8 +790,11 @@ double computeBalance()
                         }
                         else
                         {
-                            *(noReadersPartitionsPtrs[i])--;
-                            if (*(noReadersPartitionsPtrs[i]) == 0)
+                            /*fdReport = open("pointer_values.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+                            dprintf(fdReport, "[USER %5ld]: before decrement %d puntatore %p valore %ld\n", my_pid, __LINE__, noReadersPartitionsPtrs[i], *(noReadersPartitionsPtrs[i]));
+                            close(fdReport);*/
+                            (*noReadersPartitionsPtrs[i])--;
+                            if ((*noReadersPartitionsPtrs[i]) == 0)
                             {
                                 op.sem_num = i;
                                 op.sem_op = 1;
@@ -1020,7 +1027,7 @@ void deallocateIPCFacilities()
         {
             if (shmdt(regPtrs[i]) == -1)
             {
-                if (errno != EINVAL)
+                if (errno != 0 && errno != EINVAL)
                 {
                     /*
                         Implementare un meccanismo di retry??
@@ -1047,7 +1054,7 @@ void deallocateIPCFacilities()
 
     if (usersList != NULL && shmdt(usersList) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             snprintf(aus, 199, "[USER %5ld]: failed to detach from users list. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
@@ -1061,7 +1068,7 @@ void deallocateIPCFacilities()
 
     if (nodesList != NULL && shmdt(nodesList) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             snprintf(aus, 199, "[USER %5ld]: failed to detach from nodes list. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
@@ -1079,7 +1086,7 @@ void deallocateIPCFacilities()
         {
             if (shmdt(noReadersPartitionsPtrs[i]) == -1)
             {
-                if (errno != EINVAL)
+                if (errno != 0 && errno != EINVAL)
                 {
                     snprintf(aus, 199, "[USER %5ld]: failed to detach from partitions' number of readers shared variable. Error: ", my_pid);
                     safeErrorPrint(aus, __LINE__);
@@ -1100,7 +1107,7 @@ void deallocateIPCFacilities()
 
     if (noUserSegReadersPtr != NULL && shmdt(noUserSegReadersPtr) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             snprintf(aus, 199, "[USER %5ld]: failed to detach from users list's number of readers shared variable. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
@@ -1114,7 +1121,7 @@ void deallocateIPCFacilities()
 
     if (noNodeSegReadersPtr != NULL && shmdt(noNodeSegReadersPtr) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             snprintf(aus, 199, "[USER %5ld]: failed to detach from nodes list's number of readers shared variable. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
@@ -1128,7 +1135,7 @@ void deallocateIPCFacilities()
 
     if (noAllTimesNodesPtr != NULL && shmdt(noAllTimesNodesPtr) == -1)
     {
-        if (errno != EINVAL)
+        if (errno != 0 && errno != EINVAL)
         {
             snprintf(aus, 199, "[USER %5ld]: failed to detach from number of all times nodes' shared variable. Error: ", my_pid);
             safeErrorPrint(aus, __LINE__);
