@@ -2797,6 +2797,9 @@ void checkNodeCreationRequests()
 
                             printf("Coda nuovo nodo ok\n");
                             firstTrans.mtype = (long)procPid;
+                            printf("[Master]: timestamp while sending first transaction to new node: %ld\n", ausNode.transaction.timestamp.tv_nsec);
+                            printf("[Master]: sender while sending first transaction to new node: %ld\n", ausNode.transaction.sender);
+                            printf("[Master]: receiver while sending first transaction to new node: %ld\n", ausNode.transaction.receiver);
                             firstTrans.transaction = ausNode.transaction;
 
                             if (msgsnd(tpId, &firstTrans, sizeof(MsgTP) - sizeof(long), 0) == -1)
@@ -2997,6 +3000,7 @@ void printRemainedTransactions()
         cnt = 0;
         while (msgrcv(tpId, &aus, sizeof(aus) - sizeof(long), 0, IPC_NOWAIT) != -1)
         {
+            
             printf("[MASTER]:  - Timestamp: %ld\n [MASTER]:  - Sender: %ld\n [MASTER]:  - Receiver: %ld\n [MASTER]:  -  Amount sent: %f\n [MASTER]:  - Reward: %f\n",
                    aus.transaction.timestamp.tv_nsec,
                    aus.transaction.sender,
