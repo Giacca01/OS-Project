@@ -129,7 +129,7 @@ i figli lo preleveranno dalla lista dei nodi*/
 /*
  * 11 * 10 = 110
  * 2 * 10
- * REGISTRO = SO_BLOCK_SIZE * SO_REGISTRY_SIZE = 10 * 1 = 
+ * REGISTRO = SO_BLOCK_SIZE * SO_REGISTRY_SIZE = 10 * 1 =
  */
 
 /*

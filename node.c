@@ -21,7 +21,7 @@ int regPartsIds[REG_PARTITION_COUNT] = {-1, -1, -1};
  * regPtrs[1]: pointer to the second partition segment
  * regPtrs[2]: pointer to the third partition segment
  */
-Register * regPtrs[REG_PARTITION_COUNT] = {NULL, NULL, NULL};
+Register *regPtrs[REG_PARTITION_COUNT] = {NULL, NULL, NULL};
 
 /* Id of the shared memory segment that contains the nodes list */
 int nodesListId = -1;
@@ -440,10 +440,10 @@ int main(int argc, char *argv[], char *envp[])
                                                                 }
 
                                                                 /*
-                                                                    * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
-                                                                    * and waits for a message on queue; it will exit this cycle when it reads the requested
-                                                                    * number of transactions (put in extractedBlock.transList)
-                                                                    */
+                                                                 * NOTE: if in the TP there aren't SO_BLOCK_SIZE-1 transactions, the node blocks on msgrcv
+                                                                 * and waits for a message on queue; it will exit this cycle when it reads the requested
+                                                                 * number of transactions (put in extractedBlock.transList)
+                                                                 */
                                                             }
 
                                                             creatingBlock = FALSE;
@@ -466,9 +466,9 @@ int main(int argc, char *argv[], char *envp[])
                                                             simTime.tv_nsec = (simTime.tv_nsec % (SO_MAX_TRANS_PROC_NSEC + 1 - SO_MIN_TRANS_PROC_NSEC)) + SO_MIN_TRANS_PROC_NSEC;
 
                                                             /*
-                                                                * Adjusting wait time, if number of nanoseconds is greater or equal to 1 second (10^9 nanoseconds)
-                                                                * we increase the number of seconds.
-                                                                */
+                                                             * Adjusting wait time, if number of nanoseconds is greater or equal to 1 second (10^9 nanoseconds)
+                                                             * we increase the number of seconds.
+                                                             */
                                                             while (simTime.tv_nsec >= 1000000000)
                                                             {
                                                                 simTime.tv_sec++;
@@ -563,9 +563,10 @@ int main(int argc, char *argv[], char *envp[])
                                                                         {
                                                                             newBlockPos = &(regPtrs[k]->nBlocks);
                                                                             printf("[NODE %5ld]: iteration number %i\n", my_pid, k);
-                                                                            printf("[NODE %5ld] Partiition size is: %d: \n",my_pid, REG_PARTITION_SIZE);
-                                                                            printf("[NODE %5ld] Block counter BEFORE UPDATE is %d \n", my_pid,*newBlockPos);
-                                                                            if (regPtrs[k]->nBlocks < REG_PARTITION_SIZE){
+                                                                            printf("[NODE %5ld] Partiition size is: %d: \n", my_pid, REG_PARTITION_SIZE);
+                                                                            printf("[NODE %5ld] Block counter BEFORE UPDATE is %d \n", my_pid, *newBlockPos);
+                                                                            if (regPtrs[k]->nBlocks < REG_PARTITION_SIZE)
+                                                                            {
                                                                                 printf("[NODE %5ld] free block is %d\n", my_pid, k);
                                                                                 available = TRUE;
                                                                                 tmp = k;
@@ -593,7 +594,7 @@ int main(int argc, char *argv[], char *envp[])
                                                                             /*
                                                                                         regPtrs[i] PUNTATORE ad un di tipo register allocato nel segmento
                                                                                         di memoria condivisa, che rappresenta l'i-esima partizione del registro
-                                                                                
+
                                                                                     */
                                                                             printf("[NODE %5ld] free block AFTER CYCLE is %d\n", my_pid, k);
                                                                             printf("[NODE %5ld] Block counter SHORTLY BEFORE UPDATE is %d \n", my_pid, regPtrs[tmp]->nBlocks);
@@ -659,7 +660,6 @@ int main(int argc, char *argv[], char *envp[])
                                                                             sops[2].sem_flg = 0;
                                                                             sops[2].sem_num = 2;
                                                                             sops[2].sem_op = 1;
-                                                                            printf("Kekw NODO");
                                                                             if (semop(rdPartSem, sops, REG_PARTITION_COUNT) == -1)
                                                                             {
                                                                                 snprintf(printMsg, 199, "[NODE %5ld]: failed to release register partitions' reading semaphore. Error: ", my_pid);
@@ -667,8 +667,6 @@ int main(int argc, char *argv[], char *envp[])
                                                                                 printMsg[0] = 0; /* resetting string's content */
                                                                             }
                                                                         }
-
-                                                                        printf("Kekw NODO 2");
                                                                     }
                                                                 }
                                                             }
@@ -725,11 +723,11 @@ int main(int argc, char *argv[], char *envp[])
                                                             */
 
                                                     /*
-                                                        * now the node process must wait for end of simulation signal; we do it
-                                                        * with pause, but a signal could wake it up. We only want the end of simulation
-                                                        * signal to wake up the process, so we must ignore the SIGALRM signal that
-                                                        * might arrive for the periodic sending of a transaction to a friend node.
-                                                        */
+                                                     * now the node process must wait for end of simulation signal; we do it
+                                                     * with pause, but a signal could wake it up. We only want the end of simulation
+                                                     * signal to wake up the process, so we must ignore the SIGALRM signal that
+                                                     * might arrive for the periodic sending of a transaction to a friend node.
+                                                     */
                                                     if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
                                                     {
                                                         snprintf(printMsg, 199, "[NODE %5ld]: failed to set ignoring of SIGALRM signal before pause of process. Error: ", my_pid);
@@ -1249,7 +1247,6 @@ void sendTransaction()
     /*
         Recupero transazioni in eccesso
     */
-   printf("Kekw nodo 3");
     while (msgrcv(transQueue, &trans, sizeof(TransQueue) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
     {
         /*
@@ -1258,7 +1255,7 @@ void sendTransaction()
         if (trans.msgContent == TRANSTPFULL)
         {
             /* ONLY FOR DEBUG PURPOSE */
-            fdReport = open("node_creation_report.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+            fdReport = open("node_creation_report.txt", O_CREAT | O_APPEND | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO);
             dprintf(fdReport, "[NODE %5ld]: read message of type TRANSTPFULL with hops %ld\n", my_pid, trans.hops);
             close(fdReport);
 
@@ -1290,7 +1287,7 @@ void sendTransaction()
                     /*printf("Node: new node transazione: %d\n", trans.msgContent);
                     printf("Node: new node pid target: %ld\n", trans.mtype);*/
                     /* ONLY FOR DEBUG PURPOSE */
-                    fdReport = open("node_creation_report.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+                    fdReport = open("node_creation_report.txt", O_CREAT | O_APPEND | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO);
                     dprintf(fdReport, "[NODE %5ld]: requested creation of new node to master\n", my_pid);
                     close(fdReport);
 
@@ -1447,7 +1444,6 @@ void sendTransaction()
         }
     }
 
-    printf("Kekw nodo 4");
     while (msgrcv(nodeCreationQueue, &ausNode, sizeof(ausNode) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
     {
         if (ausNode.msgContent == NEWFRIEND)
@@ -1482,8 +1478,6 @@ void sendTransaction()
         }
     }
 
-    printf("Kekw nodo 5");
-
     if (errno != 0 && errno != ENOMSG && errno != EINTR)
     {
         snprintf(printMsg, 199, "[NODE %5ld]: failed to check existence of transactions on global queue. Error: ", my_pid);
@@ -1516,28 +1510,29 @@ boolean sendOnGlobalQueue(TransQueue *trans, pid_t pid, GlobalMsgContent cnt, lo
         {
             if(errno == EAGAIN)
             {
-                *//* 
-                    la coda è piena, per non bloccarci proviamo a svuotarla chiedendo al 
-                    master di creare un nuovo nodo
                 */
-                /*msgToMaster.msgContent = NEWNODE;
-                msgToMaster.mtype = getppid();
-                msgToMaster.transaction = trans->transaction;
-                if (msgsnd(nodeCreationQueue, &msgToMaster, sizeof(NodeCreationQueue) - sizeof(long), IPC_NOWAIT) == -1)
-                {
-                    ret = FALSE;
-                }
-            }
-            else
-                ret = FALSE;
-        }
+    /*
+      la coda è piena, per non bloccarci proviamo a svuotarla chiedendo al
+      master di creare un nuovo nodo
+  */
+    /*msgToMaster.msgContent = NEWNODE;
+    msgToMaster.mtype = getppid();
+    msgToMaster.transaction = trans->transaction;
+    if (msgsnd(nodeCreationQueue, &msgToMaster, sizeof(NodeCreationQueue) - sizeof(long), IPC_NOWAIT) == -1)
+    {
+        ret = FALSE;
     }
-    else
-    {*/
-        if (msgsnd(transQueue, trans, sizeof(TransQueue) - sizeof(long), 0) == -1)
-        {
-            ret = FALSE;
-        }
+}
+else
+    ret = FALSE;
+}
+}
+else
+{*/
+    if (msgsnd(transQueue, trans, sizeof(TransQueue) - sizeof(long), 0) == -1)
+    {
+        ret = FALSE;
+    }
     /*}*/
 
     return ret;
@@ -1666,7 +1661,7 @@ void endOfExecution(int sig)
     aus = (char *)calloc(200, sizeof(char));
 
     /* printing transactions read from TP but not processed */
-    if(creatingBlock)
+    if (creatingBlock)
         printRemainedTransactions();
 
     deallocateIPCFacilities();
@@ -1710,18 +1705,18 @@ void printRemainedTransactions()
     {
         extractedBlock.bIndex--;
         trans = extractedBlock.transList[extractedBlock.bIndex];
-        msg_length = snprintf(aus, 299, "[NODE %5ld]: - Timestamp: %ld : %ld\n [NODE %5ld]:  - Sender: %ld\n [NODE %5ld]:  - Receiver: %ld\n [NODE %5ld]:  - Amount sent: %f\n [NODE %5ld]:  - Reward: %f\n", 
-                                my_pid,
-                                trans.timestamp.tv_sec,
-                                trans.timestamp.tv_nsec,
-                                my_pid,
-                                trans.sender,
-                                my_pid,
-                                trans.receiver,
-                                my_pid,
-                                trans.amountSend,
-                                my_pid,
-                                trans.reward);
+        msg_length = snprintf(aus, 299, "[NODE %5ld]: - Timestamp: %ld : %ld\n [NODE %5ld]:  - Sender: %ld\n [NODE %5ld]:  - Receiver: %ld\n [NODE %5ld]:  - Amount sent: %f\n [NODE %5ld]:  - Reward: %f\n",
+                              my_pid,
+                              trans.timestamp.tv_sec,
+                              trans.timestamp.tv_nsec,
+                              my_pid,
+                              trans.sender,
+                              my_pid,
+                              trans.receiver,
+                              my_pid,
+                              trans.amountSend,
+                              my_pid,
+                              trans.reward);
         write(STDOUT_FILENO, aus, msg_length);
     }
 
@@ -1757,28 +1752,28 @@ void deallocateIPCFacilities()
     /*
     if (regPtrs != NULL)
     {*/
-        for (i = 0; i < REG_PARTITION_COUNT; i++)
+    for (i = 0; i < REG_PARTITION_COUNT; i++)
+    {
+        if (shmdt(regPtrs[i]) == -1)
         {
-            if (shmdt(regPtrs[i]) == -1)
+            if (errno != 0 && errno != EINVAL)
             {
-                if (errno != 0 && errno != EINVAL)
-                {
-                    /*
-                        Implementare un meccanismo di retry??
-                        Contando che non è un errore così frequente si potrebbe anche ignorare...
-                        Non vale la pena, possiamo limitarci a proseguire la deallocazione
-                        riducendo al minimo il memory leak
-                    */
-                    snprintf(printMsg, 199, "[NODE %5ld]: failed to detach from register's partition. Error: ", my_pid);
-                    safeErrorPrint(printMsg, __LINE__);
-                    printMsg[0] = 0;
-                }
+                /*
+                    Implementare un meccanismo di retry??
+                    Contando che non è un errore così frequente si potrebbe anche ignorare...
+                    Non vale la pena, possiamo limitarci a proseguire la deallocazione
+                    riducendo al minimo il memory leak
+                */
+                snprintf(printMsg, 199, "[NODE %5ld]: failed to detach from register's partition. Error: ", my_pid);
+                safeErrorPrint(printMsg, __LINE__);
+                printMsg[0] = 0;
             }
         }
+    }
 
-        /*
-        free(regPtrs);
-    }*/
+    /*
+    free(regPtrs);
+}*/
 
     /*
     if (regPartsIds != NULL)

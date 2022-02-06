@@ -17,7 +17,7 @@ int regPartsIds[REG_PARTITION_COUNT] = {-1, -1, -1};
  * regPtrs[1]: pointer to the second partition segment
  * regPtrs[2]: pointer to the third partition segment
  */
-Register * regPtrs[REG_PARTITION_COUNT] = {NULL, NULL, NULL};
+Register *regPtrs[REG_PARTITION_COUNT] = {NULL, NULL, NULL};
 
 /* Id of the shared memory segment that contains the users list */
 int usersListId = -1;
@@ -69,7 +69,7 @@ int noReadersPartitions[REG_PARTITION_COUNT] = {-1, -1, -1};
  * noReadersPartitionsPtrs[1]: pointer to the second partition's shared variable
  * noReadersPartitionsPtrs[2]: pointer to the third partition's shared variable
  */
-int * noReadersPartitionsPtrs[REG_PARTITION_COUNT] = {NULL, NULL, NULL};
+int *noReadersPartitionsPtrs[REG_PARTITION_COUNT] = {NULL, NULL, NULL};
 
 /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write users list */
 int userListSem = -1;
@@ -473,10 +473,10 @@ boolean allocateMemory()
         perchè sono vettori, quindi dobbiamo allocare un'area di memoria
         abbastanza grande da contenere REG_PARTITION_COUNT interi/puntatori ad interi
     */
-   /*
-    noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
-    TEST_MALLOC_ERROR(noReadersPartitions, "[USER]: failed to allocate registers partitions' shared variables ids. Error: ");
-    */
+    /*
+     noReadersPartitions = (int *)calloc(REG_PARTITION_COUNT, sizeof(int));
+     TEST_MALLOC_ERROR(noReadersPartitions, "[USER]: failed to allocate registers partitions' shared variables ids. Error: ");
+     */
     /*
     Non allochiamo il noReadersPartitionsPtrs[i] perchè esso dovrà
     contenere un puntatore alla shared memory
@@ -966,6 +966,8 @@ void endOfExecution(int sig)
 
     aus = (char *)calloc(200, sizeof(char));
 
+    computeBalance();
+
     deallocateIPCFacilities();
     function_we_into = "endOfExecution";
 
@@ -1028,27 +1030,27 @@ void deallocateIPCFacilities()
     /*
     if (regPtrs != NULL)
     {*/
-        for (i = 0; i < REG_PARTITION_COUNT; i++)
+    for (i = 0; i < REG_PARTITION_COUNT; i++)
+    {
+        if (shmdt(regPtrs[i]) == -1)
         {
-            if (shmdt(regPtrs[i]) == -1)
+            if (errno != 0 && errno != EINVAL)
             {
-                if (errno != 0 && errno != EINVAL)
-                {
-                    /*
-                        Implementare un meccanismo di retry??
-                        Contando che non è un errore così frequente si potrebbe anche ignorare...
-                        Non vale la pena, possiamo limitarci a proseguire la deallocazione
-                        riducendo al minimo il memory leak
-                    */
-                    snprintf(aus, 199, "[USER %5ld]: failed to detach from register's partition. Error: ", my_pid);
-                    safeErrorPrint(aus, __LINE__);
-                    aus[0] = 0; /* resetting string's content */
-                }
+                /*
+                    Implementare un meccanismo di retry??
+                    Contando che non è un errore così frequente si potrebbe anche ignorare...
+                    Non vale la pena, possiamo limitarci a proseguire la deallocazione
+                    riducendo al minimo il memory leak
+                */
+                snprintf(aus, 199, "[USER %5ld]: failed to detach from register's partition. Error: ", my_pid);
+                safeErrorPrint(aus, __LINE__);
+                aus[0] = 0; /* resetting string's content */
             }
         }
-        /*
-        free(regPtrs);
-    }*/
+    }
+    /*
+    free(regPtrs);
+}*/
 
     /*
     if (regPartsIds != NULL)
@@ -1089,21 +1091,21 @@ void deallocateIPCFacilities()
     /*
     if (noReadersPartitionsPtrs != NULL)
     {*/
-        for (i = 0; i < REG_PARTITION_COUNT; i++)
+    for (i = 0; i < REG_PARTITION_COUNT; i++)
+    {
+        if (shmdt(noReadersPartitionsPtrs[i]) == -1)
         {
-            if (shmdt(noReadersPartitionsPtrs[i]) == -1)
+            if (errno != 0 && errno != EINVAL)
             {
-                if (errno != 0 && errno != EINVAL)
-                {
-                    snprintf(aus, 199, "[USER %5ld]: failed to detach from partitions' number of readers shared variable. Error: ", my_pid);
-                    safeErrorPrint(aus, __LINE__);
-                    aus[0] = 0; /* resetting string's content */
-                }
+                snprintf(aus, 199, "[USER %5ld]: failed to detach from partitions' number of readers shared variable. Error: ", my_pid);
+                safeErrorPrint(aus, __LINE__);
+                aus[0] = 0; /* resetting string's content */
             }
         }
-        /*
-        free(noReadersPartitions);
-        */
+    }
+    /*
+    free(noReadersPartitions);
+    */
     /*}*/
 
     /*
