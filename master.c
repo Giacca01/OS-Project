@@ -162,8 +162,6 @@ typedef struct proc_budget
     pid_t proc_pid;
     double budget;
     int p_type; /* type of node: 0 if user, 1 if node */
-    /*struct proc_budget *prev;/* /* keeps link to previous node */
-    /*struct proc_budget *next;*/ /* keeps link to next node */
 } proc_budget;
 
 /***** Configuration parameters *****/
@@ -312,7 +310,6 @@ int main(int argc, char *argv[])
     struct sembuf sops[3];
     sigset_t set;
     struct sigaction act;
-    struct sigaction actSegFaultHandler;
     int fullRegister = TRUE;
     int exitCode = EXIT_FAILURE;
     key_t key;
@@ -338,7 +335,6 @@ int main(int argc, char *argv[])
 
     /* declaring message structures used with global queue */
     ProcQueue msg_to_node, msg_from_user, msg_from_node;
-    MsgGlobalQueue msg_new_node;
 
     /* declaring of variables for budget update */
     Block block;
@@ -351,7 +347,6 @@ int main(int argc, char *argv[])
     /* Number of user/node attempts of termination */
     int noAttemptsCheckUserTerm = 0;
     int noAttemptsCheckNodeTerm = 0;
-    long k = 0;
 
     /* initializing print string message */
     char *aus = NULL;
@@ -1793,7 +1788,7 @@ void endOfSimulation(int sig)
      *how to check if everyone was signaled (it returns true even if
      *only one signal was sent)
      */
-    int i = 0, ret = -1;
+    int i = 0;
     /*
      * Contains an exit, because it could be invoked in such a way
      * asynchronous during life cycle execution
@@ -2347,10 +2342,8 @@ void checkNodeCreationRequests()
     pid_t currPid = getpid();
     MsgTP firstTrans;
     struct sembuf sops[3];
-    long childPid = -1;
     long indexNodesList = 0;
     int attempts = 0;
-    int msg_length;
     char *printMsg;
     union semun arg;
     struct msqid_ds tpStruct;
