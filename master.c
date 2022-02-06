@@ -1426,7 +1426,7 @@ boolean assignEnvironmentVariables()
  */
 boolean readConfigParameters()
 {
-    char *filename = "params_1.txt";
+    char *filename = "params_2.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -2598,12 +2598,6 @@ void checkNodeCreationRequests()
 
         if (ausNode.msgContent == NEWNODE)
         {
-            /* ONLY FOR DEBUG PURPOSE */
-            
-            fdReport = open("node_creation_report.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
-            dprintf(fdReport, "MASTER: handled creation of new node request\n");
-            close(fdReport);
-
             printf("[MASTER]: creating new node...\n");
             /* entering critical section for number of all times nodes' shared variable */
             sops[0].sem_num = 0;
@@ -2805,7 +2799,7 @@ void checkNodeCreationRequests()
                             firstTrans.mtype = (long)procPid;
                             firstTrans.transaction = ausNode.transaction;
 
-                            if (msgsnd(tpId, &(firstTrans.transaction), sizeof(MsgTP) - sizeof(long), 0) == -1)
+                            if (msgsnd(tpId, &firstTrans, sizeof(MsgTP) - sizeof(long), 0) == -1)
                             {
                                 safeErrorPrint("[MASTER]: failed to send transaction to new node's transaction pool . Error: ", __LINE__);
 
@@ -2929,10 +2923,12 @@ void checkNodeCreationRequests()
                                 sops[0].sem_flg = 0;
                                 semop(fairStartSem, &sops[0], 1);
 
-                                printf("Ciao\n");
                                 printf("[MASTER]: created new node on request with pid %5ld\n", (long)procPid);
-                                /*msg_length = snprintf(printMsg, 199, "[MASTER]: created new node on request with pid %5ld\n", (long)procPid);
-                                write(STDOUT_FILENO, printMsg, msg_length);*/
+
+                                /* ONLY FOR DEBUG PURPOSE */
+                                fdReport = open("node_creation_report.txt", O_CREAT | O_APPEND | O_WRONLY,  S_IRWXU | S_IRWXG | S_IRWXO);
+                                dprintf(fdReport, "MASTER: created new node with pid %5ld\n", (long)procPid);
+                                close(fdReport);
                             }
                         }
                     }

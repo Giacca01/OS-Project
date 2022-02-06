@@ -5,8 +5,6 @@
     Test
     Sistemare file .h
     Memory leaks e chiamate unsafe con gcc
-    Sostituire getpid con una var globale per
-    ridurre il numero di chiamate di sistema
 */
 
 /*** GLOBAL VARIABLES FOR IPC OBJECTS ***/
@@ -32,16 +30,15 @@ int nodesListId = -1;
 ProcListElem *nodesList = NULL;
 
 /* Id of the global message queues where users, nodes and master communicate */
-int nodeCreationQueue = -1;
-int procQueue = -1;
-int transQueue = -1;
+int nodeCreationQueue = -1, procQueue = -1, transQueue = -1;
 
-/* Id of the set that contains the three semaphores used to write on the register's partitions */
+/* Id of the set that contains a semaphore used to wait for the simulation to start */
 int fairStartSem = -1;
 
 /* Id of the set that contains the three semaphores used to write on the register's partitions */
 int wrPartSem = -1;
 
+/* Id of the set that contains the three semaphores used to read on the register's partitions */
 int rdPartSem = -1;
 
 /* Id of the set that contains the three semaphores used to access the number of readers
@@ -91,6 +88,9 @@ long SO_FRIENDS_NUM;         /* Number of friends*/
 long SO_HOPS;                /* Attempts to insert a transaction in a node's TP before elimination */
 /*******************************************************/
 /*******************************************************/
+
+boolean creatingBlock = FALSE;
+Block extractedBlock;
 
 #pragma endregion
 /*** END GLOBAL VARIABLES ***/
@@ -170,6 +170,13 @@ int extractFriendNode();
 void endOfExecution(int);
 
 /**
+ * @brief Function used during termination to print transactions read from
+ * TP but still memorized in extractedBlock (transaction that node wasn't
+ * able to process because its execution terminated before).
+ */
+void printRemainedTransactions();
+
+/**
  * @brief Function that deallocates the IPC facilities allocated for the node.
  */
 void deallocateIPCFacilities();
@@ -188,7 +195,7 @@ int main(int argc, char *argv[], char *envp[])
 {
     int exitCode = EXIT_FAILURE;
     time_t timeSinceEpoch = (time_t)-1;
-    Block extractedBlock;
+    /*Block extractedBlock;*/
     Block candidateBlock;
     struct sembuf *reservation;
     struct sembuf *release;
@@ -396,6 +403,8 @@ int main(int argc, char *argv[], char *envp[])
                                                             printf("[NODE %5ld]: starting transactions' block creation...\n", my_pid);
                                                             while (i < SO_BLOCK_SIZE - 1)
                                                             {
+                                                                creatingBlock = TRUE;
+
                                                                 /* now receiving the message (transaction from TP) */
                                                                 num_bytes = msgrcv(tpId, &new_trans, sizeof(new_trans) - sizeof(long), my_pid, 0);
 
@@ -436,6 +445,8 @@ int main(int argc, char *argv[], char *envp[])
                                                                     * number of transactions (put in extractedBlock.transList)
                                                                     */
                                                             }
+
+                                                            creatingBlock = FALSE;
 
                                                             /* putting reward transaction in extracted block */
                                                             candidateBlock.transList[i] = rew_tran;
@@ -1030,7 +1041,7 @@ void reinsertTransactions(Block failedTrs)
     MsgTP msg;
 
     aus = (char *)calloc(200, sizeof(char));
-    while (failedTrs.bIndex == 0)
+    while (failedTrs.bIndex != 0)
     {
         failedTrs.bIndex--;
         msg.mtype = my_pid;
@@ -1654,6 +1665,10 @@ void endOfExecution(int sig)
 
     aus = (char *)calloc(200, sizeof(char));
 
+    /* printing transactions read from TP but not processed */
+    if(creatingBlock)
+        printRemainedTransactions();
+
     deallocateIPCFacilities();
 
     /* notify master that user process terminated before expected */
@@ -1673,6 +1688,45 @@ void endOfExecution(int sig)
         free(aus);
 
     exit(EXIT_SUCCESS);
+}
+
+/**
+ * @brief Function used during termination to print transactions read from
+ * TP but still memorized in extractedBlock (transaction that node wasn't
+ * able to process because its execution terminated before).
+ */
+void printRemainedTransactions()
+{
+    int msg_length;
+    char *aus = NULL;
+    Transaction trans;
+
+    aus = (char *)calloc(300, sizeof(char));
+
+    msg_length = snprintf(aus, 299, "[NODE %5ld]: printing remaining transactions:\n", my_pid);
+    write(STDOUT_FILENO, aus, msg_length);
+
+    while (extractedBlock.bIndex != 0)
+    {
+        extractedBlock.bIndex--;
+        trans = extractedBlock.transList[extractedBlock.bIndex];
+        msg_length = snprintf(aus, 299, "[NODE %5ld]: - Timestamp: %ld : %ld\n [NODE %5ld]:  - Sender: %ld\n [NODE %5ld]:  - Receiver: %ld\n [NODE %5ld]:  - Amount sent: %f\n [NODE %5ld]:  - Reward: %f\n", 
+                                my_pid,
+                                trans.timestamp.tv_sec,
+                                trans.timestamp.tv_nsec,
+                                my_pid,
+                                trans.sender,
+                                my_pid,
+                                trans.receiver,
+                                my_pid,
+                                trans.amountSend,
+                                my_pid,
+                                trans.reward);
+        write(STDOUT_FILENO, aus, msg_length);
+    }
+
+    if (aus != NULL)
+        free(aus);
 }
 
 /**
