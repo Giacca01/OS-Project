@@ -182,7 +182,6 @@ int main(int argc, char *argv[], char *envp[])
 {
     int exitCode = EXIT_FAILURE;
     time_t timeSinceEpoch = (time_t)-1;
-    /*Block extractedBlock;*/
     Block candidateBlock;
     struct sembuf *reservation;
     struct sembuf *release;

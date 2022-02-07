@@ -778,9 +778,6 @@ TransList *removeTransaction(TransList *tList, Transaction *t)
 
     while (tList != NULL && !done)
     {
-        /*
-            CORREGGERE: i tempi si possono confrontare direttamente??? Non credo...
-        */
         if (tList->currTrans.timestamp.tv_nsec == t->timestamp.tv_nsec &&
             tList->currTrans.sender == t->sender &&
             tList->currTrans.receiver == t->receiver)

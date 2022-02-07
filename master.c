@@ -1934,9 +1934,9 @@ boolean deallocateFacilities(int *exitCode)
     {
         /*
          * We don't want to display any error if the shared memory
-         *  segment we are trying to detach doesn't exist:
-         *   since no one can remove it, this case can only happen
-         *    when the IPC allocation procedure fails
+         * segment we are trying to detach doesn't exist:
+         * since no one can remove it, this case can only happen
+         * when the IPC allocation procedure fails
          */
         if (regPtrs[i] != NULL && shmdt(regPtrs[i]) == -1 && errno != 0 && errno != EINVAL)
         {
