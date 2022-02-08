@@ -35,3 +35,6 @@ rm:
 	rm -f master_msgrcv_content.txt
 	rm -f IPC_remover/IPC_resources.txt
 	rm -f processes_killer/processes_created.txt
+
+run:
+	./master.out
