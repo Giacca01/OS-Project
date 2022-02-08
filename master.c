@@ -2056,6 +2056,7 @@ void endOfSimulation(int sig)
                  */
                 printf(
                     "[MASTER]: simulation terminated successfully. Printing report...\n");
+                
 
                 /* Users and nodes budgets */
                 printRemainedTransactions();
