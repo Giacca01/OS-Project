@@ -235,7 +235,6 @@ int main(int argc, char *argv[], char *envp[])
     TransQueue msgCheckFailedTrans;
     char *printMsg;
     struct sembuf op;
-    char * aus;
 
     /* initializing print string message */
     printMsg = (char *)calloc(200, sizeof(char));
@@ -293,8 +292,9 @@ int main(int argc, char *argv[], char *envp[])
                             op.sem_flg = 0;
                             if (semop(fairStartSem, &op, 1) == -1)
                             {
-                                snprintf(aus, 300, "[USER %5ld]: failed to wait for zero on start semaphore. Error: ", my_pid);
-                                unsafeErrorPrint(aus, __LINE__);
+                                snprintf(printMsg, 299, "[USER %5ld]: failed to wait for zero on start semaphore. Error: ", my_pid);
+                                unsafeErrorPrint(printMsg, __LINE__);
+                                printMsg[0] = 0; /* resetting string's content */
                                 endOfExecution(-1);
                             }
                             else
@@ -304,7 +304,7 @@ int main(int argc, char *argv[], char *envp[])
                                 /* User's lifecycle */
                                 while (TRUE)
                                 {
-                                    printf("[USER %5ld]: checking if there are failed transactions...\n", my_pid);
+                                    NOT_ESSENTIAL_PRINT(printf("[USER %5ld]: checking if there are failed transactions...\n", my_pid);)
                                     /* check on global queue if a sent transaction failed */
                                     if (msgrcv(transQueue, &msgCheckFailedTrans, sizeof(msgCheckFailedTrans) - sizeof(long), my_pid, IPC_NOWAIT) != -1)
                                     {
@@ -338,7 +338,7 @@ int main(int argc, char *argv[], char *envp[])
                                     /* generate a transaction */
                                     transactionGeneration(0);
 
-                                    sleep(1);
+                                    sleep(1); /* QUESTO LO LASCIAMO OPPURE NO????? */
                                 }
                             }
                         }
@@ -588,9 +588,11 @@ double computeBalance()
      * if there will be multiple read or write cycles and to avoid
      * the starvation of writers or readers.
      */
-    msg_length = snprintf(aus, 199, "[USER %5ld]: computing balance...\n", my_pid);
-    write(STDOUT_FILENO, aus, msg_length);
-    aus[0] = 0; /* resetting string's content */
+    NOT_ESSENTIAL_PRINT(
+        msg_length = snprintf(aus, 199, "[USER %5ld]: computing balance...\n", my_pid);
+        write(STDOUT_FILENO, aus, msg_length);
+        aus[0] = 0; /* resetting string's content */
+    )
 
     for (i = 0; i < REG_PARTITION_COUNT && !errBeforeComputing && !errAfterComputing; i++)
     {
@@ -1127,9 +1129,11 @@ void transactionGeneration(int sig)
                         transactionsSent = addTransaction(transactionsSent, &new_trans);
 
                         /* sending the transaction to node */
-                        msg_length = snprintf(aus, 199, "[USER %5ld]: sending the created transaction to the node...\n", my_pid);
-                        write(STDOUT_FILENO, aus, msg_length);
-                        aus[0] = 0; /* resetting string's content */
+                        NOT_ESSENTIAL_PRINT(
+                            msg_length = snprintf(aus, 199, "[USER %5ld]: sending the created transaction to the node...\n", my_pid);
+                            write(STDOUT_FILENO, aus, msg_length);
+                            aus[0] = 0; /* resetting string's content */
+                        )
 
                         if (msgsnd(queueId, &msg_to_node, sizeof(Transaction), IPC_NOWAIT) == -1)
                         {

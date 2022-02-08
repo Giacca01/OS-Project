@@ -160,7 +160,7 @@ int *extractedFriendsIndex;
 typedef struct proc_budget
 {
     pid_t proc_pid;
-    double budget;
+    float budget;
     int p_type; /* type of node: 0 if user, 1 if node */
 } proc_budget;
 
@@ -264,18 +264,18 @@ void checkNodeCreationRequests();
  * @param budget budget of new node to insert
  * @param p_type type of new node to insert (0 = user, 1 = node)
  */
-void insert_ordered(pid_t, double, int);
+void insert_ordered(pid_t, float, int);
 
 /**
  * @brief Function that searches in the gloabl list bud_list for an element with
  * proc_pid as the one passed as first argument; if it's found, upgrades its budget
  * adding the second argument, which is a positive or negative amount.
- * @param remove_pid pid of the item to be searched for in the budgetlist.
+ * @param pidToUpdate pid of the item to be searched for in the budgetslist.
  * @param amount_changing positive or negative amount used to update process' budget.
- * @return int the method returns -1 if the processes with pid remove_pid it's not
+ * @return int the method returns -1 if the processes with pid pidToUpdate it's not
  * in the array, 0 otherwise.
  */
-int update_budget(pid_t, double);
+int update_budget(pid_t, float);
 
 /**
  * @brief Function that print remained transactions.
@@ -379,20 +379,19 @@ int main(int argc, char *argv[])
     signal(SIGINT, endOfSimulation);
 
     printf("[MASTER]: my pid is %5ld\n", masterPid);
-    printf("**** [MASTER]: simulation configuration started ****\n");
+    printf("[MASTER]: **** simulation configuration started ****\n");
 
-    printf("[MASTER]: reading configuration parameters...\n");
     if (readConfigParameters() == FALSE)
         endOfSimulation(-1);
 
-    printf("[MASTER]: setting up simulation timer...\n");
+    NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting up simulation timer...\n");)
     printf("[MASTER]: simulation lasts %ld seconds\n", SO_SIM_SEC);
     /* No previous alarms were set, so it must return 0*/
     if (alarm(SO_SIM_SEC) != 0)
         unsafeErrorPrint("[MASTER]: failed to set up simulation timer. ", __LINE__);
     else
     {
-        printf("[MASTER]: setting up signal mask...\n");
+        NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting up signal mask...\n");)
         if (sigfillset(&set) == -1)
             unsafeErrorPrint("[MASTER]: failed to initialize signals mask. Error: ", __LINE__);
         else
@@ -400,14 +399,14 @@ int main(int argc, char *argv[])
             /* We block all the signals during the execution of the handler*/
             act.sa_handler = endOfSimulation;
             act.sa_mask = set;
-            printf("[MASTER]: signal mask initialized successfully.\n");
+            NOT_ESSENTIAL_PRINT(printf("[MASTER]: signal mask initialized successfully.\n");)
 
-            printf("[MASTER]: setting end of timer disposition...\n");
+            NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting end of timer disposition...\n");)
             if (sigaction(SIGALRM, &act, NULL) == -1)
                 unsafeErrorPrint("[MASTER]: failed to set end of timer disposition. Error: ", __LINE__);
             else
             {
-                printf("[MASTER]: setting end of simulation disposition...\n");
+                NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting end of simulation disposition...\n");)
                 if (sigaction(SIGUSR1, &act, NULL) == -1)
                     unsafeErrorPrint("[MASTER]: failed to set end of simulation disposition. Error: ", __LINE__);
                 else
@@ -425,7 +424,7 @@ int main(int argc, char *argv[])
                             printf("[MASTER]: forking user processes...\n");
                             for (i = 0; i < SO_USERS_NUM; i++)
                             {
-                                printf("[MASTER]: user number %d\n", i);
+                                NOT_ESSENTIAL_PRINT(printf("[MASTER]: user number %d\n", i);)
                                 switch (child_pid = fork())
                                 {
                                 case -1:
@@ -446,7 +445,7 @@ int main(int argc, char *argv[])
                                      * The process tells the father that it is ready to run
                                      * and that it waits for all processes to be ready
                                      */
-                                    printf("[USER %5ld]: starting execution....\n", (long)getpid());
+                                    NOT_ESSENTIAL_PRINT(printf("[USER %5ld]: starting execution....\n", (long)getpid());)
                                     signal(SIGALRM, SIG_IGN);
                                     signal(SIGUSR1, tmpHandler);
 
@@ -521,7 +520,7 @@ int main(int argc, char *argv[])
                             /********************************************/
                             for (i = 0; i < SO_NODES_NUM; i++)
                             {
-                                printf("[MASTER]: node number %d\n", i);
+                                NOT_ESSENTIAL_PRINT(printf("[MASTER]: node number %d\n", i);)
                                 switch (child_pid = fork())
                                 {
                                 case -1:
@@ -533,7 +532,7 @@ int main(int argc, char *argv[])
                                      * The process tells the father that it is ready to run
                                      * and that it waits for all processes to be ready
                                      */
-                                    printf("[NODE %5ld]: starting execution....\n", (long)getpid());
+                                    NOT_ESSENTIAL_PRINT(printf("[NODE %5ld]: starting execution....\n", (long)getpid());)
 
                                     signal(SIGALRM, SIG_IGN);
                                     signal(SIGUSR1, tmpHandler);
@@ -689,7 +688,7 @@ int main(int argc, char *argv[])
                                 endOfSimulation(-1);
                             }
 
-                            printf("[MASTER]: initializing budget users processes...\n");
+                            NOT_ESSENTIAL_PRINT(printf("[MASTER]: initializing budget users processes...\n");)
                             for (i = 0; i < SO_USERS_NUM; i++)
                             {
                                 insert_ordered(usersList[i].procId, SO_BUDGET_INIT, 0); /* insert user on budgetlist */
@@ -733,7 +732,7 @@ int main(int argc, char *argv[])
 
                             /*****  Initialize budget for nodes processes   *****/
                             /****************************************************/
-                            printf("[MASTER]: initializing budget nodes processes...\n");
+                            NOT_ESSENTIAL_PRINT(printf("[MASTER]: initializing budget nodes processes...\n");)
                             /* we enter the critical section for the noNodeSegReadersPtr variabile */
                             sops[0].sem_num = 0;
                             sops[0].sem_op = -1;
@@ -782,7 +781,7 @@ int main(int argc, char *argv[])
 
                             /*****  Friends estraction   *****/
                             /*********************************/
-                            printf("[MASTER]: extracting friends for nodes...\n");
+                            NOT_ESSENTIAL_PRINT(printf("[MASTER]: extracting friends for nodes...\n");)
                             for (i = 0; i < SO_NODES_NUM; i++)
                             {
                                 estrai(i);
@@ -840,7 +839,7 @@ int main(int argc, char *argv[])
                             semop(fairStartSem, &sops[0], 1);
 
                             /* master lifecycle*/
-                            printf("**** [MASTER]: starting lifecycle... ****\n");
+                            printf("[MASTER]: **** starting lifecycle... ****\n");
                             while (1 && child_pid)
                             {
                                 /* checking if register's partitions are full */
@@ -865,7 +864,7 @@ int main(int argc, char *argv[])
 
                                 /* cycle that updates the budget list before printing it */
                                 /* at every cycle we do the count of budgets in blocks of the i-th partition */
-                                printf("[MASTER]: updating budget list before printing...\n");
+                                NOT_ESSENTIAL_PRINT(printf("[MASTER]: updating budget list before printing...\n");)
                                 for (i = 0; i < REG_PARTITION_COUNT; i++)
                                 {
                                     /* setting options for getting access to i-th partition of register */
@@ -926,7 +925,7 @@ int main(int argc, char *argv[])
                                                 unsafeErrorPrint(aus, __LINE__);
                                                 endOfSimulation(-1);
                                             }
-                                            printf("[MASTER]: gained access to %d-th partition of register\n", i);
+                                            NOT_ESSENTIAL_PRINT(printf("[MASTER]: gained access to %d-th partition of register\n", i);)
 
                                             /* Initialize the index to the block where I stopped in the last loop */
                                             ind_block = prev_read_nblock[i];
@@ -955,15 +954,14 @@ int main(int argc, char *argv[])
                                                          * therefore you do not need to update the budget of the sender, but only of the receiver.
                                                          */
                                                     }
-
-                                                    /* update budget of sender of transaction, the amount is negative */
-                                                    /* error checking not needed, already done in function */
-                                                    else if (update_budget(trans.sender, -(trans.amountSend + trans.reward)) == 0)
+                                                    else if (update_budget((pid_t)trans.sender, -(trans.amountSend + trans.reward)) == 0)
+                                                        /* update budget of sender of transaction, the amount is negative */
+                                                        /* error checking not needed, already done in function */
                                                         ct_updates++;
 
                                                     /* update budget of receiver of transaction, the amount is positive */
                                                     /* error checking not needed, already done in function */
-                                                    if (update_budget(trans.receiver, trans.amountSend) == 0)
+                                                    if (update_budget((pid_t)trans.receiver, trans.amountSend) == 0)
                                                         ct_updates++;
 
                                                     /* if we have done two updates, we can switch to next block, otherwise we stay on this */
@@ -1100,7 +1098,7 @@ int main(int argc, char *argv[])
                                 /**********************************************/
 
                                 /* Checks if there are node creation requests */
-                                printf("[MASTER]: checking if there are node creation requests to be served...\n");
+                                NOT_ESSENTIAL_PRINT(printf("[MASTER]: checking if there are node creation requests to be served...\n");)
                                 checkNodeCreationRequests();
 
                                 /**** USER TERMINATION CHECK ****/
@@ -1254,7 +1252,7 @@ int main(int argc, char *argv[])
                                 /**** END OF NODE TERMINATION CHECK ****/
                                 /***************************************/
 
-                                printf("--------------- END OF CYCLE ---------------\n");
+                                printf("[MASTER]: --------------- END OF CYCLE ---------------\n");
 
                                 if (noEffectiveUsers == 0)
                                 {
@@ -1266,7 +1264,7 @@ int main(int argc, char *argv[])
                                 /* now sleep for 1 second */
                                 nanosleep(&onesec, &tim);
 
-                                printf("**** [MASTER]: starting a new lifecycle ****\n");
+                                printf("[MASTER]: **** starting a new lifecycle ****\n");
                             }
                         }
                     }
@@ -1289,7 +1287,7 @@ boolean assignEnvironmentVariables()
         We use strtol because it can detect error (due to overflow)
         while atol can't
     */
-    printf("[MASTER]: loading environment...\n");
+    NOT_ESSENTIAL_PRINT(printf("[MASTER]: loading environment...\n");)
     SO_USERS_NUM = strtol(getenv("SO_USERS_NUM"), NULL, 10);
     TEST_ERROR_PARAM;
 
@@ -1350,7 +1348,7 @@ boolean readConfigParameters()
     char *aus = NULL;
     boolean ret = TRUE;
 
-    printf("[MASTER]: reading configuration parameters...\n");
+    NOT_ESSENTIAL_PRINT(printf("[MASTER]: reading configuration parameters...\n");)
 
     aus = (char *)calloc(100, sizeof(char));
     if (aus == NULL)
@@ -1493,7 +1491,7 @@ boolean initializeIPCFacilities()
     procQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     MSG_TEST_ERROR(procQueue, "[MASTER]: msgget failed during processes global queue creation. Error: ");
 
-    printf("[MASTER]: setting processes global queue size...\n");
+    NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting processes global queue size...\n");)
     if (msgctl(procQueue, IPC_STAT, &globalQueueStruct) == -1)
     {
         unsafeErrorPrint("[MASTER]: failed to retrive processes global queue size. Error: ", __LINE__);
@@ -1519,7 +1517,7 @@ boolean initializeIPCFacilities()
     nodeCreationQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     MSG_TEST_ERROR(nodeCreationQueue, "[MASTER]: msgget failed during nodes global queue creation. Error: ");
 
-    printf("[MASTER]: setting nodes global queue size...\n");
+    NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting nodes global queue size...\n");)
     if (msgctl(nodeCreationQueue, IPC_STAT, &globalQueueStruct) == -1)
     {
         unsafeErrorPrint("[MASTER]: failed to retrive nodes global queue size. Error: ", __LINE__);
@@ -1544,7 +1542,7 @@ boolean initializeIPCFacilities()
     transQueue = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     MSG_TEST_ERROR(transQueue, "[MASTER]: msgget failed during transactions global queue creation. Error: ");
 
-    printf("[MASTER]: setting transactions global queue size...\n");
+    NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting transactions global queue size...\n");)
     if (msgctl(transQueue, IPC_STAT, &globalQueueStruct) == -1)
     {
         unsafeErrorPrint("[MASTER]: failed to retrive transactions global queue size. Error: ", __LINE__);
@@ -1586,11 +1584,11 @@ boolean initializeIPCFacilities()
     TEST_SHMAT_ERROR(regPtrs[1], "[MASTER]: failed to attach to partition two's memory segment. Error: ");
     regPtrs[2] = (Register *)shmat(regPartsIds[2], NULL, MASTERPERMITS);
     TEST_SHMAT_ERROR(regPtrs[2], "[MASTER]: failed to attach to partition three's memory segment. Error: ");
-    printf("[MASTER]: initializing blocks...\n");
+    NOT_ESSENTIAL_PRINT(printf("[MASTER]: initializing blocks...\n");)
     regPtrs[0]->nBlocks = 0;
     regPtrs[1]->nBlocks = 0;
     regPtrs[2]->nBlocks = 0;
-    printf("Blocks: %d %d %d\n", regPtrs[0]->nBlocks, regPtrs[1]->nBlocks, regPtrs[2]->nBlocks);
+    NOT_ESSENTIAL_PRINT(printf("Blocks: %d %d %d\n", regPtrs[0]->nBlocks, regPtrs[1]->nBlocks, regPtrs[2]->nBlocks);)
 
     key = ftok(SHMFILEPATH, USERLISTSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during users list creation. Error: ");
@@ -1673,7 +1671,7 @@ boolean initializeIPCFacilities()
  * @param budget budget of new node to insert
  * @param p_type type of new node to insert (0 = user, 1 = node)
  */
-void insert_ordered(pid_t pid, double budget, int p_type)
+void insert_ordered(pid_t pid, float budget, int p_type)
 {
     int i = 0, j = 0;
 
@@ -1721,24 +1719,24 @@ void insert_ordered(pid_t pid, double budget, int p_type)
  * @brief Function that searches in the gloabl list bud_list for an element with
  * proc_pid as the one passed as first argument; if it's found, upgrades its budget
  * adding the second argument, which is a positive or negative amount.
- * @param remove_pid pid of the item to be searched for in the budgetlist.
+ * @param pidToUpdate pid of the item to be searched for in the budgetslist.
  * @param amount_changing positive or negative amount used to update process' budget.
- * @return int the method returns -1 if the processes with pid remove_pid it's not
+ * @return int the method returns -1 if the processes with pid pidToUpdate it's not
  * in the array, 0 otherwise.
  */
-int update_budget(pid_t remove_pid, double amount_changing)
+int update_budget(pid_t pidToUpdate, float amount_changing)
 {
     int i = 0;
 
     /*
-     * we have to search for the process with pid remove_pid. The processes in the
+     * we have to search for the process with pid pidToUpdate. The processes in the
      * array are ordered for budget, so we have to to a linear search.
      */
-    while (i < budgetsListLength && budgetsList[i].proc_pid == remove_pid)
+    while (i < budgetsListLength && budgetsList[i].proc_pid != pidToUpdate)
         i++;
 
     if (i == budgetsListLength)
-        return -1; /* the process of pid remove_pid it's not in the array */
+        return -1; /* the process of pid pidToUpdate it's not in the array */
 
     /* update the process' budget */
     budgetsList[i].budget += amount_changing;
@@ -1840,7 +1838,6 @@ void endOfSimulation(int sig)
                  */
                 printf(
                     "[MASTER]: simulation terminated successfully. Printing report...\n");
-                
 
                 /* Users and nodes budgets */
                 printRemainedTransactions();
@@ -2340,7 +2337,7 @@ void checkNodeCreationRequests()
 
         if (ausNode.msgContent == NEWNODE)
         {
-            printf("[MASTER]: creating new node...\n");
+            NOT_ESSENTIAL_PRINT(printf("[MASTER]: creating new node...\n");)
             /* entering critical section for number of all times nodes' shared variable */
             sops[0].sem_num = 0;
             sops[0].sem_op = -1;
@@ -2392,7 +2389,7 @@ void checkNodeCreationRequests()
                         }
                         else
                         {
-                            printf("[NODE]: I'm a new node, my pid is %ld\n", (long)getpid());
+                            NOT_ESSENTIAL_PRINT(printf("[NODE]: I'm a new node, my pid is %ld\n", (long)getpid());)
                             if (execle("node.out", "node", "ADDITIONAL", NULL, environ) == -1)
                                 safeErrorPrint("[MASTER]: failed to load node's code. Error: ", __LINE__);
                         }
@@ -2515,9 +2512,9 @@ void checkNodeCreationRequests()
                             }
 
                             firstTrans.mtype = (long)procPid;
-                            printf("[Master]: timestamp while sending first transaction to new node: %ld\n", ausNode.transaction.timestamp.tv_nsec);
-                            printf("[Master]: sender while sending first transaction to new node: %ld\n", ausNode.transaction.sender);
-                            printf("[Master]: receiver while sending first transaction to new node: %ld\n", ausNode.transaction.receiver);
+                            NOT_ESSENTIAL_PRINT(printf("[Master]: timestamp while sending first transaction to new node: %ld\n", ausNode.transaction.timestamp.tv_nsec);)
+                            NOT_ESSENTIAL_PRINT(printf("[Master]: sender while sending first transaction to new node: %ld\n", ausNode.transaction.sender);)
+                            NOT_ESSENTIAL_PRINT(printf("[Master]: receiver while sending first transaction to new node: %ld\n", ausNode.transaction.receiver);)
                             firstTrans.transaction = ausNode.transaction;
 
                             if (msgsnd(tpId, &firstTrans, sizeof(MsgTP) - sizeof(long), 0) == -1)

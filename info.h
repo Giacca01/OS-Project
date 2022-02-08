@@ -115,6 +115,21 @@ i figli lo preleveranno dalla lista dei nodi*/
         return FALSE;                    \
     }
 
+/* 
+ * constant used in NOT_ESSENTIAL_PRINT, if during compiling its value it's specified,
+ * we use it in the macro (1 = print all, 0 = only essential prints). Otherwise we 
+ * define it here.
+ */
+#ifndef ESSENTIALS_PRINTS
+    #define ESSENTIALS_PRINTS 1
+#endif
+/* macro used to hide not essentials prints during execution for a cleaner output */
+#define NOT_ESSENTIAL_PRINT(instruction) \
+    if(ESSENTIALS_PRINTS)                \
+    {                                    \
+        instruction                      \
+    }
+
 /* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
 #define REWARD_TRANSACTION -1
 #define INIT_TRANSACTION -1

@@ -217,11 +217,10 @@ int main(int argc, char *argv[], char *envp[])
         friends_node = (pid_t *)calloc(SO_FRIENDS_NUM, sizeof(pid_t));
         if (friends_node != NULL)
         {
-
             printf("[NODE %5ld]: initializing IPC facilities...\n", my_pid);
             if (initializeIPCFacilities() == TRUE)
             {
-                printf("[NODE %5ld]: reading friends from global queue...\n", my_pid);
+                NOT_ESSENTIAL_PRINT(printf("[NODE %5ld]: reading friends from global queue...\n", my_pid);)
 
                 /* Receives all friends pid from global message queue and stores them in the array */
                 while (contMex < SO_FRIENDS_NUM && !error)
@@ -286,7 +285,7 @@ int main(int argc, char *argv[], char *envp[])
                     }
                     else
                     {
-                        printf("[NODE %5ld]: setting up signal mask...\n", my_pid);
+                        NOT_ESSENTIAL_PRINT(printf("[NODE %5ld]: setting up signal mask...\n", my_pid);)
 
                         if (sigfillset(&mask) == -1)
                         {
@@ -306,7 +305,7 @@ int main(int argc, char *argv[], char *envp[])
                             }
                             else
                             {
-                                printf("[NODE %5ld]: performing setup operations...\n", my_pid);
+                                NOT_ESSENTIAL_PRINT(printf("[NODE %5ld]: performing setup operations...\n", my_pid);)
                                 newBlockPos = (int *)malloc(sizeof(int));
 
                                 if (newBlockPos == NULL)
@@ -522,12 +521,12 @@ int main(int argc, char *argv[], char *envp[])
                                                                     for (k = 0; k < REG_PARTITION_COUNT && !available; k++)
                                                                     {
                                                                         newBlockPos = &(regPtrs[k]->nBlocks);
-                                                                        printf("[NODE %5ld]: iteration number %i\n", my_pid, k);
-                                                                        printf("[NODE %5ld] Partiition size is: %d: \n", my_pid, REG_PARTITION_SIZE);
-                                                                        printf("[NODE %5ld] Block counter BEFORE UPDATE is %d \n", my_pid, *newBlockPos);
+                                                                        NOT_ESSENTIAL_PRINT(printf("[NODE %5ld]: iteration number %i\n", my_pid, k);)
+                                                                        NOT_ESSENTIAL_PRINT(printf("[NODE %5ld] Partiition size is: %d: \n", my_pid, REG_PARTITION_SIZE);)
+                                                                        NOT_ESSENTIAL_PRINT(printf("[NODE %5ld] Block counter BEFORE UPDATE is %d \n", my_pid, *newBlockPos);)
                                                                         if (regPtrs[k]->nBlocks < REG_PARTITION_SIZE)
                                                                         {
-                                                                            printf("[NODE %5ld] free block is %d\n", my_pid, k);
+                                                                            NOT_ESSENTIAL_PRINT(printf("[NODE %5ld] free block is %d\n", my_pid, k);)
                                                                             available = TRUE;
                                                                             tmp = k;
                                                                         }
@@ -550,13 +549,13 @@ int main(int argc, char *argv[], char *envp[])
                                                                          * regPtrs [i] POINTER to a register of type allocated in the segment
                                                                          * of shared memory, which represents the i-th registry partition
                                                                          */
-                                                                        printf("[NODE %5ld] free block AFTER CYCLE is %d\n", my_pid, k);
-                                                                        printf("[NODE %5ld] Block counter SHORTLY BEFORE UPDATE is %d \n", my_pid, regPtrs[tmp]->nBlocks);
+                                                                        NOT_ESSENTIAL_PRINT(printf("[NODE %5ld] free block AFTER CYCLE is %d\n", my_pid, k);)
+                                                                        NOT_ESSENTIAL_PRINT(printf("[NODE %5ld] Block counter SHORTLY BEFORE UPDATE is %d \n", my_pid, regPtrs[tmp]->nBlocks);)
                                                                         newBlockPos = &(regPtrs[tmp]->nBlocks);
                                                                         regPtrs[tmp]->blockList[*newBlockPos] = candidateBlock;
                                                                         (*newBlockPos)++;
-                                                                        printf("[NODE %5ld] Block counter AFTER UPDATE is %d \n", my_pid, regPtrs[tmp]->nBlocks);
-                                                                        printf("[NODE %5ld] newBlockPos is %d \n", my_pid, *newBlockPos);
+                                                                        NOT_ESSENTIAL_PRINT(printf("[NODE %5ld] Block counter AFTER UPDATE is %d \n", my_pid, regPtrs[tmp]->nBlocks);)
+                                                                        NOT_ESSENTIAL_PRINT(printf("[NODE %5ld] newBlockPos is %d \n", my_pid, *newBlockPos);)
                                                                         printf("[NODE %5ld]: transactions block inserted successfully!\n", my_pid);
                                                                     }
                                                                     else
@@ -592,7 +591,7 @@ int main(int argc, char *argv[], char *envp[])
                                                                     sops[2].sem_num = 2;
                                                                     sops[2].sem_op = 1;
 
-                                                                    printf("[NODE %5ld]: releasing register's partition...\n", my_pid);
+                                                                    NOT_ESSENTIAL_PRINT(printf("[NODE %5ld]: releasing register's partition...\n", my_pid);)
                                                                     if (semop(wrPartSem, sops, REG_PARTITION_COUNT) == -1)
                                                                     {
                                                                         snprintf(printMsg, 199, "[NODE %5ld]: failed to release register partitions' writing semaphore. Error: ", my_pid);
@@ -1111,9 +1110,11 @@ void sendTransaction()
                 }
                 else
                 {
-                    msg_length = snprintf(printMsg, 199, "[NODE %5ld]: requested creation of a new node to serve a transaction...\n", my_pid);
-                    write(STDOUT_FILENO, printMsg, msg_length);
-                    printMsg[0] = 0; /* resetting string's content */
+                    NOT_ESSENTIAL_PRINT(
+                        msg_length = snprintf(printMsg, 199, "[NODE %5ld]: requested creation of a new node to serve a transaction...\n", my_pid);
+                        write(STDOUT_FILENO, printMsg, msg_length);
+                        printMsg[0] = 0; /* resetting string's content */
+                        )
                 }
             }
             else
