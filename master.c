@@ -264,7 +264,7 @@ void checkNodeCreationRequests();
  * @param budget budget of new node to insert
  * @param p_type type of new node to insert (0 = user, 1 = node)
  */
-void insert_ordered(pid_t, float, int);
+void insert_ordered_budget(pid_t, float, int);
 
 /**
  * @brief Function that searches in the gloabl list bud_list for an element with
@@ -691,7 +691,7 @@ int main(int argc, char *argv[])
                             NOT_ESSENTIAL_PRINT(printf("[MASTER]: initializing budget users processes...\n");)
                             for (i = 0; i < SO_USERS_NUM; i++)
                             {
-                                insert_ordered(usersList[i].procId, SO_BUDGET_INIT, 0); /* insert user on budgetlist */
+                                insert_ordered_budget(usersList[i].procId, SO_BUDGET_INIT, 0); /* insert user on budgetlist */
                             }
 
                             /* we enter the critical section for the noUserSegReadersPtr variabile */
@@ -769,7 +769,7 @@ int main(int argc, char *argv[])
                             /* insert node on budgetlist */
                             for (i = 0; i < SO_NODES_NUM; i++)
                             {
-                                insert_ordered(nodesList[i].procId, 0, 1);
+                                insert_ordered_budget(nodesList[i].procId, 0, 1);
                             }
                             /****************************************************/
                             /****************************************************/
@@ -1078,13 +1078,13 @@ int main(int argc, char *argv[])
                                      */
 
                                     /* Printing budget of process with minimum budget */
-                                    printf("[MASTER]:  - %s PROCESS PID %5ld: actual budget %4.2f\n",
+                                    printf("[MASTER]:  - %s PROCESS PID %5ld: actual budget %4.2f (minimum)\n",
                                            (budgetsList[0].p_type == 0 ? "USER" : "NODE"),
                                            (long)budgetsList[0].proc_pid,
                                            budgetsList[0].budget);
 
                                     /* Printing budget of process with maximum budget */
-                                    printf("[MASTER]:  - %s PROCESS PID %5ld: actual budget %4.2f\n",
+                                    printf("[MASTER]:  - %s PROCESS PID %5ld: actual budget %4.2f (maximum)\n",
                                            (budgetsList[budgetsListLength - 1].p_type == 0 ? "USER" : "NODE"),
                                            (long)budgetsList[budgetsListLength - 1].proc_pid,
                                            budgetsList[budgetsListLength - 1].budget);
@@ -1336,7 +1336,7 @@ boolean assignEnvironmentVariables()
  */
 boolean readConfigParameters()
 {
-    char *filename = "params_mine.txt";
+    char *filename = "params_1.txt";
     FILE *fp = fopen(filename, "r");
     /* Reading line by line, max 128 bytes*/
     /*
@@ -1671,7 +1671,7 @@ boolean initializeIPCFacilities()
  * @param budget budget of new node to insert
  * @param p_type type of new node to insert (0 = user, 1 = node)
  */
-void insert_ordered(pid_t pid, float budget, int p_type)
+void insert_ordered_budget(pid_t pid, float budget, int p_type)
 {
     int i = 0, j = 0;
 
@@ -1727,6 +1727,7 @@ void insert_ordered(pid_t pid, float budget, int p_type)
 int update_budget(pid_t pidToUpdate, float amount_changing)
 {
     int i = 0;
+    proc_budget aus;
 
     /*
      * we have to search for the process with pid pidToUpdate. The processes in the
@@ -1737,9 +1738,22 @@ int update_budget(pid_t pidToUpdate, float amount_changing)
 
     if (i == budgetsListLength)
         return -1; /* the process of pid pidToUpdate it's not in the array */
+    
+    /* saving the current process' details (we will remove it from the list) */
+    aus = budgetsList[i];
+    
+    /* filling the empty space created */
+    while (i < budgetsListLength-1)
+    {
+        budgetsList[i] = budgetsList[i+1];
+        i++;
+    }
 
-    /* update the process' budget */
-    budgetsList[i].budget += amount_changing;
+    /* we removed an element, so we have to reduce the number of occupied entries in the array */
+    budgetsListLength--;
+
+    /* now we insert the current process's details with updated budget */
+    insert_ordered_budget(aus.proc_pid, (aus.budget + amount_changing), aus.p_type);
 
     return 0;
 }
@@ -2468,7 +2482,7 @@ void checkNodeCreationRequests()
                             }
 
                             /* Adding new node to budgetslist */
-                            insert_ordered(procPid, 0, 1);
+                            insert_ordered_budget(procPid, 0, 1);
 
                             /* add a new entry to the tpList array */
                             tplLength++;
