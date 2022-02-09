@@ -34,11 +34,6 @@ int wrPartSem = -1;
 /* Id of the set that contains the three semaphores used to read on the register's partitions */
 int rdPartSem = -1;
 
-/* Id of the set that contains the three semaphores used to access the number of readers
- * variables of the registers partitions in mutual exclusion
- */
-int mutexPartSem = -1;
-
 /* Id of the set that contains the semaphores (mutex = 0, read = 1, write = 2) used to read and write nodes list */
 int nodeListSem = -1;
 
@@ -816,11 +811,6 @@ boolean initializeIPCFacilities()
     nodeListSem = semget(key, 3, 0600);
     SEM_TEST_ERROR(nodeListSem, "[NODE]: semget failed during nodes list semaphore creation. Error: ");
 
-    key = ftok(SEMFILEPATH, PARTMUTEXSEED);
-    FTOK_TEST_ERROR(key, "[NODE]: ftok failed during partitions mutex semaphores creation. Error: ");
-    mutexPartSem = semget(key, 3, 0600);
-    SEM_TEST_ERROR(mutexPartSem, "[NODE]: semget failed during partitions mutex semaphores creation. Error: ");
-
     /*****  Creates and initialize the messages queues  *****/
     /********************************************************/
     /* Creates the global queue*/
@@ -1114,7 +1104,7 @@ void sendTransaction()
                         msg_length = snprintf(printMsg, 199, "[NODE %5ld]: requested creation of a new node to serve a transaction...\n", my_pid);
                         write(STDOUT_FILENO, printMsg, msg_length);
                         printMsg[0] = 0; /* resetting string's content */
-                        )
+                    )
                 }
             }
             else
