@@ -537,7 +537,6 @@ int main(int argc, char *argv[])
                                     signal(SIGALRM, SIG_IGN);
                                     signal(SIGUSR1, tmpHandler);
 
-                                    /* Temporary part to get the process to do something*/
                                     if (execle("node.out", "node", "NORMAL", NULL, environ) == -1)
                                     {
                                         snprintf(aus, 199, "[NODE %5ld]: failed to load node's code. Error: ", (long)getpid());
@@ -1738,14 +1737,14 @@ int update_budget(pid_t pidToUpdate, float amount_changing)
 
     if (i == budgetsListLength)
         return -1; /* the process of pid pidToUpdate it's not in the array */
-    
+
     /* saving the current process' details (we will remove it from the list) */
     aus = budgetsList[i];
-    
+
     /* filling the empty space created */
-    while (i < budgetsListLength-1)
+    while (i < budgetsListLength - 1)
     {
-        budgetsList[i] = budgetsList[i+1];
+        budgetsList[i] = budgetsList[i + 1];
         i++;
     }
 

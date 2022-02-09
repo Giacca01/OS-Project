@@ -1,4 +1,3 @@
-/* ATTENZIONE!!!! Quella che segue deve SEMPRE ESSERE LA PRIMA DEFINE*/
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
@@ -11,10 +10,20 @@
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <sys/sem.h>
-#include <fcntl.h> /* ONLY FOR DEBUG PURPOSE */
-/*#include <sys/ipc.h> VEDERE SE SERVA*/
 #include "error.h"
+
+#define SO_REGISTRY_SIZE 10000                                                                  /* Maximum number of blocks in the master */
+#define SO_BLOCK_SIZE 10                                                                        /* Number of transactions contained in a block */
+#define MAX_ADDITIONAL_NODES 100                                                                /* Maximum number of additional nodes created on request */
+#define REG_PARTITION_COUNT 3                                                                   /* Number of partitions into which the master is divided */
+#define CONF_MAX_LINE_SIZE 128                                                                  /* Configuration file's line maximum bytes length*/
+#define CONF_MAX_LINE_NO 14                                                                     /* Configuration file's maximum lines count*/
+#define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + REG_PARTITION_COUNT - 1) / REG_PARTITION_COUNT) /* Size of master single partition */
+#define MASTERPERMITS 0600                                                                      /* Permits for master */
+
 #define IPCREMOVERFILEPATH "IPC_remover/IPC_resources.txt"
+
+/* Constant for creating keys with ftok for semaphores */
 #define SEMFILEPATH "semfile.txt"
 #define FAIRSTARTSEED 1
 #define WRPARTSEED 2
@@ -23,10 +32,7 @@
 #define PARTMUTEXSEED 5
 #define NOALLTIMESNODESSEMSEED 6
 
-/*
-    A quanto pare i seeds non possono essere uguali, nemmeno
-    se il file usato nella generazione della chiave è diverso
-*/
+/* Constant for creating keys with ftok for shared memory segments */
 #define SHMFILEPATH "shmfile.txt"
 #define REGPARTONESEED 6
 #define REGPARTTWOSEED 7
@@ -40,32 +46,16 @@
 #define NONODESEGRDERSSEED 15
 #define NOALLTIMESNODESSEED 16
 
+/* Constant for creating keys with ftok for messages queue */
 #define MSGFILEPATH "msgfile.txt"
 #define PROC_QUEUE_SEED 16
 #define NODE_CREATION_QUEUE_SEED 17
 #define TRANS_QUEUE_SEED 18
-/* il seed è il pid del proprietario
-i figli lo preleveranno dalla lista dei nodi*/
 
-#define SO_REGISTRY_SIZE 10000
-#define MAX_ADDITIONAL_NODES 100
-/*Right now it's not reentrant, we should modify it*/
-#define EXIT_ON_ERROR                        \
-    if (errno)                               \
-    {                                        \
-        fprintf(stderr),                     \
-            "%d: pid %ld; errno: %d (%s)\n", \
-            __LINE__,                        \
-            (long)getpid(),                  \
-            errno,                           \
-            strerror(errno());               \
-        exit(EXIT_FAILURE);                  \
-    }
-
-/*
-    MOsificarle in modo che segnalino il modulo in cui si è verificato un erorre
-    Segnalare anche il nome del semafor/segmento
-*/
+/*** Macros to detect errors ***/
+/**
+ * @brief If ftok returns -1 it returns error.
+ */
 #define FTOK_TEST_ERROR(key, msg)        \
     if (key == -1)                       \
     {                                    \
@@ -73,6 +63,9 @@ i figli lo preleveranno dalla lista dei nodi*/
         return FALSE;                    \
     }
 
+/**
+ * @brief If semget returns -1 it returns error.
+ */
 #define SEM_TEST_ERROR(id, msg)          \
     if (id == -1)                        \
     {                                    \
@@ -80,6 +73,9 @@ i figli lo preleveranno dalla lista dei nodi*/
         return FALSE;                    \
     }
 
+/**
+ * @brief If semctl returns -1 it returns error.
+ */
 #define SEMCTL_TEST_ERROR(id, msg)       \
     if (id == -1)                        \
     {                                    \
@@ -87,6 +83,9 @@ i figli lo preleveranno dalla lista dei nodi*/
         return FALSE;                    \
     }
 
+/**
+ * @brief If shmget returns -1 it returns error.
+ */
 #define SHM_TEST_ERROR(id, msg)          \
     if (id == -1)                        \
     {                                    \
@@ -94,6 +93,9 @@ i figli lo preleveranno dalla lista dei nodi*/
         return FALSE;                    \
     }
 
+/**
+ * @brief If msgget returns -1 it returns error.
+ */
 #define MSG_TEST_ERROR(id, msg)          \
     if (id == -1)                        \
     {                                    \
@@ -101,6 +103,9 @@ i figli lo preleveranno dalla lista dei nodi*/
         return FALSE;                    \
     }
 
+/**
+ * @brief If malloc returns NULL it returns error.
+ */
 #define TEST_MALLOC_ERROR(ptr, msg)      \
     if (ptr == NULL)                     \
     {                                    \
@@ -108,6 +113,9 @@ i figli lo preleveranno dalla lista dei nodi*/
         return FALSE;                    \
     }
 
+/**
+ * @brief If shmat returns NULL it returns error.
+ */
 #define TEST_SHMAT_ERROR(ptr, msg)       \
     if (ptr == NULL)                     \
     {                                    \
@@ -115,126 +123,125 @@ i figli lo preleveranno dalla lista dei nodi*/
         return FALSE;                    \
     }
 
-/* 
- * constant used in NOT_ESSENTIAL_PRINT, if during compiling its value it's specified,
- * we use it in the macro (1 = print all, 0 = only essential prints). Otherwise we 
+/**
+ * @brief if reading the configuration parameters from the environment
+ *  variables causes an error, we report it.
+ */
+#define TEST_ERROR_PARAM                                                                       \
+    if (errno)                                                                                 \
+    {                                                                                          \
+        unsafeErrorPrint("Master: failed to read configuration parameter. Error: ", __LINE__); \
+        return FALSE;                                                                          \
+    }
+/***************************/
+
+/*** Constants and macros define to perform, if desired, ***/
+/***     only the printing of essential information      ***/
+/*
+ * Constant used in NOT_ESSENTIAL_PRINT, if during compiling its value it's specified,
+ * we use it in the macro (1 = print all, 0 = only essential prints). Otherwise we
  * define it here.
  */
 #ifndef ESSENTIALS_PRINTS
-    #define ESSENTIALS_PRINTS 1
+#define ESSENTIALS_PRINTS 1
 #endif
-/* macro used to hide not essentials prints during execution for a cleaner output */
+
+/* Macro used to hide not essentials prints during execution for a cleaner output */
 #define NOT_ESSENTIAL_PRINT(instruction) \
-    if(ESSENTIALS_PRINTS)                \
+    if (ESSENTIALS_PRINTS)               \
     {                                    \
         instruction                      \
     }
+/*************************************************************/
 
-/* sviluppare meglio: come affrontare il caso in cui SO_REGISTRY_SIZE % 3 != 0*/
-#define REWARD_TRANSACTION -1
-#define INIT_TRANSACTION -1
-#define REG_PARTITION_COUNT 3
-#define SO_BLOCK_SIZE 10       /* Modificato 10/12/2021*/
-                               /* Modificato 10/12/2021*/
-#define CONF_MAX_LINE_SIZE 128 /* Configuration file's line maximum bytes length*/
-#define CONF_MAX_LINE_NO 14    /* Configuration file's maximum lines count*/
-#define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + REG_PARTITION_COUNT - 1) / REG_PARTITION_COUNT)
-#define MASTERPERMITS 0600
-
+/*** Definition of the types used in the project ***/
 /*
- * 11 * 10 = 110
- * 2 * 10
- * REGISTRO = SO_BLOCK_SIZE * SO_REGISTRY_SIZE = 10 * 1 =
+ * By using this new datatype we're able
+ * to distinguish between a "normal" node, that
+ * must wait for the simulation to start, and
+ * an "additional one", that doesn't have to, because
+ * it's created when the simulation has already started
  */
-
-/*
-    By using this new datatype we're able
-    to distinguish between a "normal" node, that
-    must wait for the simulation to start, and
-    an "additional one", that doesn't have to, because
-    it's created when the simulation has already started
-*/
 typedef enum
 {
     NORMAL = 0,
     ADDITIONAL = 1
 } NodeType;
 
+/* It allows us to know the status of the processes: whether active or terminated */
 typedef enum
 {
     TERMINATED = 0,
     ACTIVE
 } States;
 
-/* Nella documentazione fare disegno di sta roba*/
+/* Definition of the transaction, consisting of all the required fields */
 typedef struct
 {
-    /* meglio mettere la struct e non il singolo campo
-    così non ci sono rischi di portablità*/
     struct timespec timestamp;
     long int sender;   /* Sender's PID*/
     long int receiver; /* Receiver's PID*/
-    float amountSend;
-    float reward;
+    float amountSend;  /* Amount of money sent */
+    float reward;      /* Money paid by the sender to the node that processes the transaction */
 
 } Transaction;
 
-/* Each block is a list of transactions*/
+/* Definition of a block which is a list of transactions*/
 typedef struct /* Modificato 10/12/2021*/
 {
     int bIndex;
-    /* SO_BLOCK_SIZE è da leggere da file???*/
-    Transaction transList[SO_BLOCK_SIZE];
+    Transaction transList[SO_BLOCK_SIZE]; /* Transactions list */
 } Block;
 
-/* Serve per memorizzare le transazioni, NON i puntatori ai segmenti*/
-/* Each register is a group of blocks*/
-typedef struct /* Modificato 10/12/2021*/
+/* Definition of the register that is a group of blocks */
+/* It is for storing transactions, NOT pointers to segments */
+typedef struct
 {
     int nBlocks;
-    /* Vettore allocato dinamicamente?? Potrebbe semplificare il caso in cui
-     SO_REGISTRY_SIZE % 3 != 0
-     NOPE, non si potrebbe condividere*/
-    Block blockList[REG_PARTITION_SIZE]; /* modficato*/
+    Block blockList[REG_PARTITION_SIZE]; /* Blocks list */
 } Register;
 
-typedef struct /* Modificato 10/12/2021*/
+/*
+ * It allows us to keep track of all the processes
+ * that are part of the simulation
+ */
+typedef struct
 {
-    long int procId;
-    States procState; /* dA ignorare se il processo è un nodo*/
+    long int procId;  /* Process' id */
+    States procState; /* Process' state */
 } ProcListElem;
 
-/* Il singolo elemento della lista degli amici è una coppia
- -(PID del processo a cui è riferita, lista di pid e stato degli amici)*/
 /*
-typedef struct { // Modificato 10/12/2021
-    long int ownerId;
-    ProcListElem friends;
-} FriendsList;*/
-
-typedef struct /* Modificato 10/12/2021*/
+ * It allows us to keep track of the
+ * transaction pools of the nodes
+ */
+typedef struct
 {
-    long int procId; /* è necessario??? NO, a nessuno serve l'ID del nodo*/
-    int msgQId;
+    long int procId; /* Node's id */
+    int msgQId;      /* Id of the message queue that performs the transaction pool function */
 } TPElement;
 
 /*
-    NEWNODE: message sent to master from node
-            to request the creation of a new node to serve a transaction
+    It allows us to define the type of message sent on global message queues:
 
-    NEWFRIEND: message sent to node from master to order the latter
-                to add a new process to its friends
+    -NEWNODE: message sent to master from node
+        to request the creation of a new node to serve a transaction
 
-    FAILEDTRANS: message sent to user from node to inform it that
-    the attached transaction has failed (this is used in case
-    the receiver was a terminated user)
+    -NEWFRIEND: message sent to node from master to order the latter
+        to add a new process to its friends
 
-    FRIENDINIT: massage sent to user from master to initialize its friends list
+    -FAILEDTRANS: message sent to user from node to inform it that
+        the attached transaction has failed (this is used in case
+        the receiver was a terminated user)
 
-    TRANSTPFULL: message sent to user (or node) to node to inform it that a transaction
-    must be served either by requesting the creation of new node or by dispatching it to a friend
+    -FRIENDINIT: massage sent to user from master to initialize its friends list
 
-    TERMINATEDUSER: message sent from user when it terminates its execution
+    -TRANSTPFULL: message sent to user (or node) to node to inform it that a transaction
+        must be served either by requesting the creation of new node or by dispatching it to a friend
+
+    -TERMINATEDUSER: message sent from user when it terminates its execution
+
+    -TERMINATEDNODE: message sent from node when it terminates its execution
 */
 typedef enum
 {
@@ -247,94 +254,54 @@ typedef enum
     TERMINATEDNODE
 } GlobalMsgContent;
 
-/* attenzione!!!! Per friends va fatta una memcopy
- non si può allocare staticamente perchè la sua dimensione è letta a runtime */
+/*
+ * Structure of the message sent on the message
+ * queue used for the creation of new nodes or friends
+ */
 typedef struct
 {
-    long int mtype; /* Pid of the receiver, taken with getppid (children) or from dedicated arrays (parent) */
-    GlobalMsgContent msgContent;
-    /* ProcListElem * friends;*/ /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
-    /*
-     * Abbiamo rimosso la definizione precedente in quanto friends non può essere allocato staticamente,
-     * quindi era necessario definirlo dinamicamente prima di inviare il messaggio sulla coda; questo
-     * però comporta che quando il ricevitore (processo diverso da quello che ha mandato il messaggio)
-     * prova ad accedere a tale array, si verifica un errore di segmentazione perché il processo cerca
-     * di accedere ad una zona di memoria che non è la sua ma è di un altro processo. Per questo motivo,
-     * dopo aver valutato attentamente le diverse opzioni per risolvere questo problema, si è deciso di non
-     * mandare la lista di nodi amici tramite un singolo messaggio ma di mandarla tramite più messaggi
-     * sulla coda globale e starà quindi al nodo destinatario leggere i messaggi dalla coda e creare la
-     * sua lista di nodi amici.
-     */
-    /*
-        CORREGGERE: mettere solo il pid
-    */
-    pid_t friend;            /* garbage if msgcontent == NEWNODE || msgcontent == FAILEDTRANS */
-    Transaction transaction; /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
-    long hops;               /* garbage if msgContent == NEWFRIEND || msgContent == FRIENDINIT */
-    pid_t terminatedPid;     /* pid of terminated user/node, garbage if msgContent != TERMINATEDUSER || msgContent != TERMINATEDNODE */
-} MsgGlobalQueue;
-
-typedef struct
-{
-    long int mtype;
+    long int mtype;              /* pid of node which the transaction is sent */
     GlobalMsgContent msgContent; /* NEWNODE or NEWFRIEND*/
     Transaction transaction;
     pid_t procPid;
 } NodeCreationQueue;
 
 /*
-    Global queue for terminated users and friends initialization
-*/
+ * Structure of the message sent on the global
+ * queue for terminated users and friends initialization
+ */
 typedef struct
 {
-    long int mtype;
+    long int mtype;              /* pid of node which the transaction is sent */
     GlobalMsgContent msgContent; /* FRIENDINIT or TERMINATEDUSER or TERMINATEDNODE*/
     pid_t procPid;
 } ProcQueue;
 
 /*
-    Global queue for spare and failed transactions
-*/
+ * Structure of the message sent on the global
+ * queue for spare and failed transactions
+ */
 typedef struct
 {
-    long int mtype;
+    long int mtype;              /* pid of node which the transaction is sent */
     GlobalMsgContent msgContent; /* FAILEDTRANS or TRANSTPFULL*/
     Transaction transaction;
     long hops;
 } TransQueue;
 
 /*
- * Fields:
- * mtype = pid of node which the transaction is sent
- * transaction = transaction sent to the node
+ * Structure of messages sent on the message
+ * queue which acts as a transaction pool
  */
+typedef struct msgtp
+{
+    long int mtype;          /* pid of node which the transaction is sent */
+    Transaction transaction; /* transaction sent to the node */
+} MsgTP;
 
+/* Definition of boolean type */
 typedef enum
 {
     FALSE = 0,
     TRUE
 } boolean;
-
-/*
- * Fields:
- * mtype = pid of node which the transaction is sent
- * transaction = transaction sent to the node
- */
-typedef struct msgtp
-{
-    long int mtype; /* pid of node - not that important, the transaction pool is private to the node */
-    Transaction transaction;
-} MsgTP;
-
-typedef struct
-{
-    long mtype; /* type of message */
-    pid_t pid;  /* user-define message */
-} msgbuff;
-
-#define TEST_ERROR_PARAM                                                                       \
-    if (errno)                                                                                 \
-    {                                                                                          \
-        unsafeErrorPrint("Master: failed to read configuration parameter. Error: ", __LINE__); \
-        return FALSE;                                                                          \
-    }
