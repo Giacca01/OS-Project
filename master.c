@@ -384,452 +384,453 @@ int main(int argc, char *argv[])
     if (readConfigParameters() == FALSE)
         endOfSimulation(-1);
 
-    NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting up simulation timer...\n");)
-    printf("[MASTER]: simulation lasts %ld seconds\n", SO_SIM_SEC);
-    /* No previous alarms were set, so it must return 0*/
-    if (alarm(SO_SIM_SEC) != 0)
-        unsafeErrorPrint("[MASTER]: failed to set up simulation timer. ", __LINE__);
+    NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting up signal mask...\n");)
+    if (sigfillset(&set) == -1)
+        unsafeErrorPrint("[MASTER]: failed to initialize signals mask. Error: ", __LINE__);
     else
     {
-        NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting up signal mask...\n");)
-        if (sigfillset(&set) == -1)
-            unsafeErrorPrint("[MASTER]: failed to initialize signals mask. Error: ", __LINE__);
+        /* We block all the signals during the execution of the handler*/
+        act.sa_handler = endOfSimulation;
+        act.sa_mask = set;
+        NOT_ESSENTIAL_PRINT(printf("[MASTER]: signal mask initialized successfully.\n");)
+
+        NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting end of simulation disposition...\n");)
+        if (sigaction(SIGUSR1, &act, NULL) == -1)
+            unsafeErrorPrint("[MASTER]: failed to set end of simulation disposition. Error: ", __LINE__);
         else
         {
-            /* We block all the signals during the execution of the handler*/
-            act.sa_handler = endOfSimulation;
-            act.sa_mask = set;
-            NOT_ESSENTIAL_PRINT(printf("[MASTER]: signal mask initialized successfully.\n");)
+            maxNumNode = SO_NODES_NUM + MAX_ADDITIONAL_NODES;
 
-            NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting end of timer disposition...\n");)
-            if (sigaction(SIGALRM, &act, NULL) == -1)
-                unsafeErrorPrint("[MASTER]: failed to set end of timer disposition. Error: ", __LINE__);
-            else
+            printf("[MASTER]: creating IPC facilitites...\n");
+            if (allocateGlobalStructures() == TRUE)
             {
-                NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting end of simulation disposition...\n");)
-                if (sigaction(SIGUSR1, &act, NULL) == -1)
-                    unsafeErrorPrint("[MASTER]: failed to set end of simulation disposition. Error: ", __LINE__);
-                else
+                printf("[MASTER]: initializating IPC facilitites...\n");
+                if (initializeIPCFacilities() == TRUE)
                 {
-                    maxNumNode = SO_NODES_NUM + MAX_ADDITIONAL_NODES;
-
-                    printf("[MASTER]: creating IPC facilitites...\n");
-                    if (allocateGlobalStructures() == TRUE)
+                    /*****  Creates SO_USERS_NUM children   *****/
+                    /********************************************/
+                    printf("[MASTER]: forking user processes...\n");
+                    for (i = 0; i < SO_USERS_NUM; i++)
                     {
-                        printf("[MASTER]: initializating IPC facilitites...\n");
-                        if (initializeIPCFacilities() == TRUE)
+                        NOT_ESSENTIAL_PRINT(printf("[MASTER]: user number %d\n", i);)
+                        switch (child_pid = fork())
                         {
-                            /*****  Creates SO_USERS_NUM children   *****/
-                            /********************************************/
-                            printf("[MASTER]: forking user processes...\n");
-                            for (i = 0; i < SO_USERS_NUM; i++)
+                        case -1:
+                            /*Handle error*/
+                            unsafeErrorPrint("[MASTER]: fork failed. Error: ", __LINE__);
+                            /*
+                             *    (**)
+                             *    In case we failed to create a process we end
+                             *    the simulation.
+                             *    This solution is extended to every operation required to create a node/user.
+                             *    This solution is quite restrictive, but we have to consider
+                             *    that loosing even one process before it even started
+                             *    means violating the project requirments
+                             */
+                            endOfSimulation(-1);
+                        case 0:
+                            /*
+                             * The process tells the father that it is ready to run
+                             * and that it waits for all processes to be ready
+                             */
+                            NOT_ESSENTIAL_PRINT(printf("[USER %5ld]: starting execution....\n", (long)getpid());)
+                            signal(SIGALRM, SIG_IGN);
+                            signal(SIGUSR1, tmpHandler);
+
+                            if (execle("user.out", "user", NULL, environ) == -1)
                             {
-                                NOT_ESSENTIAL_PRINT(printf("[MASTER]: user number %d\n", i);)
-                                switch (child_pid = fork())
-                                {
-                                case -1:
-                                    /*Handle error*/
-                                    unsafeErrorPrint("[MASTER]: fork failed. Error: ", __LINE__);
-                                    /*
-                                     *    (**)
-                                     *    In case we failed to create a process we end
-                                     *    the simulation.
-                                     *    This solution is extended to every operation required to create a node/user.
-                                     *    This solution is quite restrictive, but we have to consider
-                                     *    that loosing even one process before it even started
-                                     *    means violating the project requirments
-                                     */
-                                    endOfSimulation(-1);
-                                case 0:
-                                    /*
-                                     * The process tells the father that it is ready to run
-                                     * and that it waits for all processes to be ready
-                                     */
-                                    NOT_ESSENTIAL_PRINT(printf("[USER %5ld]: starting execution....\n", (long)getpid());)
-                                    signal(SIGALRM, SIG_IGN);
-                                    signal(SIGUSR1, tmpHandler);
-
-                                    if (execle("user.out", "user", NULL, environ) == -1)
-                                    {
-                                        snprintf(aus, 199, "[USER %5ld]: failed to load user's code. Error: ", (long)getpid());
-                                        unsafeErrorPrint(aus, __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-                                    break;
-
-                                default:
-                                    /* Increments number of effective users and alltime users */
-                                    noEffectiveUsers++;
-                                    noAllTimesUsers++;
-
-                                    /* Process notify his creatorion */
-                                    sops[0].sem_num = 0;
-                                    sops[0].sem_op = -1;
-                                    sops[0].sem_flg = IPC_NOWAIT;
-                                    if (semop(fairStartSem, &sops[0], 1) == -1)
-                                    {
-                                        safeErrorPrint("[MASTER]: failed to decrement start semaphore. Error: ", __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-
-                                    /*
-                                     *    No user or node is writing or reading on the
-                                     *    read but it's better to be one hundred percent
-                                     *    to check no one is reading or writing from the list
-                                     *
-                                     *    ENTRY SECTION:
-                                     *    Reserve read semaphore and Reserve write semaphore
-                                     */
-                                    sops[0].sem_op = -1;
-                                    sops[0].sem_num = 1;
-
-                                    sops[1].sem_op = -1;
-                                    sops[1].sem_num = 2;
-                                    if (semop(userListSem, sops, 2) == -1)
-                                    {
-                                        unsafeErrorPrint("[MASTER]: failed to reserve users list semaphore for writing operation. Error:  ", __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-
-                                    /* Save users processes pid and state into usersList*/
-                                    usersList[i].procId = child_pid;
-                                    usersList[i].procState = ACTIVE;
-
-                                    /*
-                                     *Exit section
-                                     */
-                                    sops[0].sem_op = 1;
-                                    sops[0].sem_num = 1;
-
-                                    sops[1].sem_op = 1;
-                                    sops[1].sem_num = 2;
-                                    if (semop(userListSem, sops, 2) == -1)
-                                    {
-                                        unsafeErrorPrint("[MASTER]: failed to release users list semaphore for writing operation. Error:  ", __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-
-                                    break;
-                                }
+                                snprintf(aus, 199, "[USER %5ld]: failed to load user's code. Error: ", (long)getpid());
+                                unsafeErrorPrint(aus, __LINE__);
+                                endOfSimulation(-1);
                             }
-                            /********************************************/
-                            /********************************************/
+                            break;
 
-                            printf("[MASTER]: forking nodes processes...\n");
-                            /*****  Creates SO_NODES_NUM children   *****/
-                            /********************************************/
-                            for (i = 0; i < SO_NODES_NUM; i++)
-                            {
-                                NOT_ESSENTIAL_PRINT(printf("[MASTER]: node number %d\n", i);)
-                                switch (child_pid = fork())
-                                {
-                                case -1:
-                                    /* Handle error*/
-                                    unsafeErrorPrint("[MASTER]: fork failed. Error: ", __LINE__);
-                                    endOfSimulation(-1);
-                                case 0:
-                                    /*
-                                     * The process tells the father that it is ready to run
-                                     * and that it waits for all processes to be ready
-                                     */
-                                    NOT_ESSENTIAL_PRINT(printf("[NODE %5ld]: starting execution....\n", (long)getpid());)
+                        default:
+                            /* Increments number of effective users and alltime users */
+                            noEffectiveUsers++;
+                            noAllTimesUsers++;
 
-                                    signal(SIGALRM, SIG_IGN);
-                                    signal(SIGUSR1, tmpHandler);
-
-                                    if (execle("node.out", "node", "NORMAL", NULL, environ) == -1)
-                                    {
-                                        snprintf(aus, 199, "[NODE %5ld]: failed to load node's code. Error: ", (long)getpid());
-                                        unsafeErrorPrint(aus, __LINE__);
-                                    }
-                                    break;
-
-                                default:
-                                    /* Process notify his creatorion */
-                                    sops[0].sem_num = 0;
-                                    sops[0].sem_op = -1;
-                                    if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
-                                    {
-                                        safeErrorPrint("[MASTER]: failed to reserve number of all times nodes' shared variable semaphore. Error: ", __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-
-                                    /* Incrementing number of effective and all times nodes */
-                                    noEffectiveNodes++;
-                                    (*noAllTimesNodesPtr)++;
-
-                                    sops[0].sem_num = 0;
-                                    sops[0].sem_op = 1;
-                                    if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
-                                    {
-                                        safeErrorPrint("[MASTER]: failed to release number of all times nodes' shared variable semaphore. Error: ", __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-
-                                    sops[0].sem_num = 0;
-                                    sops[0].sem_op = -1;
-                                    sops[0].sem_flg = IPC_NOWAIT;
-                                    if (semop(fairStartSem, &sops[0], 1) == -1)
-                                    {
-                                        safeErrorPrint("[MASTER]: failed to decrement start semaphore. Error: ", __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-
-                                    /*Initialize messages queue for transactions pools*/
-                                    tpList[i].procId = (long)child_pid;
-                                    key = ftok(MSGFILEPATH, child_pid);
-                                    if (key == -1)
-                                    {
-                                        unsafeErrorPrint("[MASTER]: failed to initialize process' transaction pool. Error: ", __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-
-                                    tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
-                                    if (tpList[i].msgQId == -1)
-                                    {
-                                        unsafeErrorPrint("[MASTER]: failed to initialize process' transaction pool. Error: ", __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-
-                                    if (msgctl(tpList[i].msgQId, IPC_STAT, &tpStruct) == -1)
-                                    {
-                                        unsafeErrorPrint("[MASTER]: failed to retrive process transaction pool's size. Error", __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-                                    else
-                                    {
-                                        /* Setting process transaction pool's size */
-                                        if (tpStruct.msg_qbytes > (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
-                                        {
-                                            tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
-                                            if (msgctl(tpList[i].msgQId, IPC_SET, &tpStruct) == -1)
-                                            {
-                                                unsafeErrorPrint("[MASTER]: failed to set process transaction pool's size. Error", __LINE__);
-                                                endOfSimulation(-1);
-                                            }
-                                        }
-                                    }
-
-                                    /* updating tpList length */
-                                    tplLength++;
-
-                                    /* Save nodes processes pid and state into nodesList */
-                                    sops[0].sem_op = -1;
-                                    sops[0].sem_num = 1;
-                                    sops[1].sem_op = -1;
-                                    sops[1].sem_num = 2;
-                                    if (semop(nodeListSem, sops, 2) == -1)
-                                    {
-                                        unsafeErrorPrint("[MASTER]: failed to reserve nodes list semaphore for writing operation. Error ", __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-
-                                    nodesList[i].procId = child_pid;
-                                    nodesList[i].procState = ACTIVE;
-
-                                    sops[0].sem_op = 1;
-                                    sops[0].sem_num = 1;
-                                    sops[1].sem_op = 1;
-                                    sops[1].sem_num = 2;
-                                    if (semop(nodeListSem, sops, 2) == -1)
-                                    {
-                                        unsafeErrorPrint("[MASTER]: failed to release nodes list semaphore for writing operation. Error ", __LINE__);
-                                        endOfSimulation(-1);
-                                    }
-
-                                    break;
-                                }
-                            }
-                            /********************************************/
-                            /********************************************/
-
-                            /*****  Initialize budget for users processes   *****/
-                            /****************************************************/
-
-                            /* we enter the critical section for the noUserSegReadersPtr variabile */
-                            sops[0].sem_op = -1;
+                            /* Process notify his creatorion */
                             sops[0].sem_num = 0;
+                            sops[0].sem_op = -1;
+                            sops[0].sem_flg = IPC_NOWAIT;
+                            if (semop(fairStartSem, &sops[0], 1) == -1)
+                            {
+                                safeErrorPrint("[MASTER]: failed to decrement start semaphore. Error: ", __LINE__);
+                                endOfSimulation(-1);
+                            }
+
+                            /*
+                             *    No user or node is writing or reading on the
+                             *    read but it's better to be one hundred percent
+                             *    to check no one is reading or writing from the list
+                             *
+                             *    ENTRY SECTION:
+                             *    Reserve read semaphore and Reserve write semaphore
+                             */
+                            sops[0].sem_op = -1;
+                            sops[0].sem_num = 1;
+
                             sops[1].sem_op = -1;
-                            sops[1].sem_num = 1;
+                            sops[1].sem_num = 2;
                             if (semop(userListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("[MASTER]: failed to reserve usersList semaphore for reading operation. Error: ", __LINE__);
+                                unsafeErrorPrint("[MASTER]: failed to reserve users list semaphore for writing operation. Error:  ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
-                            (*noUserSegReadersPtr)++;
-                            if ((*noUserSegReadersPtr) == 1)
-                            {
-                                sops[0].sem_num = 2;
-                                sops[0].sem_op = -1;
-                                if (semop(userListSem, &sops[0], 1) == -1)
-                                {
-                                    safeErrorPrint("[MASTER]: failed to reserve write usersList semaphore. Error: ", __LINE__);
-                                    endOfSimulation(-1);
-                                }
-                                /*
-                                 * if the writer is writing, then the first reader who will enter this
-                                 * branch will fall asleep on this traffic light.
-                                 * if the writer is not writing, then the first reader will decrement the by 1
-                                 * traffic light value, so if the writer wants to write, he will fall asleep
-                                 * on the traffic light
-                                 */
-                            }
+                            /* Save users processes pid and state into usersList*/
+                            usersList[i].procId = child_pid;
+                            usersList[i].procState = ACTIVE;
 
-                            /* We exit the critical section for the noUserSegReadersPtr variabile */
-                            sops[0].sem_num = 0;
+                            /*
+                             *Exit section
+                             */
                             sops[0].sem_op = 1;
-                            sops[1].sem_num = 1;
+                            sops[0].sem_num = 1;
+
                             sops[1].sem_op = 1;
+                            sops[1].sem_num = 2;
                             if (semop(userListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("[MASTER]: failed to release usersList semaphore after reading operation. Error: ", __LINE__);
+                                unsafeErrorPrint("[MASTER]: failed to release users list semaphore for writing operation. Error:  ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
-                            NOT_ESSENTIAL_PRINT(printf("[MASTER]: initializing budget users processes...\n");)
-                            for (i = 0; i < SO_USERS_NUM; i++)
-                            {
-                                insert_ordered_budget(usersList[i].procId, SO_BUDGET_INIT, 0); /* insert user on budgetlist */
-                            }
+                            break;
+                        }
+                    }
+                    /********************************************/
+                    /********************************************/
 
-                            /* we enter the critical section for the noUserSegReadersPtr variabile */
+                    printf("[MASTER]: forking nodes processes...\n");
+                    /*****  Creates SO_NODES_NUM children   *****/
+                    /********************************************/
+                    for (i = 0; i < SO_NODES_NUM; i++)
+                    {
+                        NOT_ESSENTIAL_PRINT(printf("[MASTER]: node number %d\n", i);)
+                        switch (child_pid = fork())
+                        {
+                        case -1:
+                            /* Handle error*/
+                            unsafeErrorPrint("[MASTER]: fork failed. Error: ", __LINE__);
+                            endOfSimulation(-1);
+                        case 0:
+                            /*
+                             * The process tells the father that it is ready to run
+                             * and that it waits for all processes to be ready
+                             */
+                            NOT_ESSENTIAL_PRINT(printf("[NODE %5ld]: starting execution....\n", (long)getpid());)
+
+                            signal(SIGALRM, SIG_IGN);
+                            signal(SIGUSR1, tmpHandler);
+
+                            if (execle("node.out", "node", "NORMAL", NULL, environ) == -1)
+                            {
+                                snprintf(aus, 199, "[NODE %5ld]: failed to load node's code. Error: ", (long)getpid());
+                                unsafeErrorPrint(aus, __LINE__);
+                            }
+                            break;
+
+                        default:
+                            /* Process notify his creatorion */
                             sops[0].sem_num = 0;
                             sops[0].sem_op = -1;
-                            if (semop(userListSem, &sops[0], 1) == -1)
+                            if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
                             {
-                                safeErrorPrint("[MASTER]: failed to reserve mutex usersList semaphore. Error: ", __LINE__);
+                                safeErrorPrint("[MASTER]: failed to reserve number of all times nodes' shared variable semaphore. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
-                            (*noUserSegReadersPtr)--;
-                            if ((*noUserSegReadersPtr) == 0)
-                            {
-                                sops[0].sem_num = 2;
-                                sops[0].sem_op = 1;
-                                if (semop(userListSem, &sops[0], 1) == -1)
-                                {
-                                    safeErrorPrint("[MASTER]: failed to reserve write usersList semaphore. Error: ", __LINE__);
-                                    endOfSimulation(-1);
-                                }
-                                /*
-                                 * if I am the last reader and stop reading then I need to reset to 0
-                                 * the semaphore value so that if the writer wants to write he can do it.
-                                 */
-                            }
+                            /* Incrementing number of effective and all times nodes */
+                            noEffectiveNodes++;
+                            (*noAllTimesNodesPtr)++;
 
-                            /* we exit the critical section for the noUserSegReadersPtr variabile */
                             sops[0].sem_num = 0;
                             sops[0].sem_op = 1;
-                            if (semop(userListSem, &sops[0], 1) == -1)
+                            if (semop(noAllTimesNodesSem, &sops[0], 1) == -1)
                             {
-                                safeErrorPrint("[MASTER]: failed to release mutex usersList semaphore. Error: ", __LINE__);
+                                safeErrorPrint("[MASTER]: failed to release number of all times nodes' shared variable semaphore. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
-                            /****************************************************/
-                            /****************************************************/
 
-                            /*****  Initialize budget for nodes processes   *****/
-                            /****************************************************/
-                            NOT_ESSENTIAL_PRINT(printf("[MASTER]: initializing budget nodes processes...\n");)
-                            /* we enter the critical section for the noNodeSegReadersPtr variabile */
                             sops[0].sem_num = 0;
                             sops[0].sem_op = -1;
-                            sops[1].sem_num = 1;
-                            sops[1].sem_op = -1;
-                            if (semop(nodeListSem, sops, 2) == -1)
+                            sops[0].sem_flg = IPC_NOWAIT;
+                            if (semop(fairStartSem, &sops[0], 1) == -1)
                             {
-                                safeErrorPrint("[MASTER]: failed to reserve nodeList semaphore for reading operation. Error: ", __LINE__);
+                                safeErrorPrint("[MASTER]: failed to decrement start semaphore. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
-                            (*noNodeSegReadersPtr)++;
-                            if ((*noNodeSegReadersPtr) == 1)
+                            /*Initialize messages queue for transactions pools*/
+                            tpList[i].procId = (long)child_pid;
+                            key = ftok(MSGFILEPATH, child_pid);
+                            if (key == -1)
                             {
-                                sops[0].sem_num = 2;
-                                sops[0].sem_op = -1;
-                                if (semop(nodeListSem, &sops[0], 1) == -1)
-                                {
-                                    safeErrorPrint("[MASTER]: failed to reserve write nodeList semaphore. Error: ", __LINE__);
-                                    endOfSimulation(-1);
-                                }
-                            }
-                            /* we exit the critical section for the noNodeSegReadersPtr variabile */
-                            sops[0].sem_num = 0;
-                            sops[0].sem_op = 1;
-                            sops[1].sem_num = 1;
-                            sops[1].sem_op = 1;
-                            if (semop(nodeListSem, sops, 2) == -1)
-                            {
-                                safeErrorPrint("[MASTER]: failed to release nodeList semaphore after reading operation. Error: ", __LINE__);
+                                unsafeErrorPrint("[MASTER]: failed to initialize process' transaction pool. Error: ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
-                            /* insert node on budgetlist */
-                            for (i = 0; i < SO_NODES_NUM; i++)
+                            tpList[i].msgQId = msgget(key, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
+                            if (tpList[i].msgQId == -1)
                             {
-                                insert_ordered_budget(nodesList[i].procId, 0, 1);
+                                unsafeErrorPrint("[MASTER]: failed to initialize process' transaction pool. Error: ", __LINE__);
+                                endOfSimulation(-1);
                             }
-                            /****************************************************/
-                            /****************************************************/
 
-                            /************** END OF INITIALIZATION OF BUDGETLIST **************/
-                            /*****************************************************************/
-
-                            /* Still have to work on nodesList, I do after the UNLOCK of the critical zone */
-
-                            /*****  Friends estraction   *****/
-                            /*********************************/
-                            NOT_ESSENTIAL_PRINT(printf("[MASTER]: extracting friends for nodes...\n");)
-                            for (i = 0; i < SO_NODES_NUM; i++)
+                            if (msgctl(tpList[i].msgQId, IPC_STAT, &tpStruct) == -1)
                             {
-                                estrai(i);
-                                msg_to_node.mtype = nodesList[i].procId;
-                                msg_to_node.msgContent = FRIENDINIT;
-                                for (j = 0; j < SO_FRIENDS_NUM; j++)
+                                unsafeErrorPrint("[MASTER]: failed to retrive process transaction pool's size. Error", __LINE__);
+                                endOfSimulation(-1);
+                            }
+                            else
+                            {
+                                /* Setting process transaction pool's size */
+                                if (tpStruct.msg_qbytes > (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE)
                                 {
-                                    msg_to_node.procPid = nodesList[extractedFriendsIndex[j]].procId;
-                                    if (msgsnd(procQueue, &msg_to_node, sizeof(msg_to_node) - sizeof(long), 0) == -1)
+                                    tpStruct.msg_qbytes = (sizeof(MsgTP) - sizeof(long)) * SO_TP_SIZE;
+                                    if (msgctl(tpList[i].msgQId, IPC_SET, &tpStruct) == -1)
                                     {
-                                        unsafeErrorPrint("[MASTER]: failed to initialize node friends. Error: ", __LINE__);
+                                        unsafeErrorPrint("[MASTER]: failed to set process transaction pool's size. Error", __LINE__);
                                         endOfSimulation(-1);
                                     }
                                 }
                             }
 
-                            /* Now UNLOCK of the critical zone */
-                            /* we enter the critical section for the noNodeSegReadersPtr variabile */
-                            sops[0].sem_num = 0;
+                            /* updating tpList length */
+                            tplLength++;
+
+                            /* Save nodes processes pid and state into nodesList */
                             sops[0].sem_op = -1;
-                            if (semop(nodeListSem, &sops[0], 1) == -1)
+                            sops[0].sem_num = 1;
+                            sops[1].sem_op = -1;
+                            sops[1].sem_num = 2;
+                            if (semop(nodeListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("[MASTER]: failed to reserve mutex nodeList semaphore. Error: ", __LINE__);
+                                unsafeErrorPrint("[MASTER]: failed to reserve nodes list semaphore for writing operation. Error ", __LINE__);
                                 endOfSimulation(-1);
                             }
 
-                            (*noNodeSegReadersPtr)--;
-                            if ((*noNodeSegReadersPtr) == 0)
-                            {
-                                sops[0].sem_num = 2;
-                                sops[0].sem_op = 1;
-                                if (semop(nodeListSem, &sops[0], 1) == -1)
-                                {
-                                    safeErrorPrint("[MASTER]: failed to reserve write nodeList semaphore. Error: ", __LINE__);
-                                    endOfSimulation(-1);
-                                }
-                            }
-                            /* we exit the critical section for the noNodeSegReadersPtr variabile */
-                            sops[0].sem_num = 0;
+                            nodesList[i].procId = child_pid;
+                            nodesList[i].procState = ACTIVE;
+
                             sops[0].sem_op = 1;
-                            sops[1].sem_num = 1;
+                            sops[0].sem_num = 1;
                             sops[1].sem_op = 1;
+                            sops[1].sem_num = 2;
                             if (semop(nodeListSem, sops, 2) == -1)
                             {
-                                safeErrorPrint("[MASTER]: failed to release nodeList semaphore after reading operation. Error: ", __LINE__);
+                                unsafeErrorPrint("[MASTER]: failed to release nodes list semaphore for writing operation. Error ", __LINE__);
                                 endOfSimulation(-1);
                             }
-                            /*****  End of Friends estraction   *****/
-                            /****************************************/
+
+                            break;
+                        }
+                    }
+                    /********************************************/
+                    /********************************************/
+
+                    /*****  Initialize budget for users processes   *****/
+                    /****************************************************/
+
+                    /* we enter the critical section for the noUserSegReadersPtr variabile */
+                    sops[0].sem_op = -1;
+                    sops[0].sem_num = 0;
+                    sops[1].sem_op = -1;
+                    sops[1].sem_num = 1;
+                    if (semop(userListSem, sops, 2) == -1)
+                    {
+                        safeErrorPrint("[MASTER]: failed to reserve usersList semaphore for reading operation. Error: ", __LINE__);
+                        endOfSimulation(-1);
+                    }
+
+                    (*noUserSegReadersPtr)++;
+                    if ((*noUserSegReadersPtr) == 1)
+                    {
+                        sops[0].sem_num = 2;
+                        sops[0].sem_op = -1;
+                        if (semop(userListSem, &sops[0], 1) == -1)
+                        {
+                            safeErrorPrint("[MASTER]: failed to reserve write usersList semaphore. Error: ", __LINE__);
+                            endOfSimulation(-1);
+                        }
+                        /*
+                         * if the writer is writing, then the first reader who will enter this
+                         * branch will fall asleep on this traffic light.
+                         * if the writer is not writing, then the first reader will decrement the by 1
+                         * traffic light value, so if the writer wants to write, he will fall asleep
+                         * on the traffic light
+                         */
+                    }
+
+                    /* We exit the critical section for the noUserSegReadersPtr variabile */
+                    sops[0].sem_num = 0;
+                    sops[0].sem_op = 1;
+                    sops[1].sem_num = 1;
+                    sops[1].sem_op = 1;
+                    if (semop(userListSem, sops, 2) == -1)
+                    {
+                        safeErrorPrint("[MASTER]: failed to release usersList semaphore after reading operation. Error: ", __LINE__);
+                        endOfSimulation(-1);
+                    }
+
+                    NOT_ESSENTIAL_PRINT(printf("[MASTER]: initializing budget users processes...\n");)
+                    for (i = 0; i < SO_USERS_NUM; i++)
+                    {
+                        insert_ordered_budget(usersList[i].procId, SO_BUDGET_INIT, 0); /* insert user on budgetlist */
+                    }
+
+                    /* we enter the critical section for the noUserSegReadersPtr variabile */
+                    sops[0].sem_num = 0;
+                    sops[0].sem_op = -1;
+                    if (semop(userListSem, &sops[0], 1) == -1)
+                    {
+                        safeErrorPrint("[MASTER]: failed to reserve mutex usersList semaphore. Error: ", __LINE__);
+                        endOfSimulation(-1);
+                    }
+
+                    (*noUserSegReadersPtr)--;
+                    if ((*noUserSegReadersPtr) == 0)
+                    {
+                        sops[0].sem_num = 2;
+                        sops[0].sem_op = 1;
+                        if (semop(userListSem, &sops[0], 1) == -1)
+                        {
+                            safeErrorPrint("[MASTER]: failed to reserve write usersList semaphore. Error: ", __LINE__);
+                            endOfSimulation(-1);
+                        }
+                        /*
+                         * if I am the last reader and stop reading then I need to reset to 0
+                         * the semaphore value so that if the writer wants to write he can do it.
+                         */
+                    }
+
+                    /* we exit the critical section for the noUserSegReadersPtr variabile */
+                    sops[0].sem_num = 0;
+                    sops[0].sem_op = 1;
+                    if (semop(userListSem, &sops[0], 1) == -1)
+                    {
+                        safeErrorPrint("[MASTER]: failed to release mutex usersList semaphore. Error: ", __LINE__);
+                        endOfSimulation(-1);
+                    }
+                    /****************************************************/
+                    /****************************************************/
+
+                    /*****  Initialize budget for nodes processes   *****/
+                    /****************************************************/
+                    NOT_ESSENTIAL_PRINT(printf("[MASTER]: initializing budget nodes processes...\n");)
+                    /* we enter the critical section for the noNodeSegReadersPtr variabile */
+                    sops[0].sem_num = 0;
+                    sops[0].sem_op = -1;
+                    sops[1].sem_num = 1;
+                    sops[1].sem_op = -1;
+                    if (semop(nodeListSem, sops, 2) == -1)
+                    {
+                        safeErrorPrint("[MASTER]: failed to reserve nodeList semaphore for reading operation. Error: ", __LINE__);
+                        endOfSimulation(-1);
+                    }
+
+                    (*noNodeSegReadersPtr)++;
+                    if ((*noNodeSegReadersPtr) == 1)
+                    {
+                        sops[0].sem_num = 2;
+                        sops[0].sem_op = -1;
+                        if (semop(nodeListSem, &sops[0], 1) == -1)
+                        {
+                            safeErrorPrint("[MASTER]: failed to reserve write nodeList semaphore. Error: ", __LINE__);
+                            endOfSimulation(-1);
+                        }
+                    }
+                    /* we exit the critical section for the noNodeSegReadersPtr variabile */
+                    sops[0].sem_num = 0;
+                    sops[0].sem_op = 1;
+                    sops[1].sem_num = 1;
+                    sops[1].sem_op = 1;
+                    if (semop(nodeListSem, sops, 2) == -1)
+                    {
+                        safeErrorPrint("[MASTER]: failed to release nodeList semaphore after reading operation. Error: ", __LINE__);
+                        endOfSimulation(-1);
+                    }
+
+                    /* insert node on budgetlist */
+                    for (i = 0; i < SO_NODES_NUM; i++)
+                    {
+                        insert_ordered_budget(nodesList[i].procId, 0, 1);
+                    }
+                    /****************************************************/
+                    /****************************************************/
+
+                    /************** END OF INITIALIZATION OF BUDGETLIST **************/
+                    /*****************************************************************/
+
+                    /* Still have to work on nodesList, I do after the UNLOCK of the critical zone */
+
+                    /*****  Friends estraction   *****/
+                    /*********************************/
+                    NOT_ESSENTIAL_PRINT(printf("[MASTER]: extracting friends for nodes...\n");)
+                    for (i = 0; i < SO_NODES_NUM; i++)
+                    {
+                        estrai(i);
+                        msg_to_node.mtype = nodesList[i].procId;
+                        msg_to_node.msgContent = FRIENDINIT;
+                        for (j = 0; j < SO_FRIENDS_NUM; j++)
+                        {
+                            msg_to_node.procPid = nodesList[extractedFriendsIndex[j]].procId;
+                            if (msgsnd(procQueue, &msg_to_node, sizeof(msg_to_node) - sizeof(long), 0) == -1)
+                            {
+                                unsafeErrorPrint("[MASTER]: failed to initialize node friends. Error: ", __LINE__);
+                                endOfSimulation(-1);
+                            }
+                        }
+                    }
+
+                    /* Now UNLOCK of the critical zone */
+                    /* we enter the critical section for the noNodeSegReadersPtr variabile */
+                    sops[0].sem_num = 0;
+                    sops[0].sem_op = -1;
+                    if (semop(nodeListSem, &sops[0], 1) == -1)
+                    {
+                        safeErrorPrint("[MASTER]: failed to reserve mutex nodeList semaphore. Error: ", __LINE__);
+                        endOfSimulation(-1);
+                    }
+
+                    (*noNodeSegReadersPtr)--;
+                    if ((*noNodeSegReadersPtr) == 0)
+                    {
+                        sops[0].sem_num = 2;
+                        sops[0].sem_op = 1;
+                        if (semop(nodeListSem, &sops[0], 1) == -1)
+                        {
+                            safeErrorPrint("[MASTER]: failed to reserve write nodeList semaphore. Error: ", __LINE__);
+                            endOfSimulation(-1);
+                        }
+                    }
+                    /* we exit the critical section for the noNodeSegReadersPtr variabile */
+                    sops[0].sem_num = 0;
+                    sops[0].sem_op = 1;
+                    sops[1].sem_num = 1;
+                    sops[1].sem_op = 1;
+                    if (semop(nodeListSem, sops, 2) == -1)
+                    {
+                        safeErrorPrint("[MASTER]: failed to release nodeList semaphore after reading operation. Error: ", __LINE__);
+                        endOfSimulation(-1);
+                    }
+                    /*****  End of Friends estraction   *****/
+                    /****************************************/
+
+                    NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting up simulation timer...\n");)
+                    printf("[MASTER]: simulation lasts %ld seconds\n", SO_SIM_SEC);
+                    /* No previous alarms were set, so it must return 0*/
+                    if (alarm(SO_SIM_SEC) != 0)
+                        unsafeErrorPrint("[MASTER]: failed to set up simulation timer. ", __LINE__);
+                    else
+                    {
+                        NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting end of timer disposition...\n");)
+                        if (sigaction(SIGALRM, &act, NULL) == -1)
+                            unsafeErrorPrint("[MASTER]: failed to set end of timer disposition. Error: ", __LINE__);
+                        else
+                        {
 
                             printf("[MASTER]: about to start simulation...\n");
                             sops[0].sem_op = -1;
@@ -1267,9 +1268,9 @@ int main(int argc, char *argv[])
                             }
                         }
                     }
-                    deallocateFacilities(&exitCode);
                 }
             }
+            deallocateFacilities(&exitCode);
         }
     }
 
