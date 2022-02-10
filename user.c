@@ -571,7 +571,7 @@ boolean initializeFacilities()
 double computeBalance()
 {
     double balance = 0;
-    int i, j, k, l, msg_length;
+    int i, j, k, msg_length;
     Register *ptr;
     TransList *transSent;
     struct sembuf op;
@@ -666,25 +666,22 @@ double computeBalance()
                         ptr = regPtrs[i];
 
                         /* The while led to the generation of segmentation faults */
-                        for (l = 0; l < REG_PARTITION_COUNT; l++)
+                        for (j = 0; j < ptr->nBlocks; j++)
                         {
-                            for (j = 0; j < ptr->nBlocks; j++)
+                            for (k = 0; k < SO_BLOCK_SIZE; k++)
                             {
-                                for (k = 0; k < SO_BLOCK_SIZE; k++)
+                                if (ptr->blockList[j].transList[k].receiver == my_pid)
                                 {
-                                    if (ptr->blockList[j].transList[k].receiver == my_pid)
-                                    {
-                                        balance += ptr->blockList[j].transList[k].amountSend;
-                                    }
-                                    else if (ptr->blockList[j].transList[k].sender == my_pid)
-                                    {
-                                        /*
-                                         * We remove the transactions already present in the master
-                                         * from the list of those sent
-                                         */
-                                        balance -= ((ptr->blockList[j].transList[k].amountSend) + (ptr->blockList[j].transList[k].reward));
-                                        transactionsSent = removeTransaction(transactionsSent, &(ptr->blockList[j].transList[k]));
-                                    }
+                                    balance += ptr->blockList[j].transList[k].amountSend;
+                                }
+                                else if (ptr->blockList[j].transList[k].sender == my_pid)
+                                {
+                                    /*
+                                        * We remove the transactions already present in the master
+                                        * from the list of those sent
+                                        */
+                                    balance -= ((ptr->blockList[j].transList[k].amountSend) + (ptr->blockList[j].transList[k].reward));
+                                    transactionsSent = removeTransaction(transactionsSent, &(ptr->blockList[j].transList[k]));
                                 }
                             }
                         }
@@ -761,8 +758,8 @@ double computeBalance()
     else if (!errAfterComputing)
     {
         /*
-         * Precondition: Transactions have been deleted from transSent
-         * already registered in the master
+         * Precondition: Transactions already registered in the master 
+         * have been deleted from transSent
          */
         transSent = transactionsSent;
         while (transSent != NULL)
