@@ -42,9 +42,13 @@ userEssentialsPrints: user.c info.h
 userDebug: user.c info.h
 	gcc -g -o0  user.c error.o -o user.out
 
-rm:
+# used to remove everything, also compiled files #
+rmAll: rm
 	rm -f *.o
 	rm -f *.out
+
+# removes only files created during the previous execution - TO MODIFY#
+rm:
 	rm -f node_creation_report.txt
 	rm -f master_msgrcv_content.txt
 	rm -f IPC_remover/IPC_resources.txt

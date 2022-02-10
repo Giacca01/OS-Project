@@ -450,6 +450,9 @@ int main(int argc, char *argv[])
                             noEffectiveUsers++;
                             noAllTimesUsers++;
 
+                            /* insert user on budgetslist */
+                            insert_ordered_budget(child_pid, SO_BUDGET_INIT, 0);
+
                             /* Process notify his creatorion */
                             sops[0].sem_num = 0;
                             sops[0].sem_op = -1;
@@ -563,6 +566,9 @@ int main(int argc, char *argv[])
                                 endOfSimulation(-1);
                             }
 
+                            /* insert node on budgetslist */
+                            insert_ordered_budget(child_pid, 0, 1);
+
                             /*Initialize messages queue for transactions pools*/
                             tpList[i].procId = (long)child_pid;
                             key = ftok(MSGFILEPATH, child_pid);
@@ -631,95 +637,8 @@ int main(int argc, char *argv[])
                     /********************************************/
                     /********************************************/
 
-                    /*****  Initialize budget for users processes   *****/
-                    /****************************************************/
-
-                    /* we enter the critical section for the noUserSegReadersPtr variabile */
-                    sops[0].sem_op = -1;
-                    sops[0].sem_num = 0;
-                    sops[1].sem_op = -1;
-                    sops[1].sem_num = 1;
-                    if (semop(userListSem, sops, 2) == -1)
-                    {
-                        safeErrorPrint("[MASTER]: failed to reserve usersList semaphore for reading operation. Error: ", __LINE__);
-                        endOfSimulation(-1);
-                    }
-
-                    (*noUserSegReadersPtr)++;
-                    if ((*noUserSegReadersPtr) == 1)
-                    {
-                        sops[0].sem_num = 2;
-                        sops[0].sem_op = -1;
-                        if (semop(userListSem, &sops[0], 1) == -1)
-                        {
-                            safeErrorPrint("[MASTER]: failed to reserve write usersList semaphore. Error: ", __LINE__);
-                            endOfSimulation(-1);
-                        }
-                        /*
-                         * if the writer is writing, then the first reader who will enter this
-                         * branch will fall asleep on this traffic light.
-                         * if the writer is not writing, then the first reader will decrement the by 1
-                         * traffic light value, so if the writer wants to write, he will fall asleep
-                         * on the traffic light
-                         */
-                    }
-
-                    /* We exit the critical section for the noUserSegReadersPtr variabile */
-                    sops[0].sem_num = 0;
-                    sops[0].sem_op = 1;
-                    sops[1].sem_num = 1;
-                    sops[1].sem_op = 1;
-                    if (semop(userListSem, sops, 2) == -1)
-                    {
-                        safeErrorPrint("[MASTER]: failed to release usersList semaphore after reading operation. Error: ", __LINE__);
-                        endOfSimulation(-1);
-                    }
-
-                    NOT_ESSENTIAL_PRINT(printf("[MASTER]: initializing budget users processes...\n");)
-                    for (i = 0; i < SO_USERS_NUM; i++)
-                    {
-                        insert_ordered_budget(usersList[i].procId, SO_BUDGET_INIT, 0); /* insert user on budgetlist */
-                    }
-
-                    /* we enter the critical section for the noUserSegReadersPtr variabile */
-                    sops[0].sem_num = 0;
-                    sops[0].sem_op = -1;
-                    if (semop(userListSem, &sops[0], 1) == -1)
-                    {
-                        safeErrorPrint("[MASTER]: failed to reserve mutex usersList semaphore. Error: ", __LINE__);
-                        endOfSimulation(-1);
-                    }
-
-                    (*noUserSegReadersPtr)--;
-                    if ((*noUserSegReadersPtr) == 0)
-                    {
-                        sops[0].sem_num = 2;
-                        sops[0].sem_op = 1;
-                        if (semop(userListSem, &sops[0], 1) == -1)
-                        {
-                            safeErrorPrint("[MASTER]: failed to reserve write usersList semaphore. Error: ", __LINE__);
-                            endOfSimulation(-1);
-                        }
-                        /*
-                         * if I am the last reader and stop reading then I need to reset to 0
-                         * the semaphore value so that if the writer wants to write he can do it.
-                         */
-                    }
-
-                    /* we exit the critical section for the noUserSegReadersPtr variabile */
-                    sops[0].sem_num = 0;
-                    sops[0].sem_op = 1;
-                    if (semop(userListSem, &sops[0], 1) == -1)
-                    {
-                        safeErrorPrint("[MASTER]: failed to release mutex usersList semaphore. Error: ", __LINE__);
-                        endOfSimulation(-1);
-                    }
-                    /****************************************************/
-                    /****************************************************/
-
-                    /*****  Initialize budget for nodes processes   *****/
-                    /****************************************************/
-                    NOT_ESSENTIAL_PRINT(printf("[MASTER]: initializing budget nodes processes...\n");)
+                    /*****  Friends estraction   *****/
+                    /*********************************/
                     /* we enter the critical section for the noNodeSegReadersPtr variabile */
                     sops[0].sem_num = 0;
                     sops[0].sem_op = -1;
@@ -753,21 +672,6 @@ int main(int argc, char *argv[])
                         endOfSimulation(-1);
                     }
 
-                    /* insert node on budgetlist */
-                    for (i = 0; i < SO_NODES_NUM; i++)
-                    {
-                        insert_ordered_budget(nodesList[i].procId, 0, 1);
-                    }
-                    /****************************************************/
-                    /****************************************************/
-
-                    /************** END OF INITIALIZATION OF BUDGETLIST **************/
-                    /*****************************************************************/
-
-                    /* Still have to work on nodesList, I do after the UNLOCK of the critical zone */
-
-                    /*****  Friends estraction   *****/
-                    /*********************************/
                     NOT_ESSENTIAL_PRINT(printf("[MASTER]: extracting friends for nodes...\n");)
                     for (i = 0; i < SO_NODES_NUM; i++)
                     {
@@ -785,7 +689,6 @@ int main(int argc, char *argv[])
                         }
                     }
 
-                    /* Now UNLOCK of the critical zone */
                     /* we enter the critical section for the noNodeSegReadersPtr variabile */
                     sops[0].sem_num = 0;
                     sops[0].sem_op = -1;
@@ -806,6 +709,7 @@ int main(int argc, char *argv[])
                             endOfSimulation(-1);
                         }
                     }
+
                     /* we exit the critical section for the noNodeSegReadersPtr variabile */
                     sops[0].sem_num = 0;
                     sops[0].sem_op = 1;
