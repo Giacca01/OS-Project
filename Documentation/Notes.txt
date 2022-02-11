@@ -1,0 +1,16 @@
+1) Configurazioni: ok
+2) Libro mastro: usiamo shared memory
+3) Grado di concorrenza: usiamo il semaforo begin
+4) Accesso al master: problema dei lettori/scrittori (due sem creati ed inizializzati dal master)
+5) Transaction pool: coda di messaggi (niente rollback in caso di errore, mandi solo un messaggio per avvertire l'utente) oppure lista privata (funzioe associata all'uscita del nodo che stampa il numero di transazioni presenti e argv oppure coda di messaggi per passare la transazione transaction poolscartata al nuovo figlio).
+La lista privata è probabilmente più veloce.
+6) Lista nodi disponibili: memori condivisa
+7) Per simulazione elaborazione blocco: usiamo nanosleep
+8) Meccanismo di uscita:
+	-il master, alla rilevazione della condizione di uscita (**), invia un segnale a tutti i figli per
+	provocarne la terminazione. Il padre si mette in wait e prosegue con le operazioni di stampa e pulizia
+	solo dopo lo sblocco.
+	
+(**) le condizioni d'errore sono:
+	-scadenza timer simulazione
+	-libro mastro pieno (invio segnale dal nodo al master)
