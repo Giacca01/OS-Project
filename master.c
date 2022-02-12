@@ -26,9 +26,10 @@
 #define NO_ATTEMPTS_CHECK_NODE_TERMINATION 10
 /**** End of Constants definition ****/
 
-/*** GLOBAL VARIABLES FOR IPC ***/
+/**** GLOBAL VARIABLES FOR IPC ****/
 #pragma region GLOBAL VARIABLES FOR IPC
 
+/* union used for semaphores initialization */
 union semun
 {
     int val;
@@ -67,11 +68,9 @@ ProcListElem *nodesList = NULL;
 TPElement *tpList = NULL;
 
 /* Id of the global message queue where users, nodes and master communicate */
-int nodeCreationQueue = -1;
-int procQueue = -1;
-int transQueue = -1;
+int nodeCreationQueue = -1, procQueue = -1, transQueue = -1;
 
-/* Id of the set that contains the three semaphores used to write on the register's partitions */
+/* Id of the set that contains the semaphore used to start the simulation */
 int fairStartSem = -1;
 
 /* Id of the set that contains the three semaphores used to write on the register's partitions */
@@ -132,9 +131,9 @@ int noAllTimesNodes = -1;
 long *noAllTimesNodesPtr = NULL;
 
 /*
-    We use a long int variable to handle an outstanding number
-    of child processes
-*/
+ * We use a long int variable to handle an outstanding number
+ * of child processes
+ */
 /* Number of users that terminated before end of simulation*/
 long noTerminatedUsers = 0;
 
@@ -146,60 +145,75 @@ long noEffectiveNodes = 0;
 
 /* Holds the effective number of users */
 long noEffectiveUsers = 0;
-/*long noAllTimesNodes = 0;  */ /* Historical number of nodes: it counts also the terminated ones */
+
 /* Historical number of users: it counts also the terminated ones */
 long noAllTimesUsers = 0;
 
 /* keeps tpList length */
 long tplLength = 0;
-
 #pragma endregion
-/*** END GLOBAL VARIABLES FOR IPC ***/
+/**** END GLOBAL VARIABLES FOR IPC ****/
 
-/*** GLOBAL VARIABLES ***/
+/**** GLOBAL VARIABLES ****/
 #pragma region GLOBAL VARIABLES
-/***** Definition of global variables that contain *****/
-/***** the values ​​of the configuration parameters  *****/
-/*******************************************************/
+/* array of pointers to the environment's variables, used in execle */
 extern char **environ;
-struct timespec now;
+
+/* array used for friends node generation for nodes */
 int *extractedFriendsIndex;
 
-/* struct that rappresents a process and its budget*/
+/*** Configuration parameters ***/
+/* Number of user processes */
+long SO_USERS_NUM;
+/* Number of node processes */
+long SO_NODES_NUM;
+/* Percentage of node's reward of the transaction */
+long SO_REWARD;
+/* Min time for wait for transaction's processing */
+long SO_MIN_TRANS_GEN_NSEC;
+/* Max time for wait for transaction's processing */
+long SO_MAX_TRANS_GEN_NSEC;
+/* Attempts to send a transaction before termination of user */
+long SO_RETRY;
+/* Size of Transaction Pool of node processes */
+long SO_TP_SIZE;
+/* Min time for transactions' block processing */
+long SO_MIN_TRANS_PROC_NSEC;
+/* Max time for transactions' block processing */
+long SO_MAX_TRANS_PROC_NSEC;
+/* Initial budget of user processes */
+long SO_BUDGET_INIT;
+/* Duration of the simulation */
+long SO_SIM_SEC;
+/* Number of friends */
+long SO_FRIENDS_NUM;
+/* Attempts to insert a transaction in a node's TP before elimination */
+long SO_HOPS;
+/*** End of Configuration parameters ***/
+
+/* max number of nodes */
+long maxNumNode = 0;
+
+/*
+ * Array that will contain the lines read from the configuration file:
+ * each "row" of the "matrix" will contain a different file line
+ */
+char line[CONF_MAX_LINE_NO][CONF_MAX_LINE_SIZE];
+
+/* struct that rappresents a process and its budget, used to create the budgetslist */
 typedef struct proc_budget
 {
     pid_t proc_pid;
     float budget;
-    int p_type; /* type of node: 0 if user, 1 if node */
+    int p_type; /* type of process: 0 if user, 1 if node */
 } proc_budget;
 
-/***** Configuration parameters *****/
-long SO_USERS_NUM,
-    SO_NODES_NUM,
-    SO_REWARD,
-    SO_MIN_TRANS_GEN_NSEC,
-    SO_MAX_TRANS_GEN_NSEC,
-    SO_RETRY,
-    SO_TP_SIZE,
-    SO_MIN_TRANS_PROC_NSEC,
-    SO_MAX_TRANS_PROC_NSEC,
-    SO_BUDGET_INIT,
-    SO_SIM_SEC,
-    SO_FRIENDS_NUM,
-    SO_HOPS;
-/***** End of Configuration parameters ***********/
-
-/* max number of nodes */
-long maxNumNode = 0;
-/* used in file reading */
-char line[CONF_MAX_LINE_NO][CONF_MAX_LINE_SIZE];
-
 /* arrays that keeps nodes and users' budgets */
-proc_budget * budgetsList = NULL;
+proc_budget *budgetsList = NULL;
 
 /*
- * The idea is that the register is immutable and therefore is not
- * need to go through it all every time.
+ * The idea is that the register is immutable and therefore 
+ * there is no need to go through it all every time.
  * To improve the efficiency of budget calculation
  * we can just update the budgets on the basis
  * of transactions entered in the register only
@@ -211,8 +225,10 @@ int budgetsListLength = 0;
 
 /* master's pid */
 long masterPid = -1;
-/* keep track if simulation is terminated */
+
+/* keeps track if simulation is terminated */
 boolean simTerminated = FALSE;
+
 /* keeps track of segmentation fault catched by handler */
 int segFaultHappened = 0;
 #pragma endregion
@@ -221,51 +237,55 @@ int segFaultHappened = 0;
 /*** FUNCTIONS PROTOTYPES DECLARATION ***/
 #pragma region FUNCTIONS PROTOTYPES DECLARATION
 /**
- * @brief Function that assigns the values ​​of the environment variables to the global variables defined above.
+ * Function that assigns the values ​​of the environment variables to the global variables defined above.
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
 boolean assignEnvironmentVariables();
 
 /**
- * @brief Function that reads the file containing the configuration parameters to save them as environment variables.
+ * Function that reads the file containing the configuration parameters to save them as environment variables.
+ * @param filename file from which we read the configuration parameters
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
-boolean readConfigParameters();
+boolean readConfigParameters(char * filename);
 
 /**
- * @brief Allocation of global structures.
+ * Allocation of global structures.
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
 boolean allocateGlobalStructures();
 
 /**
- * @brief Ipc structures allocation.
+ * Ipc structures allocation.
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
 boolean initializeIPCFacilities();
 
 /**
- * @brief Function that ends the execution of the user; this can happen in three different ways,
- * rappresented by the values that the parameter might assume.
- * @param sig the parameters value are: 0 -> only end of execution; -1 -> end of execution and deallocation (called from error);
- * SIGUSR1 -> end of execution and deallocation (called by signal from master)
+ * Function that ends the simulation, killing all the child processes still alive and
+ * deallocating the IPC structures. 
+ * It can be invoked in different ways or for different reasons, depending on the value that
+ * the parameter might assume.
+ * @param sig rappresents the event that called this function; possible values are: -1 (critical error),
+ * -2 (no more users alive), -3 (no more nodes alive), SIGALRM (time of simulation expired), 
+ * SIGUSR1 (register is full).
  */
 void endOfSimulation(int);
 
 /**
- * @brief Function that deallocates the IPC facilities for the user.
+ * Function that deallocates the IPC facilities for the user.
  * @param exitcode indicates whether the simulation ends successfully or not
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
 boolean deallocateFacilities(int *);
 
 /**
- * @brief Function that checks for node creation requests.
+ * Function that checks for node creation requests.
  */
 void checkNodeCreationRequests();
 
 /**
- * @brief Function that inserts in the global list bud_list the node passed as
+ * Function that inserts in the global list bud_list the node passed as
  * argument in an ordered way (the list is ordered in ascending order).
  * We want to keep the list sorted to implement a more efficient
  * budget calculation.
@@ -276,7 +296,7 @@ void checkNodeCreationRequests();
 void insert_ordered_budget(pid_t, float, int);
 
 /**
- * @brief Function that searches in the gloabl list bud_list for an element with
+ * Function that searches in the gloabl list bud_list for an element with
  * proc_pid as the one passed as first argument; if it's found, upgrades its budget
  * adding the second argument, which is a positive or negative amount.
  * @param pidToUpdate pid of the item to be searched for in the budgetslist.
@@ -287,12 +307,12 @@ void insert_ordered_budget(pid_t, float, int);
 int update_budget(pid_t, float);
 
 /**
- * @brief Function that print remained transactions.
+ * Function that print remained transactions.
  */
-void printRemainedTransactions();
+void printTransactionsNotProcessed();
 
 /**
- * @brief Upload the location to extractedFriendsIndex in friends' nodesList
+ * Upload the location to extractedFriendsIndex in friends' nodesList
  * (doing so extracts friends)
  * @param k index of the process that cannot be extracted, i.e. the one calling the function.
  */
@@ -304,7 +324,7 @@ void estrai(int);
 void tmpHandler(int sig);
 
 /**
- * @brief Function that catches any segmentation fault error during execution and
+ * Function that catches any segmentation fault error during execution and
  * avoids brutal termination.
  * @param sig signal that fired the handler
  */
@@ -315,14 +335,13 @@ void segmentationFaultHandler(int);
 /*** MAIN FUNCTION ***/
 int main(int argc, char *argv[])
 {
+    int i = 0, j = 0, indexForBL = 0, exitCode = EXIT_FAILURE;
     pid_t child_pid;
-    struct sembuf sops[3];
-    sigset_t set;
-    struct sigaction act;
-    int fullRegister = TRUE;
-    int exitCode = EXIT_FAILURE;
     key_t key;
-    int i = 0, j = 0, indexForBL = 0;
+    sigset_t set;
+    struct sembuf sops[3];
+    struct sigaction act;
+    boolean fullRegister = TRUE;
 
     /* definition of objects necessary for nanosleep */
     struct timespec onesec, tim;
@@ -339,9 +358,9 @@ int main(int argc, char *argv[])
     int ind_tr_in_block = 0;
 
     /* 
-        variable that keeps track of the attempts to update a budget,
-        if > NO_ATTEMPTS_UPDATE_BUDGET we switch to next block 
-    */
+     * variable that keeps track of the attempts to update a budget,
+     * if > NO_ATTEMPTS_UPDATE_BUDGET we switch to next block 
+     */
     int bud_update_attempts = 0;
 
     /* declaring message structures used with global queue */
@@ -361,6 +380,12 @@ int main(int argc, char *argv[])
 
     /* initializing print string message */
     char *aus = NULL;
+
+    /* 
+     * variable that rappresents the file from which we load the configuration parameters;
+     * "params_1.txt" it's the default value in case we forget to pass the parameter from terminal.
+     */
+    char config[50] = "params_1.txt";
 
     /* Set common semaphore options*/
     sops[0].sem_num = 0;
@@ -392,7 +417,11 @@ int main(int argc, char *argv[])
     printf("[MASTER]: my pid is %5ld\n", masterPid);
     printf("[MASTER]: **** simulation configuration started ****\n");
 
-    if (readConfigParameters() == FALSE)
+    /* checking for the path of the file where we read the configuration parameters */
+    if(argc > 1)
+        strcpy(config, argv[1]);
+
+    if (readConfigParameters(config) == FALSE)
         endOfSimulation(-1);
 
     NOT_ESSENTIAL_PRINT(printf("[MASTER]: setting up signal mask...\n");)
@@ -867,7 +896,8 @@ int main(int argc, char *argv[])
                                                          * therefore you do not need to update the budget of the sender, but only of the receiver.
                                                          */
                                                     }
-                                                    else if (update_budget((pid_t)trans.sender, -(trans.amountSend + trans.reward)) == 0){
+                                                    else if (update_budget((pid_t)trans.sender, -(trans.amountSend + trans.reward)) == 0)
+                                                    {
                                                         /* update budget of sender of transaction, the amount is negative */
                                                         /* error checking not needed, already done in function */
                                                         ct_updates++;
@@ -1055,7 +1085,6 @@ int main(int argc, char *argv[])
                                                     noTerminatedUsers++;
                                                     /* Updating number of effective active processes */
                                                     noEffectiveUsers--;
-
                                                     break;
                                                     /* we stop the cycle now that we found the process */
                                                 }
@@ -1197,7 +1226,7 @@ int main(int argc, char *argv[])
 }
 
 /**
- * @brief Function that assigns the values ​​of the environment variables to the global variables defined above.
+ * Function that assigns the values ​​of the environment variables to the global variables defined above.
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
 boolean assignEnvironmentVariables()
@@ -1250,12 +1279,12 @@ boolean assignEnvironmentVariables()
 }
 
 /**
- * @brief Function that reads the file containing the configuration parameters to save them as environment variables.
+ * Function that reads the file containing the configuration parameters to save them as environment variables.
+ * @param filename file from which we read the configuration parameters
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
-boolean readConfigParameters()
+boolean readConfigParameters(char * filename)
 {
-    char *filename = "params_2.txt";
     FILE *fp = fopen(filename, "r");
     /* Counter of the number of lines in the file*/
     int k = 0;
@@ -1264,10 +1293,6 @@ boolean readConfigParameters()
 
     NOT_ESSENTIAL_PRINT(printf("[MASTER]: reading configuration parameters...\n");)
 
-    /*
-     *Array that will contain the lines read from the file:
-     *each "row" of the "matrix" will contain a different file line
-     */
     aus = (char *)calloc(100, sizeof(char));
     if (aus == NULL)
         unsafeErrorPrint("[MASTER]: failed to allocate memory. Error: ", __LINE__);
@@ -1313,7 +1338,7 @@ boolean readConfigParameters()
 }
 
 /**
- * @brief Allocation of global structures.
+ * Allocation of global structures.
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
 boolean allocateGlobalStructures()
@@ -1328,7 +1353,7 @@ boolean allocateGlobalStructures()
 }
 
 /**
- * @brief Ipc structures allocation.
+ * Ipc structures allocation.
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
 boolean initializeIPCFacilities()
@@ -1337,9 +1362,10 @@ boolean initializeIPCFacilities()
     unsigned short aux[REG_PARTITION_COUNT] = {1, 1, 1};
     int res = -1;
     struct msqid_ds globalQueueStruct;
+    key_t key;
 
     /* Initialization of semaphores*/
-    key_t key = ftok(SEMFILEPATH, FAIRSTARTSEED);
+    key = ftok(SEMFILEPATH, FAIRSTARTSEED);
     FTOK_TEST_ERROR(key, "[MASTER]: ftok failed during fair start semaphore creation. Error: ");
 
     fairStartSem = semget(key, 1, IPC_CREAT | IPC_EXCL | MASTERPERMITS);
@@ -1575,7 +1601,7 @@ boolean initializeIPCFacilities()
 }
 
 /**
- * @brief Function that inserts in the global list bud_list the node passed as
+ * Function that inserts in the global list bud_list the node passed as
  * argument in an ordered way (the list is ordered in ascending order).
  * We want to keep the list sorted to implement a more efficient
  * budget calculation.
@@ -1628,7 +1654,7 @@ void insert_ordered_budget(pid_t pid, float budget, int p_type)
 }
 
 /**
- * @brief Function that searches in the gloabl list bud_list for an element with
+ * Function that searches in the gloabl list bud_list for an element with
  * proc_pid as the one passed as first argument; if it's found, upgrades its budget
  * adding the second argument, which is a positive or negative amount.
  * @param pidToUpdate pid of the item to be searched for in the budgetslist.
@@ -1680,10 +1706,13 @@ void tmpHandler(int sig)
 }
 
 /**
- * @brief Function that ends the execution of the user; this can happen in three different ways,
- * rappresented by the values that the parameter might assume.
- * @param sig the parameters value are: 0 -> only end of execution; -1 -> end of execution and deallocation (called from error);
- * SIGUSR1 -> end of execution and deallocation (called by signal from master)
+ * Function that ends the simulation, killing all the child processes still alive and
+ * deallocating the IPC structures. 
+ * It can be invoked in different ways or for different reasons, depending on the value that
+ * the parameter might assume.
+ * @param sig rappresents the event that called this function; possible values are: -1 (critical error),
+ * -2 (no more users alive), -3 (no more nodes alive), SIGALRM (time of simulation expired), 
+ * SIGUSR1 (register is full).
  */
 void endOfSimulation(int sig)
 {
@@ -1744,7 +1773,7 @@ void endOfSimulation(int sig)
                 printf("[MASTER]: simulation terminated successfully. Printing report...\n");
 
                 /* Users and nodes budgets */
-                printRemainedTransactions();
+                printTransactionsNotProcessed();
 
                 /* processes terminated before end of simulation*/
                 printf("Processes terminated before end of simulation: %ld\n", noTerminatedUsers);
@@ -1788,7 +1817,7 @@ void endOfSimulation(int sig)
 }
 
 /**
- * @brief Function that deallocates the IPC facilities for the user.
+ * Function that deallocates the IPC facilities for the user.
  * @param exitcode indicates whether the simulation ends successfully or not
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
@@ -2189,26 +2218,24 @@ boolean deallocateFacilities(int *exitCode)
 }
 
 /**
- * @brief Function that checks for node creation requests.
+ * Function that checks for node creation requests.
  */
 void checkNodeCreationRequests()
 {
+    int tpId = -1, j = 0, attempts = 0;
+    long indexNodesList = 0;
+    pid_t procPid = -1;
     NodeCreationQueue ausNode;
     TransQueue ausTrans;
     ProcQueue ausProc;
-    pid_t procPid = -1;
-    int tpId = -1, j = 0;
-    pid_t currPid = getpid();
     MsgTP firstTrans;
     struct sembuf sops[3];
-    long indexNodesList = 0;
-    int attempts = 0;
-    char *printMsg;
+    char *printMsg = NULL;
     union semun arg;
     struct msqid_ds tpStruct;
 
     while (attempts < NO_ATTEMPTS_NEW_NODE_REQUESTS && 
-        msgrcv(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), currPid, IPC_NOWAIT) != -1
+        msgrcv(nodeCreationQueue, &ausNode, sizeof(NodeCreationQueue) - sizeof(long), masterPid, IPC_NOWAIT) != -1
     ){
         /* Increasing the number of attempts to check for new node requests*/
         attempts++;
@@ -2561,15 +2588,13 @@ void checkNodeCreationRequests()
 }
 
 /**
- * @brief Function that print remained transactions.
+ * Function that prints remained transactions.
  */
-void printRemainedTransactions()
+void printTransactionsNotProcessed()
 {
-    int i = 0;
-    int tpId = -1;
+    int i = 0, tpId = -1, cnt = 0;
     MsgTP aus;
     boolean error = FALSE;
-    int cnt = 0;
 
     for (i = 0; i < tplLength && !error; i++)
     {
@@ -2578,13 +2603,13 @@ void printRemainedTransactions()
         cnt = 0;
         while (msgrcv(tpId, &aus, sizeof(aus) - sizeof(long), 0, IPC_NOWAIT) != -1)
         {
-
-            printf("[MASTER]:  - Timestamp: %ld\n [MASTER]:  - Sender: %ld\n [MASTER]:  - Receiver: %ld\n [MASTER]:  -  Amount sent: %f\n [MASTER]:  - Reward: %f\n",
-                   aus.transaction.timestamp.tv_nsec,
-                   aus.transaction.sender,
-                   aus.transaction.receiver,
-                   aus.transaction.amountSend,
-                   aus.transaction.reward);
+            printf("[MASTER]:  - Timestamp: %ld : %ld\n [MASTER]:  - Sender: %ld\n [MASTER]:  - Receiver: %ld\n [MASTER]:  - Amount sent: %f\n [MASTER]:  - Reward: %f\n",
+                              aus.transaction.timestamp.tv_sec,
+                              aus.transaction.timestamp.tv_nsec,
+                              aus.transaction.sender,
+                              aus.transaction.receiver,
+                              aus.transaction.amountSend,
+                              aus.transaction.reward);
             cnt++;
         }
 
@@ -2599,14 +2624,14 @@ void printRemainedTransactions()
 }
 
 /**
- * @brief Upload the location to extractedFriendsIndex in friends' nodesList
+ * Upload the location to extractedFriendsIndex in friends' nodesList
  * (doing so extracts friends)
  * @param k index of the process that cannot be extracted, i.e. the one calling the function.
  */
 void estrai(int k)
 {
-    int x, count, n, i = 0;
-    int r;
+    int x, count, n, i = 0, r;
+    struct timespec now;
 
     for (count = 0; count < SO_FRIENDS_NUM; count++)
     {
@@ -2641,7 +2666,7 @@ void estrai(int k)
 }
 
 /**
- * @brief Function that catches any segmentation fault error during execution and
+ * Function that catches any segmentation fault error during execution and
  * avoids brutal termination.
  *
  * @param sig signal that fired the handler

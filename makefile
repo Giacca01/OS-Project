@@ -2,9 +2,9 @@ CC=gcc
 CFLAGS=-std=c89 -pedantic-errors -Wall -ggdb
 ESSENTIALS=-DESSENTIALS_PRINTS=0
 
-all: rm error.o master.o node.o user.o
-allDebug: rm error masterDebug nodeDebug userDebug
-allEssentialsPrints: rm error masterEssentialsPrints nodeEssentialsPrints userEssentialsPrints
+all: error.o master.o node.o user.o
+allDebug: error masterDebug nodeDebug userDebug
+allEssentialsPrints: error masterEssentialsPrints nodeEssentialsPrints userEssentialsPrints
 
 error.o: error.c error.h
 	${CC} -c ${CFLAGS} error.c -o error.o
@@ -42,17 +42,10 @@ userEssentialsPrints: user.c info.h
 userDebug: user.c info.h
 	gcc -g -o0  user.c error.o -o user.out
 
-# used to remove everything, also compiled files #
-rmAll: rm
+# used to remove compiled files #
+rm:
 	rm -f *.o
 	rm -f *.out
-
-# removes only files created during the previous execution - TO MODIFY#
-rm:
-	rm -f node_creation_report.txt
-	rm -f master_msgrcv_content.txt
-	rm -f IPC_remover/IPC_resources.txt
-	rm -f processes_killer/processes_created.txt
 
 run: all
 	./master.out

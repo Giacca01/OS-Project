@@ -12,14 +12,22 @@
 #include <sys/sem.h>
 #include "error.h"
 
-#define SO_REGISTRY_SIZE 10000                                                                  /* Maximum number of blocks in the master */
-#define SO_BLOCK_SIZE 20                                                                        /* Number of transactions contained in a block */
-#define MAX_ADDITIONAL_NODES 100                                                                /* Maximum number of additional nodes created on request */
-#define REG_PARTITION_COUNT 3                                                                   /* Number of partitions into which the master is divided */
-#define CONF_MAX_LINE_SIZE 128                                                                  /* Configuration file's line maximum bytes length*/
-#define CONF_MAX_LINE_NO 14                                                                     /* Configuration file's maximum lines count*/
-#define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + REG_PARTITION_COUNT - 1) / REG_PARTITION_COUNT) /* Size of master single partition */
-#define MASTERPERMITS 0600                                                                      /* Permits for master */
+/* Maximum number of blocks in the master */
+#define SO_REGISTRY_SIZE 1000
+/* Number of transactions contained in a block */
+#define SO_BLOCK_SIZE 100
+/* Maximum number of additional nodes created on request */
+#define MAX_ADDITIONAL_NODES 100
+/* Number of partitions into which the master is divided */
+#define REG_PARTITION_COUNT 3
+/* Configuration file's line maximum bytes length */
+#define CONF_MAX_LINE_SIZE 128
+/* Configuration file's maximum lines count */
+#define CONF_MAX_LINE_NO 14
+/* Size of master single partition */
+#define REG_PARTITION_SIZE ((SO_REGISTRY_SIZE + REG_PARTITION_COUNT - 1) / REG_PARTITION_COUNT)
+/* Permits for master */
+#define MASTERPERMITS 0600
 
 #define IPCREMOVERFILEPATH "IPC_remover/IPC_resources.txt"
 

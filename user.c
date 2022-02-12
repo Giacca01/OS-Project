@@ -29,10 +29,9 @@ int nodesListId = -1;
 ProcListElem *nodesList = NULL;
 
 /* Id of the global message queue where users, nodes and master communicate */
-int procQueue = -1;
-int transQueue = -1;
+int procQueue = -1, transQueue = -1;
 
-/* Id of the set that contains the three semaphores used to write on the register's partitions */
+/* Id of the set that contains a semaphore used to wait for the simulation to start */
 int fairStartSem = -1;
 
 /* Id of the set that contains the three semaphores used to write on the register's partitions */
@@ -93,25 +92,34 @@ long *noAllTimesNodesPtr = NULL;
 
 /*** GLOBAL VARIABLES ***/
 #pragma region GLOBAL VARIABLES
-/***** Definition of global variables that contain *****/
-/***** the values ​​of the configuration parameters  *****/
-/*******************************************************/
-/* Better to use long: the values could be very large */
-long SO_USERS_NUM;           /* Number of user processes */
-long SO_NODES_NUM;           /* Number of node processes */
-long SO_REWARD;              /* Percentage of node's reward of the transaction */
-long SO_MIN_TRANS_GEN_NSEC;  /* Min time for wait for transaction's processing */
-long SO_MAX_TRANS_GEN_NSEC;  /* Max time for wait for transaction's processing */
-long SO_RETRY;               /* Attempts to send a transaction before termination of user */
-long SO_TP_SIZE;             /* Size of Transaction Pool of node processes */
-long SO_MIN_TRANS_PROC_NSEC; /* Min time for transactions' block processing */
-long SO_MAX_TRANS_PROC_NSEC; /* Max time for transactions' block processing */
-long SO_BUDGET_INIT;         /* Initial budget of user processes */
-long SO_SIM_SEC;             /* Duration of the simulation*/
-long SO_FRIENDS_NUM;         /* Number of friends*/
-long SO_HOPS;                /* Attempts to insert a transaction in a node's TP before elimination */
-/*******************************************************/
-/*******************************************************/
+/*** Configuration parameters ***/
+/* Number of user processes */
+long SO_USERS_NUM;
+/* Number of node processes */
+long SO_NODES_NUM;
+/* Percentage of node's reward of the transaction */
+long SO_REWARD;
+/* Min time for wait for transaction's processing */
+long SO_MIN_TRANS_GEN_NSEC;
+/* Max time for wait for transaction's processing */
+long SO_MAX_TRANS_GEN_NSEC;
+/* Attempts to send a transaction before termination of user */
+long SO_RETRY;
+/* Size of Transaction Pool of node processes */
+long SO_TP_SIZE;
+/* Min time for transactions' block processing */
+long SO_MIN_TRANS_PROC_NSEC;
+/* Max time for transactions' block processing */
+long SO_MAX_TRANS_PROC_NSEC;
+/* Initial budget of user processes */
+long SO_BUDGET_INIT;
+/* Duration of the simulation */
+long SO_SIM_SEC;
+/* Number of friends */
+long SO_FRIENDS_NUM;
+/* Attempts to insert a transaction in a node's TP before elimination */
+long SO_HOPS;
+/*** End of Configuration parameters ***/
 
 /*
  *    List that contains all the transactions sent by a process.
@@ -121,42 +129,51 @@ long SO_HOPS;                /* Attempts to insert a transaction in a node's TP 
  *    orderly insertion and dichotomous search
  */
 TransList *transactionsSent = NULL; 
-int num_failure = 0;               
-struct timespec now;
-long my_pid; /* pid of current user */
+
+/* counter of user failures while trying yo generate a transaction */
+int num_failure = 0;
+
+/* pid of current user */
+long my_pid;
+
+/* keeps track if execution is terminated */
+boolean execTerminated = FALSE;
+
+/* keeps track of segmentation fault catched by handler */
+int segFaultHappened = 0;
 #pragma endregion
 /*** END GLOBAL VARIABLES ***/
 
 /*** FUNCTIONS PROTOTYPES DECLARATION ***/
 #pragma region FUNCTIONS PROTOTYPES DECLARATION
 /**
- * @brief Function that reads from environment variables the parameters necessary for the execution.
+ * Function that reads from environment variables the parameters necessary for the execution.
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
 boolean readParams();
 
 /**
- * @brief Function that initializes the IPC facilities for the user.
+ * Function that initializes the IPC facilities for the user.
  * @return Returns TRUE if successfull, FALSE in case an error occurres.
  */
 boolean initializeFacilities();
 
 /**
- * @brief Function that computes the budget of the user counting from the register
+ * Function that computes the budget of the user counting from the register
  * and removing the amount of the sent but not processed transaction (the one not in register)
  * @return returns the actual balance as a double
  */
 double computeBalance();
 
 /**
- * @brief Function that removes the passed transaction from the list of sent transactions.
+ * Function that removes the passed transaction from the list of sent transactions.
  * @param tList a pointer to the list of sent transactions to modify
  * @param t a pointer to the transaction to remove from list
  */
 TransList *removeTransaction(TransList *, Transaction *);
 
 /**
- * @brief Function that computes the budget of the user, generates a transaction,
+ * Function that computes the budget of the user, generates a transaction,
  * sends it to a randomly chosen node and then simulates the wait for processing
  * the transaction.
  * @param sig the type of event that triggered the handler, 0 if not called on event
@@ -164,7 +181,7 @@ TransList *removeTransaction(TransList *, Transaction *);
 void transactionGeneration(int);
 
 /**
- * @brief Function that ends the execution of the user; this can happen in three different ways,
+ * Function that ends the execution of the user; this can happen in three different ways,
  * rappresented by the values that the parameter might assume.
  * @param sig the parameters value are: 0 -> only end of execution; -1 -> end of execution and deallocation (called from error);
  * SIGUSR1 -> end of execution and deallocation (called by signal from master)
@@ -172,18 +189,18 @@ void transactionGeneration(int);
 void endOfExecution(int);
 
 /**
- * @brief Function that deallocates the IPC facilities for the user.
+ * Function that deallocates the IPC facilities for the user.
  */
 void deallocateIPCFacilities();
 
 /**
- * @brief Function that increases by one the number of failure counter of the user while attempting
+ * Function that increases by one the number of failure counter of the user while attempting
  * to create a transaction and if the counter is equal to SO_RETRY, the simulation must terminate.
  */
 void userFailure();
 
 /**
- * @brief Function that adds the transaction passed as second argument to the list of sent transactions
+ * Function that adds the transaction passed as second argument to the list of sent transactions
  * passed as first argument.
  * @param transSent a pointer to the list of sent transactions
  * @param t a pointer to the transaction to add to the list
@@ -192,13 +209,13 @@ void userFailure();
 TransList *addTransaction(TransList *, Transaction *);
 
 /**
- * @brief Function that deallocates the list of sent transactions.
+ * Function that deallocates the list of sent transactions.
  * @param transSent a pointer to the list of sent transactions to deallocate
  */
 void freeTransList(TransList *);
 
 /**
- * @brief Function that extracts randomly a receiver for the transaction which is not the same user
+ * Function that extracts randomly a receiver for the transaction which is not the same user
  * that generated the transaction, whose pid is the argument passed to the function.
  * @param pid is the pid of the current user, the return value must be different from this pid
  * @return Returns the pid of the selected user in the usersList shared array, -1 if the function generates an error.
@@ -206,13 +223,13 @@ void freeTransList(TransList *);
 pid_t extractReceiver(pid_t);
 
 /**
- * @brief Function that extracts randomly a node which to send the generated transaction.
+ * Function that extracts randomly a node which to send the generated transaction.
  * @return Returns the pid of the selected user in the usersList shared array, -1 if the function generates an error.
  */
 pid_t extractNode();
 
 /**
- * @brief Function that catches any segmentation fault error during execution and
+ * Function that catches any segmentation fault error during execution and
  * avoids brutal termination.
  *
  * @param sig signal that fired the handler
@@ -227,14 +244,19 @@ int main(int argc, char *argv[], char *envp[])
     struct sigaction actEndOfExec;
     struct sigaction actGenTrans;
     struct sigaction actSegFaultHandler;
+    struct sembuf op;
+    struct timespec onesec, tim;
     sigset_t mask;
     TransQueue msgCheckFailedTrans;
     char *printMsg;
-    struct sembuf op;
 
     /* initializing print string message */
     printMsg = (char *)calloc(200, sizeof(char));
     my_pid = (long)getpid();
+
+    /* setting data for waiting for one second */
+    onesec.tv_sec = 1;
+    onesec.tv_nsec = 0;
 
     if (readParams())
     {
@@ -333,8 +355,7 @@ int main(int argc, char *argv[], char *envp[])
                                     /* generate a transaction */
                                     transactionGeneration(0);
 
-                                    
-                                    sleep(1);
+                                    nanosleep(&onesec, &tim);
                                 }
                             }
                         }
@@ -363,7 +384,7 @@ int main(int argc, char *argv[], char *envp[])
 /*** FUNCTIONS IMPLEMENTATIONS ***/
 #pragma region FUNCTIONS IMPLEMENTATIONS
 /**
- * @brief Function that reads from environment variables the parameters necessary for the execution.
+ * Function that reads from environment variables the parameters necessary for the execution.
  * @return Returns TRUE if successfull, FALSE in case an error occurrs.
  */
 boolean readParams()
@@ -411,7 +432,7 @@ boolean readParams()
 }
 
 /**
- * @brief Function that initializes the IPC facilities for the user.
+ * Function that initializes the IPC facilities for the user.
  * @return Returns TRUE if successfull, FALSE in case an error occurres.
  */
 boolean initializeFacilities()
@@ -545,7 +566,7 @@ boolean initializeFacilities()
 }
 
 /**
- * @brief Function that computes the budget of the user counting from the register
+ * Function that computes the budget of the user counting from the register
  * and removing the amount of the sent but not processed transaction (the one not in register)
  * @param transSent it rappresents a pointer to the gloabl list of sent transactions, we must not
  * use the global one otherwise we lose the real pointer
@@ -758,7 +779,7 @@ double computeBalance()
 }
 
 /**
- * @brief Function that removes the passed transaction from the list of sent transactions.
+ * Function that removes the passed transaction from the list of sent transactions.
  * @param tList a pointer to the list of sent transactions to modify
  * @param t a pointer to the transaction to remove from list
  */
@@ -827,7 +848,7 @@ TransList *removeTransaction(TransList *tList, Transaction *t)
 }
 
 /**
- * @brief Function that ends the execution of the user; this can happen in three different ways,
+ * Function that ends the execution of the user; this can happen in three different ways,
  * rappresented by the values that the parameter might assume.
  * @param sig the parameters value are: 
  *  0 -> only end of execution; 
@@ -873,13 +894,15 @@ void endOfExecution(int sig)
         }
     }
 
+    execTerminated = TRUE;
+
     if (aus)
         free(aus);
     exit(exitCode);
 }
 
 /**
- * @brief Function that deallocates the IPC facilities for the user.
+ * Function that deallocates the IPC facilities for the user.
  */
 void deallocateIPCFacilities()
 {
@@ -1004,7 +1027,7 @@ void deallocateIPCFacilities()
 }
 
 /**
- * @brief Function that computes the budget of the user, generates a transaction,
+ * Function that computes the budget of the user, generates a transaction,
  * sends it to a randomly chosen node and then simulates the wait for processing
  * the transaction.
  * @param sig the type of event that triggered the handler, 0 if not called on event
@@ -1203,8 +1226,7 @@ void transactionGeneration(int sig)
 
                             /*
                              * Here in case of failure it is not necessary to increase the counter 
-                                of the number of failures because
-                             * we created the transaction anyway
+                             * of the number of failures because we created the transaction anyway
                              */
                         }
                     }
@@ -1224,7 +1246,7 @@ void transactionGeneration(int sig)
 }
 
 /**
- * @brief Function that increases by one the number of failure counter of the user while attempting
+ * Function that increases by one the number of failure counter of the user while attempting
  * to create a transaction and if the counter is equal to SO_RETRY, the simulation must terminate.
  */
 void userFailure()
@@ -1249,7 +1271,7 @@ void userFailure()
 }
 
 /**
- * @brief Function that adds the transaction passed as second argument to the list of sent transactions
+ * Function that adds the transaction passed as second argument to the list of sent transactions
  * passed as first argument.
  * @param transSent a pointer to the list of sent transactions
  * @param t a pointer to the transaction to add to the list
@@ -1282,7 +1304,7 @@ TransList *addTransaction(TransList *transSent, Transaction *t)
 }
 
 /**
- * @brief Function that deallocates the list of sent transactions.
+ * Function that deallocates the list of sent transactions.
  * @param transSent a pointer to the list of sent transactions to deallocate
  */
 void freeTransList(TransList *transSent)
@@ -1297,7 +1319,7 @@ void freeTransList(TransList *transSent)
 }
 
 /**
- * @brief Function that extracts randomly a receiver for the transaction which is not the same user
+ * Function that extracts randomly a receiver for the transaction which is not the same user
  * that generated the transaction, whose pid is the argument passed to the function.
  * @param pid is the pid of the current user, the return value must be different from this pid
  * @return Returns the pid of the selected user in the usersList shared array, -1 if the function generates an error.
@@ -1308,12 +1330,12 @@ pid_t extractReceiver(pid_t pid)
     struct sembuf sops;
     pid_t pid_to_return = -1;
     boolean errBeforeExtraction = FALSE;
+    struct timespec now;
     char *aus;
 
     aus = (char *)calloc(200, sizeof(char));
 
     sops.sem_flg = 0;
-
     sops.sem_num = 0;
     sops.sem_op = -1;
     if (semop(userListSem, &sops, 1) != -1)
@@ -1408,7 +1430,7 @@ pid_t extractReceiver(pid_t pid)
 }
 
 /**
- * @brief Function that extracts randomly a node which to send the generated transaction.
+ * Function that extracts randomly a node which to send the generated transaction.
  * @return Returns the pid of the selected user in the usersList shared array, -1 if the function generates an error.
  */
 pid_t extractNode()
@@ -1417,6 +1439,7 @@ pid_t extractNode()
     struct sembuf sops;
     pid_t pid_to_return = -1;
     boolean errBeforeExtraction = FALSE;
+    struct timespec now;
     char *aus;
     long numNodes = 0;
 
@@ -1543,24 +1566,36 @@ pid_t extractNode()
 }
 
 /**
- * @brief Function that catches any segmentation fault error during execution and
+ * Function that catches any segmentation fault error during execution and
  * avoids brutal termination.
  *
  * @param sig signal that fired the handler
  */
 void segmentationFaultHandler(int sig)
 {
-    char *aus = NULL;
-    int msg_length;
+    if (segFaultHappened == 0)
+        segFaultHappened++;
+    else if (segFaultHappened == 1)
+    {
+        /*
+         *  We got two segmentation faults in a row, the fault could be serious.
+         *  Let's try to end the execution with the dedicated function.
+         */
+        segFaultHappened++;
+        endOfExecution(-1);
+    }
+    else
+    {
+        /*
+         *  Multiple segmentation faults have occurred, we cannot terminate using the
+         *  dedicated function. We must end brutally.
+         */
+        exit(EXIT_FAILURE);
+    }
 
-    aus = (char *)calloc(200, sizeof(char));
+    dprintf(STDERR_FILENO, "[USER %5ld]: a segmentation fault error happened. Terminating...\n", my_pid);
 
-    msg_length = snprintf(aus, 199, "[USER %5ld]: a segmentation fault error happened. Terminating...\n", my_pid);
-    write(STDOUT_FILENO, aus, msg_length);
-    if (aus != NULL)
-        free(aus);
-
-    if (sig == SIGSEGV)
+    if (!execTerminated)
         endOfExecution(-1);
     else
         exit(EXIT_FAILURE);
