@@ -1,5 +1,5 @@
-.out
-.o
+*.out
+*.o
 Error
 IPC_remover
 Node

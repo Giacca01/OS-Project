@@ -333,8 +333,8 @@ int main(int argc, char *argv[], char *envp[])
                                     /* generate a transaction */
                                     transactionGeneration(0);
 
-                                    /*
-                                    sleep(1);*/
+                                    
+                                    sleep(1);
                                 }
                             }
                         }
