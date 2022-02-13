@@ -1,0 +1,9 @@
+*.out
+*.o
+Error
+IPC_remover
+Node
+processes_killer
+source
+User
+.vscode
